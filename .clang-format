@@ -1,0 +1,71 @@
+
+BasedOnStyle: LLVM
+
+### Indentation
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+AccessModifierOffset: 4
+IndentAccessModifiers: true
+
+### Braces — Allman
+BreakBeforeBraces: Allman
+
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Never
+
+### Line Length
+ColumnLimit: 100
+
+### Pointers & References
+PointerAlignment: Left   # int* x
+
+### Spaces
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+#SpacesInParens: false #not supported by older clang
+SpacesInCStyleCastParentheses: false
+SpacesInAngles: false
+
+### Alignments
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignOperands: true
+AlignTrailingComments: true
+
+### Includes
+SortIncludes: true
+IncludeBlocks: Merge
+
+### Comments
+ReflowComments: true
+
+### Naming conventions
+#| Entity         | Style                | Example            |
+#| -------------- | -------------------- | ------------------ |
+#| Class          | UpperCamelCase       | `PlayerCharacter`  |
+#| Struct         | UpperCamelCase       | `PlayerStats`      |
+#| Private member | lowerCamelCase + `_` | `health_`          |
+#| Public member  | lowerCamelCase       | `score`            |
+#| Functions      | lowerCamelCase       | `updatePosition()` |
+#| Variables      | lowerCamelCase       | `playerCount`      |
+#| Constants      | kCamelCase           | `kMaxLives`        |
+#| Enum           | UpperCamelCase       | `WeaponType`       |
+#| Enum values    | kCamelCase           | `kSword`           |
+#| Namespace      | UpperCamelCase       | `Sword`            |
