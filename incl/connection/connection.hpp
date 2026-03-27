@@ -1,4 +1,6 @@
 #include "parsing.hpp"
+#define MAX_EVENTS 10
+
 
 struct HTTPMessage;
 
