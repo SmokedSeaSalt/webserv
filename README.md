@@ -27,4 +27,4 @@ The following things can be configured:
 - ```./webserv [config_file]```
 
 ## Resources
-
+- https://www.rfc-editor.org/rfc/rfc9112.html
