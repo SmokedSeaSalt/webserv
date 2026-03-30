@@ -1,15 +1,10 @@
-#include <cctype>
-#include "parsing"
+#include "parsing/parsing.hpp"
 
-bool is_tchar(char c)
+auto to_lower(std::string str) -> std::string
 {
-    return (std::isalnum(c) || c == '!' || c == '#' || c == '$' || c == '%' || c == '&' ||
-           c == '\'' || c == '*' || c == '+' || c == '-' || c == '.' || c == '^' || c == '_' ||
-           c == '`' || c == '|' || c == '~');
+	for (auto& c : str)
+	{
+		c = std::tolower(static_cast<unsigned char>(c));
+	}
+	return str;
 }
-
-auto validateMethod(std::string str) -> std::expected<bool, std::string>;
-//https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages#request_targets
-auto validateRequestTarget(std::string str) -> std::expected<std::string, std::string>;
-auto validateProtocol(std::string str) -> std::expected<bool, std::string>;
-auto validateHeader(std::string str) -> std::expected<bool, std::string>;

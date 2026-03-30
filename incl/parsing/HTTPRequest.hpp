@@ -2,6 +2,7 @@
 #include <string>
 #include <expected>
 #include "parsing/parsing.hpp"
+#include "parsing/HTTPRules.hpp"
 
 enum class RequestState
 {
@@ -11,15 +12,12 @@ enum class RequestState
     KDone
 };
 
-class HTTPRequest
+class HTTPRequest: public HTTPRules
 {
     public:
-       auto newData(std::string data) -> std::expected<size_t, std::string>;
+        auto newData(std::string data) -> std::expected<size_t, std::string>;
 
     private:
-        const std::string delimiter_ = "\r\n";
-        const std::set<std::string> supportedMethods_ = {"GET", "HEAD", "POST", "DELETE"};
-
         RequestState state_;
         std::string buffer_;
         HTTPMessage message_;
@@ -29,10 +27,4 @@ class HTTPRequest
         auto parseBody() -> std::expected<size_t, std::string>;
 
         auto expectBody() -> bool;
-
 };
-
-	std::string method;
-	std::string requestTarget;
-	std::string protocol;
-	std::unordered_map<std::string, std::vector<std::string>> headers;

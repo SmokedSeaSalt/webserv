@@ -65,17 +65,50 @@ auto HTTPRequest::parseStartLine(std::string line) -> std::expected<size_t, std:
 
     this->message_.method = line.substr(0, pos1);
     auto ret = validateMethod(this->message_.method);
+    if (!ret.has_value())
+        return std::unexpected(ret.error());
     
     this->message_.requestTarget = line.substr(pos1 + 1, pos2 - pos1 - 1);
     auto ret = validateRequestTarget(this->message_.requestTarget);
+    if (!ret.has_value())
+        return std::unexpected(ret.error());
 
     this->message_.protocol = line.substr(pos2 + 1);
-    auto ret = validateRequestTarget(this->message_.protocol);
+    auto ret = validateProtocol(this->message_.protocol);
+    if (!ret.has_value())
+        return std::unexpected(ret.error());
 
     return 1;
 }
 
-auto HTTPRequest::parseHeader(std::string line) -> std::expected<size_t, std::string> {}
+//split into key:value
+//validate key -> make lowercase -> store in key
+//validate value -> store in value
+auto HTTPRequest::parseHeader(std::string line) -> std::expected<size_t, std::string>
+{
+    auto colon_pos = line.find(":");
+    if (colon_pos == std::string::npos || colon_pos == 0)
+        return std::unexpected("400 Bad Request");
+    
+    std::string key = line.substr(0, colon_pos);
+    key = to_lower(key);
+    std::string value = line.substr(colon_pos + 1);
+
+    // trim value OWS (optional whitespace)
+    size_t start = value.find_first_not_of(" \t");
+    size_t end = value.find_last_not_of(" \t");
+    if (start == std::string::npos)
+        value = "";
+    else
+        value = value.substr(start, end - start + 1);
+
+    auto ret = validateHeader(key, value);
+    if (!ret.has_value())
+        return std::unexpected("400 Bad Request");
+    this->message_.headers[key].push_back(value);
+
+    return line.size();
+}
 
 auto HTTPRequest::parseBody() -> std::expected<size_t, std::string> {}
 
