@@ -16,7 +16,7 @@ private:
     int listenSock;
 
     void        connection_loop();
-    int         setupListenSock(int port, std::string ip);
+    int         setupListenSocket(int port, std::string ip);
     sockaddr_in setListenServerAddress(int port, std::string ip);
 
     void        createConnection();

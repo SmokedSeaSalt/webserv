@@ -11,9 +11,10 @@ void Server::setNonBlocking(int connSock)
 	
 }
 
+#include <iostream>
 void Server::handleEvent(int fd)
 {
-
+    std::cout << "blah: " << fd << std::endl;
 }
 
 void Server::createConnection()
@@ -51,7 +52,7 @@ sockaddr_in Server::setListenServerAddress(int port, std::string ip)
     return listenServerAddress;
 }
 
-int Server::setupListenSock(int port, std::string ip)
+int Server::setupListenSocket(int port, std::string ip)
 {
     // Create socket with IPv4 and TCP
     int listenSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -62,24 +63,26 @@ int Server::setupListenSock(int port, std::string ip)
     }
 
     sockaddr_in listenServerAddress = setListenServerAddress(port, ip);
-
     if (bind(listenSocket, (struct sockaddr*)&listenServerAddress, sizeof(listenSocket)) == -1)
     {
         perror("bind");
         exit(EXIT_FAILURE);
     }
 
+    if (listen(listenSocket, SOMAXCONN) == -1)
+    {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void Server::connection_loop()
 {
     std::map<int, Client> clientMap;
     struct epoll_event    ev, events[MAX_EVENTS];
-    int                   listenSock, nfds, epollfd;
+    int                   listenSocket, nfds, epollfd;
 
-    /* Code to set up listening socket, 'listen_sock',
-    (socket(), bind(), listen()) omitted.  */
-    listenSock = setupListenSock();
+    listenSocket = setupListenSocket(8080, "");
 
     epollfd = epoll_create(1);
     if (epollfd == -1)
@@ -89,8 +92,8 @@ void Server::connection_loop()
     }
 
     ev.events  = EPOLLIN;
-    ev.data.fd = listenSock;
-    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, listenSock, &ev) == -1)
+    ev.data.fd = listenSocket;
+    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, listenSocket, &ev) == -1)
     {
         perror("epoll_ctl: listen_sock");
         exit(EXIT_FAILURE);
