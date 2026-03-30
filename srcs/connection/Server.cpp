@@ -5,33 +5,52 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "Server.hpp"
+#include <fcntl.h>
 
-void Server::setNonBlocking(int connSock)
+Server::Server()
 {
-	
+
+}
+    
+Server::~Server()
+{
+    
+}
+
+void Server::setNonBlocking(int socketfd)
+{
+    if (fcntl(socketfd, F_SETFL, O_NONBLOCK) == -1)
+    {
+        perror("fcntl");
+        exit(EXIT_FAILURE);
+    }
 }
 
 #include <iostream>
+#include <unistd.h>
+
 void Server::handleEvent(int fd)
 {
-    std::cout << "blah: " << fd << std::endl;
+    char buf[10000];
+    read(fd, buf, 10000);
+    std::cout << buf << std::endl;
 }
 
-void Server::createConnection()
+void Server::createConnection(int listenSocket)
 {
-    int conn_sock;
+    int connectionSocket;
 
-    conn_sock = accept(listen_sock, (struct sockaddr*)&addr, &addrlen);
-    if (conn_sock == -1)
+    connectionSocket = accept(listenSocket, nullptr, nullptr); // todo: can provide more args to log info on clients
+    if (connectionSocket == -1)
     {
         perror("accept");
         exit(EXIT_FAILURE);
     }
-    setNonBlocking(conn_sock);
-    ev.data.fd = conn_sock;
-    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, conn_sock, &ev) == -1)
+    setNonBlocking(connectionSocket);
+    ev_.data.fd = connectionSocket;
+    if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, connectionSocket, &ev_) == -1)
     {
-        perror("epoll_ctl: conn_sock");
+        perror("epoll_ctl: connectionSocket");
         exit(EXIT_FAILURE);
     }
 }
@@ -56,7 +75,7 @@ int Server::setupListenSocket(int port, std::string ip)
 {
     // Create socket with IPv4 and TCP
     int listenSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (listenSock == -1)
+    if (listenSocket == -1)
     {
         perror("socket");
         exit(EXIT_FAILURE); // TODO: exit or return?
@@ -74,26 +93,30 @@ int Server::setupListenSocket(int port, std::string ip)
         perror("listen");
         exit(EXIT_FAILURE);
     }
+
+    setNonBlocking(listenSocket);
+    return listenSocket;
 }
 
 void Server::connection_loop()
 {
     std::map<int, Client> clientMap;
-    struct epoll_event    ev, events[MAX_EVENTS];
-    int                   listenSocket, nfds, epollfd;
+    
+    int                   listenSocket, nfds;
 
     listenSocket = setupListenSocket(8080, "");
 
-    epollfd = epoll_create(1);
-    if (epollfd == -1)
+
+    epollfd_ = epoll_create(1);
+    if (epollfd_ == -1)
     {
         perror("epoll_create1");
         exit(EXIT_FAILURE);
     }
 
-    ev.events  = EPOLLIN;
-    ev.data.fd = listenSocket;
-    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, listenSocket, &ev) == -1)
+    ev_.events  = EPOLLIN;
+    ev_.data.fd = listenSocket;
+    if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, listenSocket, &ev_) == -1)
     {
         perror("epoll_ctl: listen_sock");
         exit(EXIT_FAILURE);
@@ -101,17 +124,20 @@ void Server::connection_loop()
 
     while (true)
     {
-        nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);
+        nfds = epoll_wait(epollfd_, events_, MAX_EVENTS, -1);
         if (nfds == -1)
-            perror("epoll_wait"); exit(EXIT_FAILURE);
+        {
+            perror("epoll_wait");
+            exit(EXIT_FAILURE);
+        }
         
 
         for (int n = 0; n < nfds; ++n)
         {
-            if (events[n].data.fd == listenSock)
-                createConnection();
+            if (events_[n].data.fd == listenSock)
+                createConnection(events_[n].data.fd);
             else
-                handleEvent(events[n].data.fd);
+                handleEvent(events_[n].data.fd);
         }
     }
 }

@@ -3,23 +3,28 @@
 
 #include <string>
 #include <netinet/in.h>
+#include <sys/epoll.h>
+#include "connection.hpp"
 
 class Server
 {
 public:
     Server();
-    Server(const Server& other);
-    Server& operator=(const Server& other);
     ~Server();
 
-private:
-    int listenSock;
-
     void        connection_loop();
+
+
+private:
+    int                 listenSock;
+    struct epoll_event  ev_;
+    struct epoll_event  events_[MAX_EVENTS];
+    int                 epollfd_;
+
     int         setupListenSocket(int port, std::string ip);
     sockaddr_in setListenServerAddress(int port, std::string ip);
 
-    void        createConnection();
+    void        createConnection(int listenSocket);
     void        handleEvent(int fd);
     void        setNonBlocking(int connSock);
 

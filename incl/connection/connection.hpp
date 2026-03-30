@@ -1,7 +1,9 @@
+#ifndef CONNECTION_HPP
+#define CONNECTION_HPP
+
 #include "parsing.hpp"
 #define MAX_EVENTS 10
 
-struct HTTPMessage;
 
 enum class SocketState
 {
@@ -28,3 +30,5 @@ struct Client
         HTTPMessage response;
         ErrorType   error;
 };
+
+#endif // CONNECTION_HPP

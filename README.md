@@ -29,3 +29,4 @@ The following things can be configured:
 ## Resources
 - https://www.rfc-editor.org/rfc/rfc9112.html
 - https://www.geeksforgeeks.org/cpp/socket-programming-in-cpp/
+- https://beej.us/guide/bgnet/html/
