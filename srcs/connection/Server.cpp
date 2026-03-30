@@ -6,6 +6,11 @@
 #include <arpa/inet.h>
 #include "Server.hpp"
 #include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <iostream>
+#include <unistd.h>
+
 
 Server::Server()
 {
@@ -14,7 +19,7 @@ Server::Server()
     
 Server::~Server()
 {
-    
+
 }
 
 void Server::setNonBlocking(int socketfd)
@@ -26,14 +31,14 @@ void Server::setNonBlocking(int socketfd)
     }
 }
 
-#include <iostream>
-#include <unistd.h>
 
-void Server::handleEvent(int fd)
+int Server::handleEvent(int fd)
 {
     char buf[10000];
-    read(fd, buf, 10000);
-    std::cout << buf << std::endl;
+    int numBytes = read(fd, buf, 10000);
+    if (numBytes > 0)
+        std::cout << numBytes << " bytes read." << buf << std::endl;
+    return numBytes;
 }
 
 void Server::createConnection(int listenSocket)
@@ -59,6 +64,7 @@ sockaddr_in Server::setListenServerAddress(int port, std::string ip)
 {
     sockaddr_in listenServerAddress;
 
+    bzero(&listenServerAddress, sizeof(listenServerAddress));
     listenServerAddress.sin_family = AF_INET;
     listenServerAddress.sin_port = htons(port);
     if (ip.empty())
@@ -82,8 +88,9 @@ int Server::setupListenSocket(int port, std::string ip)
     }
 
     sockaddr_in listenServerAddress = setListenServerAddress(port, ip);
-    if (bind(listenSocket, (struct sockaddr*)&listenServerAddress, sizeof(listenSocket)) == -1)
+    if (bind(listenSocket, (struct sockaddr*)&listenServerAddress, sizeof(listenServerAddress)) == -1)
     {
+        printf("listenSocket: %d", listenSocket);
         perror("bind");
         exit(EXIT_FAILURE);
     }
@@ -134,7 +141,7 @@ void Server::connection_loop()
 
         for (int n = 0; n < nfds; ++n)
         {
-            if (events_[n].data.fd == listenSock)
+            if (events_[n].data.fd == listenSocket)
                 createConnection(events_[n].data.fd);
             else
                 handleEvent(events_[n].data.fd);

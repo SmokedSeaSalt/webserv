@@ -16,7 +16,6 @@ public:
 
 
 private:
-    int                 listenSock;
     struct epoll_event  ev_;
     struct epoll_event  events_[MAX_EVENTS];
     int                 epollfd_;
@@ -25,7 +24,7 @@ private:
     sockaddr_in setListenServerAddress(int port, std::string ip);
 
     void        createConnection(int listenSocket);
-    void        handleEvent(int fd);
+    int         handleEvent(int fd);
     void        setNonBlocking(int connSock);
 
     
