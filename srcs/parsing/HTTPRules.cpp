@@ -16,7 +16,7 @@ auto HTTPRules::is_tchar(char c) -> bool
 //all visable charachters. ascii value 33 -> 126
 auto HTTPRules::is_vchar(char c) -> bool
 {
-    return (c >= '!' && c <= '~');
+    return ((c >= ' ' && c <= '~') || c == '\t');
 }
 
 auto HTTPRules::validateMethod(std::string str) -> std::expected<bool, std::string>
@@ -40,5 +40,6 @@ auto HTTPRules::validateProtocol(std::string str) -> std::expected<bool, std::st
 
 auto HTTPRules::validateHeader(std::string key, std::string value) -> std::expected<bool, std::string>
 {
+
 //TODO
 }

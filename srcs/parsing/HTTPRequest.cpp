@@ -37,12 +37,12 @@ auto HTTPRequest::newData(std::string data) -> std::expected<size_t, std::string
     }
     case (RequestState::kBody):
     {
-
+        //TODO
         break;
     }
     case (RequestState::KDone):
     {
-
+        //TODO
         break;
     }
     }
@@ -51,7 +51,7 @@ auto HTTPRequest::newData(std::string data) -> std::expected<size_t, std::string
     return pos;
 }
 
-auto HTTPRequest::parseStartLine(std::string line) -> std::expected<size_t, std::string> 
+auto HTTPRequest::parseStartLine(std::string line) -> std::expected<size_t, std::string>
 {
     auto pos1 = line.find(' ');
     if (pos1 == std::string::npos)
@@ -67,7 +67,7 @@ auto HTTPRequest::parseStartLine(std::string line) -> std::expected<size_t, std:
     auto ret = validateMethod(this->message_.method);
     if (!ret.has_value())
         return std::unexpected(ret.error());
-    
+
     this->message_.requestTarget = line.substr(pos1 + 1, pos2 - pos1 - 1);
     auto ret = validateRequestTarget(this->message_.requestTarget);
     if (!ret.has_value())
@@ -89,7 +89,7 @@ auto HTTPRequest::parseHeader(std::string line) -> std::expected<size_t, std::st
     auto colon_pos = line.find(":");
     if (colon_pos == std::string::npos || colon_pos == 0)
         return std::unexpected("400 Bad Request");
-    
+
     std::string key = line.substr(0, colon_pos);
     key = to_lower(key);
     std::string value = line.substr(colon_pos + 1);
@@ -125,5 +125,5 @@ auto HTTPRequest::expectBody() -> bool
             return false;
         return true;
     }
-    return false;      
+    return false;
 }
