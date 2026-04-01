@@ -2,7 +2,8 @@
 
 int main()
 {
-	Server server;
+	Server server("example.txt");
+	server.setup();
 	server.connection_loop();
 	return 0;
 }

@@ -5,29 +5,44 @@
 #include <netinet/in.h>
 #include <sys/epoll.h>
 #include "connection.hpp"
+#include <vector>
+#include <expected>
+#include <set>
+
+#include "configParsing.hpp"
 
 class Server
 {
 public:
-    Server();
+    Server(std::string configFile);
     ~Server();
 
-    void        connection_loop();
+    auto setup() -> std::expected<void, std::string>;
+    auto connection_loop() -> std::expected<void, std::string>;
 
 
 private:
-    struct epoll_event  ev_;
-    struct epoll_event  events_[MAX_EVENTS];
-    int                 epollfd_;
+    struct epoll_event      ev_;
+    struct epoll_event      events_[MAX_EVENTS];
+    struct Config           config_;
+    std::map<int, Client>   clientMap_;
+    std::set<int>           listenSockets_;
+    std::string             configFile_;
+    int                     epollfd_;
 
-    int         setupListenSocket(int port, std::string ip);
-    sockaddr_in setListenServerAddress(int port, std::string ip);
-
-    void        createConnection(int listenSocket);
-    int         handleEvent(int fd);
-    void        setNonBlocking(int connSock);
+    auto setupListenSocket(std::string ip, int port) -> std::expected<int, std::string>;
+    auto setupListenSockets() -> std::expected<void, std::string>;
 
     
+    auto getListenServerAddress(std::string ip, int port) -> std::expected<sockaddr_in, std::string>;
+
+    auto createConnection(int listenSocket) -> std::expected<void, std::string>;
+    auto handleEvent(int fd) -> std::expected<int, std::string>;
+    auto setNonBlocking(int connSock) -> std::expected<void, std::string>;
+
+    // cleanup
+    auto closeListenSockets() -> void;
+
 };
 
 #endif // SERVER_HPP
