@@ -1,4 +1,5 @@
 #include <cctype>
+#include <algorithm>
 #include "parsing/HTTPRules.hpp"
 
 
@@ -6,17 +7,22 @@ const std::string HTTPRules::delimiter_ = "\r\n";
 const std::set<std::string> HTTPRules::supportedMethods_ = {"GET", "HEAD", "POST", "DELETE"};
 const std::string HTTPRules::HTTPVersion_ = "HTTP/1.1";
 
-auto HTTPRules::is_tchar(char c) -> bool
+auto HTTPRules::is_tchar(unsigned char c) -> bool
 {
     return (std::isalnum(c) || c == '!' || c == '#' || c == '$' || c == '%' || c == '&' ||
            c == '\'' || c == '*' || c == '+' || c == '-' || c == '.' || c == '^' || c == '_' ||
            c == '`' || c == '|' || c == '~');
 }
 
-//all visable charachters. ascii value 33 -> 126
-auto HTTPRules::is_vchar(char c) -> bool
+//all visable charachters. ascii value 32 -> 126 and tab
+auto HTTPRules::is_vchar(unsigned char c) -> bool
 {
     return ((c >= ' ' && c <= '~') || c == '\t');
+}
+
+auto HTTPRules::is_field_vchar(unsigned char c) -> bool
+{
+    return ((c >= 0x21 && c <= 0x7e) || (c >= 0x80 && c <= 0xff) || c == '\t')
 }
 
 auto HTTPRules::validateMethod(std::string str) -> std::expected<bool, std::string>
@@ -40,6 +46,6 @@ auto HTTPRules::validateProtocol(std::string str) -> std::expected<bool, std::st
 
 auto HTTPRules::validateHeader(std::string key, std::string value) -> std::expected<bool, std::string>
 {
-
+    bool validKey = std::all_of(key.begin(), key.end(), HTTPRules::is_tchar);
 //TODO
 }

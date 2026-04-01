@@ -22,8 +22,9 @@ class HTTPRules
         static const std::set<std::string> supportedMethods_;
         static const std::string HTTPVersion_;
 
-        static auto is_tchar(char c) -> bool;
-        static auto is_vchar(char c) -> bool;
+        static auto is_tchar(unsigned char c) -> bool;
+        static auto is_vchar(unsigned char c) -> bool;
+        static auto is_field_vchar(unsigned char c) -> bool;
 
         static auto validateMethod(std::string str) -> std::expected<bool, std::string>;
         static auto validateRequestTarget(std::string str) -> std::expected<std::string, std::string>;
