@@ -1,8 +1,8 @@
+#include "parsing/HTTPRules.hpp"
+#include "parsing/parsing.hpp"
+#include <expected>
 #include <set>
 #include <string>
-#include <expected>
-#include "parsing/parsing.hpp"
-#include "parsing/HTTPRules.hpp"
 
 enum class RequestState
 {
@@ -12,19 +12,19 @@ enum class RequestState
     KDone
 };
 
-class HTTPRequest: public HTTPRules
+class HTTPRequest : public HTTPRules
 {
     public:
-        auto newData(std::string data) -> std::expected<size_t, std::string>;
+        auto newData(std::string data) -> std::expected<void, std::string>;
 
     private:
         RequestState state_;
-        std::string buffer_;
-        HTTPMessage message_;
-    
+        std::string  buffer_;
+        HTTPMessage  message_;
+
         auto parseStartLine(std::string line) -> std::expected<size_t, std::string>;
         auto parseHeader(std::string line) -> std::expected<size_t, std::string>;
-        auto parseBody() -> std::expected<size_t, std::string>;
+        auto parseBody(std::string line) -> std::expected<size_t, std::string>;
 
         auto expectBody() -> bool;
 };
