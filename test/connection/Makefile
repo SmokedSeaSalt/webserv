@@ -63,6 +63,20 @@ $(BUILD_DIR):
 .PHONY:	clean fclean re all debug asan
 
 ################################################################################
+# Installs                                                                     #
+################################################################################
+
+LLVM_VERSION = 21.1.8
+LLVM_TAR = LLVM-$(LLVM_VERSION)-Linux-X64.tar.xz
+LLVM_DIR = $(HOME)/sgoinfre/LLVM-$(LLVM_VERSION)-Linux-X64
+
+install_cpp23:
+	wget -P $(HOME)/sgoinfre https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVM_VERSION)/$(LLVM_TAR)
+	tar xf $(HOME)/sgoinfre/$(LLVM_TAR) -C $(HOME)/sgoinfre
+
+.PHONY += install_cpp23
+
+################################################################################
 # Terminal beautification                                                      #
 ################################################################################
 
