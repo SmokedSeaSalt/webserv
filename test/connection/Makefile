@@ -3,8 +3,9 @@
 ################################################################################
 
 NAME = webserv
-CPP = c++
-CPPFLAGS = -Wall -Werror -Wextra -MMD --std=c++23
+CPP = $(HOME)/sgoinfre/LLVM-21.1.8-Linux-X64/bin/clang++
+CPPFLAGS = -Wall -Werror -Wextra -MMD --std=c++23 --stdlib=libc++
+LDFLAGS = -Wl,-rpath,$(HOME)/sgoinfre/LLVM-21.1.8-Linux-X64/lib/x86_64-unknown-linux-gnu -lc++ -lc++abi
 DEBUGFLAGS = -g
 ASANFLAGS = -fsanitize=address,undefined -g
 
@@ -32,7 +33,7 @@ all: $(NAME)
 	@printf "$(COLOUR_BLUE)Executable: $(NAME)\n$(COLOUR_END)"
 
 $(NAME): $(OBJ) Makefile
-	@$(CPP) $(CPPFLAGS) $(OBJ) -o $@
+	@$(CPP) $(LDFLAGS) $(OBJ) -o $@
 	@printf "$(COLOUR_GREEN)Compilation done👍\n$(COLOUR_END)"
 
 $(BUILD_DIR)/%.o: %.cpp Makefile | $(BUILD_DIR)

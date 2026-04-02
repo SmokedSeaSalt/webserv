@@ -22,6 +22,7 @@ auto Server::setNonBlocking(int socketfd) -> std::expected<void, std::string>
         perror("fcntl");
         return std::unexpected("fcntl failed");
     }
+    return {};
 }
 
 auto Server::handleEvent(int fd) -> std::expected<int, std::string>
@@ -56,6 +57,7 @@ auto Server::createConnection(int listenSocket) -> std::expected<void, std::stri
         return std::unexpected("epoll_ctl failed");
     }
     clientMap_.emplace(connectionSocket, Client());
+    return {};
 }
 
 auto Server::getListenServerAddress(std::string ip, int port)
@@ -139,6 +141,7 @@ auto Server::setupListenSockets() -> std::expected<void, std::string>
             return std::unexpected("epoll_ctl() failed");
         }
     }
+    return {};
 }
 
 auto Server::setup() -> std::expected<void, std::string>
@@ -149,10 +152,12 @@ auto Server::setup() -> std::expected<void, std::string>
         perror("epoll_create");
         return std::unexpected("epoll_create() failed");
     }
-
+    ServerBlock test("", 8080); //FOR NOW HARDCODED TEST
+    config_.serverBlocks.push_back(test); //FOR NOW HARDCODED TEST
     auto ret = setupListenSockets();
     if (!ret.has_value())
         return std::unexpected(ret.error());
+    return {};
 }
 
 auto Server::connection_loop() -> std::expected<void, std::string>
@@ -176,6 +181,7 @@ auto Server::connection_loop() -> std::expected<void, std::string>
                 handleEvent(events_[n].data.fd);
         }
     }
+    return {};
 }
 
 // Server
