@@ -2,10 +2,12 @@
 #define CONNECTION_HPP
 
 #include "parsing.hpp"
+#include "HTTPRequest.hpp"
 #define MAX_EVENTS 10
+#define BUFFER_SIZE 10
 
 
-enum class SocketState
+enum class ClientState
 {
     Receiving,
     Processing,
@@ -25,8 +27,8 @@ enum class ErrorType
 struct Client
 {
         int         socketfd;
-        SocketState state;
-        HTTPMessage request;
+        ClientState state;
+        HTTPRequest request; // todo: change this to HTTPRequest when merge with mathijs
         HTTPMessage response;
         ErrorType   error;
 };

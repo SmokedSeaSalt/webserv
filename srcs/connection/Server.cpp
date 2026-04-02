@@ -11,7 +11,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-Server::Server(std::string configFile) : configFile_(configFile) {}
+Server::Server(Config config) : config_(config) {}
 
 Server::~Server() {}
 
@@ -25,8 +25,35 @@ auto Server::setNonBlocking(int socketfd) -> std::expected<void, std::string>
     return {};
 }
 
+auto Server::handleReceivingEvent(int fd) -> std::expected<void, std::string>
+{
+    std::string buf;
+    buf.resize(BUFFER_SIZE);
+    std::size_t numBytes = read(fd, buf.data(), BUFFER_SIZE - 1);
+    if (numBytes < 0)
+        return std::unexpected("read failed");
+    buf[numBytes] = '\0';
+    clientMap_[fd].request.newData(buf);
+    return {};
+}
+
 auto Server::handleEvent(int fd) -> std::expected<int, std::string>
 {
+
+    switch (clientMap_[fd].state)
+    {
+    case ClientState::Receiving:
+        handleReceivingEvent(fd);
+        break;
+    case ClientState::Processing:;
+        break;
+    case ClientState::Sending:
+        break;
+    case ClientState::Closed:
+        break;
+    case ClientState::Error:
+        break;
+    }
     char buf[10000];
     int  numBytes = read(fd, buf, 10000);
     if (numBytes > 0)
@@ -56,7 +83,11 @@ auto Server::createConnection(int listenSocket) -> std::expected<void, std::stri
         perror("epoll_ctl: connectionSocket");
         return std::unexpected("epoll_ctl failed");
     }
-    clientMap_.emplace(connectionSocket, Client());
+    clientMap_.emplace(connectionSocket, Client{.socketfd = connectionSocket,
+                                                .state    = ClientState::Receiving,
+                                                .request  = HTTPRequest{},
+                                                .response = HTTPMessage{},
+                                                .error    = ErrorType::None});
     return {};
 }
 
@@ -152,8 +183,8 @@ auto Server::setup() -> std::expected<void, std::string>
         perror("epoll_create");
         return std::unexpected("epoll_create() failed");
     }
-    ServerBlock test("", 8080); //FOR NOW HARDCODED TEST
-    config_.serverBlocks.push_back(test); //FOR NOW HARDCODED TEST
+    ServerBlock test("", 8080);           // FOR NOW HARDCODED TEST
+    config_.serverBlocks.push_back(test); // FOR NOW HARDCODED TEST
     auto ret = setupListenSockets();
     if (!ret.has_value())
         return std::unexpected(ret.error());
@@ -183,6 +214,13 @@ auto Server::connection_loop() -> std::expected<void, std::string>
     }
     return {};
 }
+
+// Getters
+auto Server::getListenSockets() -> std::set<int>
+{
+    return listenSockets_;
+}
+
 
 // Server
 // |-- vector<ListenSocket>

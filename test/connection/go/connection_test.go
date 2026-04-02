@@ -11,4 +11,4 @@ func TestHelloName(t *testing.T) {
     if !want.MatchString(msg) || err != nil {
         t.Errorf(`Hello("Gladys") = %q, %v, want match for %#q, nil`, msg, err, want)
     }
-} 
+}

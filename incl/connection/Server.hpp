@@ -14,11 +14,14 @@
 class Server
 {
 public:
-    Server(std::string configFile);
+    Server(Config config);
     ~Server();
 
     auto setup() -> std::expected<void, std::string>;
     auto connection_loop() -> std::expected<void, std::string>;
+
+    // getters
+    auto getListenSockets() -> std::set<int>;
 
 
 private:
@@ -27,18 +30,24 @@ private:
     struct Config           config_;
     std::map<int, Client>   clientMap_;
     std::set<int>           listenSockets_;
-    std::string             configFile_;
     int                     epollfd_;
 
+    // setup() helpers
     auto setupListenSocket(std::string ip, int port) -> std::expected<int, std::string>;
     auto setupListenSockets() -> std::expected<void, std::string>;
+    auto setNonBlocking(int connSock) -> std::expected<void, std::string>;
 
     
     auto getListenServerAddress(std::string ip, int port) -> std::expected<sockaddr_in, std::string>;
 
-    auto createConnection(int listenSocket) -> std::expected<void, std::string>;
+
+    // connectionLoop helpers
     auto handleEvent(int fd) -> std::expected<int, std::string>;
-    auto setNonBlocking(int connSock) -> std::expected<void, std::string>;
+    auto handleReceivingEvent(int fd) -> std::expected<void, std::string>;
+    auto createConnection(int listenSocket) -> std::expected<void, std::string>;
+
+
+
 
     // cleanup
     auto closeListenSockets() -> void;

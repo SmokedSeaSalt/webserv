@@ -10,20 +10,26 @@ DEBUGFLAGS = -g
 ASANFLAGS = -fsanitize=address,undefined -g
 
 ################################################################################
+# ENV		                                                                   #
+################################################################################
+PORT = 4242
+################################################################################
 # Source files                                                                 #
 ################################################################################
 
 BUILD_DIR = build
 
 SRC =	main.cpp \
-		Server.cpp
+		Server.cpp \
+		HTTPRequest.cpp
 
-INCLUDE_FLAGS = -I../../srcs/connection -I../../incl/connection -I../../incl/parsing
+INCLUDE_FLAGS = -I../mocks/incl -I../../incl/connection -I../../incl/parsing -I../../srcs/connection
 
 OBJ = $(addprefix $(BUILD_DIR)/,$(patsubst %.cpp,%.o,$(SRC)))
 DEP = $(OBJ:.o=.d)
 
 vpath %.cpp .:../../srcs/connection
+vpath %.cpp .:mocks/srcs/
 
 ################################################################################
 # Rules                                                                        #
@@ -31,6 +37,9 @@ vpath %.cpp .:../../srcs/connection
 
 all: $(NAME)
 	@printf "$(COLOUR_BLUE)Executable: $(NAME)\n$(COLOUR_END)"
+	
+run: all
+	./$(NAME)
 
 $(NAME): $(OBJ) Makefile
 	@$(CPP) $(LDFLAGS) $(OBJ) -o $@
