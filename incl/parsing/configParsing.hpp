@@ -1,6 +1,11 @@
+#ifndef CONFIGPARSING_HPP
+#define CONFIGPARSING_HPP
+
 #include <vector>
 #include <string>
 #include <map>
+#include <fstream>
+#include <expected>
 
 struct AcceptedMethods
 {
@@ -27,12 +32,19 @@ struct ServerBlock
 {
     std::string                 ip;
     int                         port;
-    std::size_t                 maxBodySize;
     std::map<int, std::string>  defaultErrorPages; // <error code, path to default error page>
-    
+    std::size_t                 maxBodySize;
+    std::vector<Location>       locations;
 };
 
 struct Config
 {
     std::vector<ServerBlock>   serverBlocks; // interface:port pairs
 };
+
+
+auto    parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::string>;
+auto    parseLocation(std::ifstream& inFile) -> std::expected<Location, std::string>;
+auto    split(std::string line) -> std::expected<std::vector<std::string>, std::string>;
+
+#endif // CONFIGPARSING_HPP
