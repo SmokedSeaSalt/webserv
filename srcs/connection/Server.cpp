@@ -29,7 +29,7 @@ auto Server::handleReceivingEvent(int fd) -> std::expected<void, std::string>
 {
     std::string buf;
     buf.resize(BUFFER_SIZE);
-    std::size_t numBytes = read(fd, buf.data(), BUFFER_SIZE - 1);
+    ssize_t numBytes = read(fd, buf.data(), BUFFER_SIZE - 1);
     if (numBytes < 0)
         return std::unexpected("read failed");
     buf[numBytes] = '\0';
@@ -183,7 +183,9 @@ auto Server::setup() -> std::expected<void, std::string>
         perror("epoll_create");
         return std::unexpected("epoll_create() failed");
     }
-    ServerBlock test("", 8080);           // FOR NOW HARDCODED TEST
+    ServerBlock test{};           // FOR NOW HARDCODED TEST
+    test.ip = "";
+    test.port = 8080;
     config_.serverBlocks.push_back(test); // FOR NOW HARDCODED TEST
     auto ret = setupListenSockets();
     if (!ret.has_value())

@@ -8,11 +8,21 @@
 #include <iostream>
 
 
-Config  mockParseConfig(std::string port, int ip)
+Config  mockParseConfig(std::string ip, int port)
 {
-	Config config;
-	config.serverBlocks.push_back(ServerBlock(port, ip));
-	return config;
+    ServerBlock sb{};
+    sb.ip = ip;
+    sb.port = port;
+    sb.defaultErrorPages = {
+        {404, "/errors/404.html"},
+        {500, "/errors/500.html"}
+    };
+    sb.maxBodySize = 10000;
+    sb.locations = {}; // leave empty for connection tests
+
+    Config config{};
+    config.serverBlocks.push_back(sb);
+    return config;
 }
 
 TEST_CASE("Server receives and prints request") {
