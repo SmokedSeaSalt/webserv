@@ -3,9 +3,9 @@
 ################################################################################
 
 NAME = webserv
-CXX ?= c++
-CXXFLAGS = -Wall -Werror -Wextra -MMD --std=c++23 #--stdlib=libc++
-LDFLAGS = #-Wl,-rpath,$(HOME)/sgoinfre/LLVM-21.1.8-Linux-X64/lib/x86_64-unknown-linux-gnu -lc++ -lc++abi
+CPP = $(HOME)/sgoinfre/LLVM-21.1.8-Linux-X64/bin/clang++
+CPPFLAGS = -Wall -Werror -Wextra -MMD --std=c++23 --stdlib=libc++
+LDFLAGS = -Wl,-rpath,$(HOME)/sgoinfre/LLVM-21.1.8-Linux-X64/lib/x86_64-unknown-linux-gnu -lc++ -lc++abi
 DEBUGFLAGS = -g
 ASANFLAGS = -fsanitize=address,undefined -g
 
@@ -48,12 +48,12 @@ run: all
 	./$(NAME)
 
 $(NAME): $(OBJ) Makefile
-	@$(CXX) $(LDFLAGS) $(OBJ) -o $@
+	@$(CPP) $(LDFLAGS) $(OBJ) -o $@
 	@printf "$(COLOUR_GREEN)Compilation done👍\n$(COLOUR_END)"
 
 $(BUILD_DIR)/%.o: %.cpp Makefile | $(BUILD_DIR)
 	@printf "$(COLOUR_BLUE)Compiling $< \n$(COLOUR_END)"
-	@$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c $< -o $@ -MF $(BUILD_DIR)/$*.d
+	@$(CPP) $(CPPFLAGS) $(INCLUDE_FLAGS) -c $< -o $@ -MF $(BUILD_DIR)/$*.d
 
 clean:
 	rm -rf $(BUILD_DIR)
@@ -64,10 +64,10 @@ fclean: clean
 re: fclean
 	$(MAKE) --no-print-directory
 
-debug: CXXFLAGS += $(DEBUGFLAGS)
+debug: CPPFLAGS += $(DEBUGFLAGS)
 debug: re
 
-asan: CXXFLAGS += $(ASANFLAGS)
+asan: CPPFLAGS += $(ASANFLAGS)
 asan: re
 
 $(BUILD_DIR):
