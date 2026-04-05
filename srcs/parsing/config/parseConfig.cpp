@@ -4,6 +4,14 @@
 #include <fstream>
 #include "parsing.hpp"
 
+auto trimTrailingSemicolon(std::string& str) -> std::expected<void, std::string>
+{
+    if (str.empty() || str.back() != ';')
+        return std::unexpected("Semicolon error at: " + str);
+    str.pop_back();
+    return {};
+}
+
 auto	parseConfigFile(std::string configFile) -> std::expected<Config, std::string>
 {
     Config          config;

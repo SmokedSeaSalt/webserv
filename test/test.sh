@@ -15,3 +15,4 @@ mkdir -p incl && wget -q https://raw.githubusercontent.com/doctest/doctest/maste
 printf "%b\n" "${WHITE}Connection tests${NC}"
 
 make -C connection
+make -C parsing/config

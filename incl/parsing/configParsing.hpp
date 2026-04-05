@@ -9,23 +9,25 @@
 
 struct AcceptedMethods
 {
-    bool    getAllowed;
-    bool    headAllowed;
-    bool    postAllowed;
-    bool    deleteAllowed;
+    bool getAllowed = false;
+    bool headAllowed = false;
+    bool postAllowed = false;
+    bool deleteAllowed = false;
 };
 
 struct Location
 {
-    AcceptedMethods                     acceptedMethods;
-    std::string                         redirectLocation;
-    int                                 redirectCode;
-    std::string                         root;
-    bool                                directoryListing;
-    std::string                         defaultFile;
-    bool                                uploadsAllowed;
-    std::string                         uploadLocation;
-    std::map<std::string, std::string>  cgiPaths;
+    // The end of line comments correspond to the name of the directive in the conf file
+    std::string                         pathPrefix; // location /pathPrefix
+    AcceptedMethods                     acceptedMethods; // methods
+    int                                 redirectCode = 0; // return
+    std::string                         redirectLocation; // return
+    std::string                         root; // root
+    bool                                directoryListing = false; // autoindex
+    std::string                         defaultFile; // index
+    bool                                uploadsAllowed = false; // upload_store
+    std::string                         uploadLocation; // upload_store
+    std::map<std::string, std::string>  cgiPaths; // cgi <cgi type, cgi path>
 };
 
 struct ServerBlock
@@ -44,7 +46,7 @@ struct Config
 
 auto	parseConfigFile(std::string configFile) -> std::expected<Config, std::string>;
 auto    parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::string>;
-auto    parseLocation(std::ifstream& inFile) -> std::expected<Location, std::string>;
+auto    parseLocation(std::ifstream& inFile, std::string pathPrefix) -> std::expected<Location, std::string>;
 auto    split(std::string line) -> std::expected<std::vector<std::string>, std::string>;
-
+auto    trimTrailingSemicolon(std::string& str) -> std::expected<void, std::string>;
 #endif // CONFIGPARSING_HPP

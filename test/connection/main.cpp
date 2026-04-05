@@ -26,7 +26,8 @@ Config  mockParseConfig(std::string ip, int port)
 }
 
 TEST_CASE("Server receives and prints request") {
-    int port = std::stoi(std::getenv("PORT"));
+    const char* portEnv = std::getenv("PORT");
+    int port = std::stoi(portEnv ? portEnv : "4242");
     Config config = mockParseConfig("", port);
     Server server(config);
     
