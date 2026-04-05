@@ -6,5 +6,7 @@
 
 auto	parseLocation(std::ifstream& inFile) -> std::expected<Location, std::string>
 {
-
+	Location location;
+	(void)inFile;
+	return location;
 }

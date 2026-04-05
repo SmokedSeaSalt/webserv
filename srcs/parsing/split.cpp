@@ -12,5 +12,6 @@ auto split(std::string line) -> std::expected<std::vector<std::string>, std::str
 	while (std::getline(stream, token, ' ')) {
 		if (!token.empty())
 			wordList.push_back(token);
-	}
+	} // todo error handling?
+	return wordList;
 }

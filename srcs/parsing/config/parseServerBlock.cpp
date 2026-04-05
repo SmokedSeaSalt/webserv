@@ -1,50 +1,126 @@
 #include "configParsing.hpp"
-#include <string>
+#include "parsing.hpp"
 #include <expected>
 #include <fstream>
-#include "parsing.hpp"
+#include <string>
 
-static auto	parseErrorPage(ServerBlock& serverBlock, std::string buf) -> std::expected<void, std::string>
+static auto trimTrailingSemicolon(std::string& str) -> std::expected<void, std::string>
 {
-    auto                        splitResult = split(buf);
-    std::vector<std::string>    words;
-    int                         errorCode;
-    int                         semicolonIndex;
-    std::string                 errorPage;
+    if (str.empty() || str.back() != ';')
+        return std::unexpected("Semicolon error at: " + str);
+    str.pop_back();
+    return {};
+}
 
+static auto parseErrorPage(ServerBlock& serverBlock, std::string buf)
+    -> std::expected<void, std::string>
+{
+    std::vector<std::string> tokens;
+    int                      errorCode;
+
+    auto semicolonResult = trimTrailingSemicolon(buf);
+    if (!semicolonResult.has_value())
+        return std::unexpected(semicolonResult.error());
+
+    auto splitResult = split(buf);
     if (!splitResult.has_value())
         return std::unexpected(splitResult.error());
-    words = splitResult.value();
-    if (words.size() != 3)
+    tokens = splitResult.value();
+    if (tokens.size() != 3)
         return std::unexpected("Invalid argument count at: " + buf);
-    try {
-        errorCode = std::stoi(words[1]);
+    try
+    {
+        errorCode = std::stoi(tokens[1]);
         // todo: what are valid int values for error codes?
-    } catch (...) {
+    }
+    catch (...)
+    {
         return std::unexpected("Invalid error code at: " + buf);
     }
-    semicolonIndex = words[2].find(';');
-    if (semicolonIndex != words.size() - 1)
-        return std::unexpected("Semicolon error at: " + buf);
-    serverBlock.defaultErrorPages[errorCode] = words[2].substr(0, words[2].length() - 1);
+    if (tokens[2].empty())
+        return std::unexpected("Invalid error page at: " + buf);
+    serverBlock.defaultErrorPages[errorCode] = tokens[2];
     return {};
 }
 
-static auto	parseMaxBodySize(ServerBlock& serverBlock, std::string buf) -> std::expected<void, std::string>
+static auto parseMaxBodySize(ServerBlock& serverBlock, std::string buf)
+    -> std::expected<void, std::string>
 {
+    std::vector<std::string> tokens;
+    int                      maxBodySize;
 
+    auto semicolonResult = trimTrailingSemicolon(buf);
+    if (!semicolonResult.has_value())
+        return std::unexpected(semicolonResult.error());
+
+    auto splitResult = split(buf);
+    if (!splitResult.has_value())
+        return std::unexpected(splitResult.error());
+    tokens = splitResult.value();
+    try
+    {
+        maxBodySize = std::stoi(tokens[1]);
+    }
+    catch (...)
+    {
+        return std::unexpected("Invalid error code at: " + buf);
+    }
+    if (maxBodySize < 0)
+        return std::unexpected("Invalid error code at: " + buf);
+    serverBlock.maxBodySize = maxBodySize;
 
     return {};
 }
 
-static auto	parseListen(ServerBlock& serverBlock, std::string buf) -> std::expected<void, std::string>
+static auto parseListen(ServerBlock& serverBlock, std::string buf)
+    -> std::expected<void, std::string>
 {
+    std::vector<std::string> tokens;
+    std::string              ip;
+    std::string              portStr;
+    int                      port;
 
+    auto semicolonResult = trimTrailingSemicolon(buf);
+    if (!semicolonResult.has_value())
+        return std::unexpected(semicolonResult.error());
 
+    auto splitResult = split(buf);
+    if (!splitResult.has_value())
+        return std::unexpected(splitResult.error());
+    tokens = splitResult.value();
+    if (tokens.size() != 2)
+        return std::unexpected("Invalid argument count at: " + buf);
+
+    std::size_t colonIndex = tokens[1].rfind(':');
+    if (colonIndex == std::string::npos)
+        return std::unexpected("Invalid listen format at: " + buf);
+
+    ip = tokens[1].substr(0, colonIndex);
+    portStr = tokens[1].substr(colonIndex + 1);
+    if (ip.empty() || portStr.empty())
+        return std::unexpected("Invalid listen format at: " + buf);
+
+    try
+    {
+        std::size_t parsedLen = 0;
+        port                  = std::stoi(portStr, &parsedLen);
+        if (parsedLen != portStr.size())
+            return std::unexpected("Invalid port at: " + buf);
+    }
+    catch (...)
+    {
+        return std::unexpected("Invalid port at: " + buf);
+    }
+
+    if (port < 1 || port > 65535)
+        return std::unexpected("Invalid port at: " + buf);
+
+    serverBlock.ip   = ip;
+    serverBlock.port = port;
     return {};
 }
 
-auto	parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::string>
+auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::string>
 {
     ServerBlock serverBlock;
     std::string buf;
@@ -54,28 +130,29 @@ auto	parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
         buf = stringTrim(buf);
         if (buf.find("listen") == 0)
         {
-            auto tmp = parseListen(serverBlock, buf);
-            if (!tmp.has_value())
-                return std::unexpected(tmp.error());
+            auto result = parseListen(serverBlock, buf);
+            if (!result.has_value())
+                return std::unexpected(result.error());
         }
         else if (buf.find("client_max_body_size") == 0)
         {
-            auto tmp = parseMaxBodySize(serverBlock, buf);
-            if (!tmp.has_value())
-                return std::unexpected(tmp.error());
+            auto result = parseMaxBodySize(serverBlock, buf);
+            if (!result.has_value())
+                return std::unexpected(result.error());
         }
         else if (buf.find("error_page") == 0)
         {
-            auto tmp = parseErrorPage(serverBlock, buf);
-            if (!tmp.has_value())
-                return std::unexpected(tmp.error());
+            auto result = parseErrorPage(serverBlock, buf);
+            if (!result.has_value())
+                return std::unexpected(result.error());
         }
         else if (buf.find("location") == 0)
         {
-            auto tmp = parseLocation(inFile);
-            if (!tmp.has_value())
-                return std::unexpected(tmp.error());
-            serverBlock.locations.push_back(tmp.value());
+            auto result = parseLocation(inFile);
+            if (!result.has_value())
+                return std::unexpected(result.error());
+            serverBlock.locations.push_back(result.value());
         }
     }
+    return serverBlock;
 }
