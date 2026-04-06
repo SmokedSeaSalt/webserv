@@ -147,7 +147,7 @@ auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
                 return std::unexpected(splitResult.error());
             if (splitResult.value().size() != 3 || !(splitResult.value()[0] == "location" && splitResult.value()[2] == "{"))
                 return std::unexpected("Parse error at: " + buf);
-            auto result = parseLocation(inFile, splitResult.value()[0]);
+            auto result = parseLocation(inFile, splitResult.value()[1]);
             if (!result.has_value())
                 return std::unexpected(result.error());
             serverBlock.locations.push_back(result.value());
