@@ -24,7 +24,10 @@ static auto parseErrorPage(ServerBlock& serverBlock, std::string buf)
         return std::unexpected("Invalid argument count at: " + buf);
     try
     {
-        errorCode = std::stoi(tokens[1]);
+        size_t pos = 0;
+        errorCode = std::stoi(tokens[1], &pos);
+        if (pos != tokens[1].size())
+            return std::unexpected("Invalid redirect code");
         // todo: what are valid int values for error codes?
     }
     catch (...)
@@ -55,7 +58,10 @@ static auto parseMaxBodySize(ServerBlock& serverBlock, std::string buf)
         return std::unexpected("Invalid client_max_body_size argument count at: " + buf);
     try
     {
-        maxBodySize = std::stoi(tokens[1]);
+        size_t pos = 0;
+        maxBodySize = std::stoi(tokens[1], &pos);
+        if (pos != tokens[1].size())
+            return std::unexpected("Invalid redirect code");
     }
     catch (...)
     {
@@ -98,9 +104,9 @@ static auto parseListen(ServerBlock& serverBlock, std::string buf)
 
     try
     {
-        std::size_t parsedLen = 0;
-        port                  = std::stoi(portStr, &parsedLen);
-        if (parsedLen != portStr.size())
+        std::size_t pos = 0;
+        port = std::stoi(portStr, &pos);
+        if (pos != portStr.size())
             return std::unexpected("Invalid port at: " + buf);
     }
     catch (...)

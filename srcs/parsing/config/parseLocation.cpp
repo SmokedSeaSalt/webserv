@@ -52,7 +52,10 @@ static auto parseRedirect(Location& location, std::vector<std::string> tokens)
     if (tokens.size() != 3)
             return std::unexpected("Invalid redirect argument count");
     try {
-        location.redirectCode = std::stoi(tokens[1]);
+        size_t pos = 0;
+        location.redirectCode = std::stoi(tokens[1], &pos);
+        if (pos != tokens[1].size())
+            return std::unexpected("Invalid redirect code");
     } catch (...) {
         return std::unexpected("Invalid redirect code");
     }

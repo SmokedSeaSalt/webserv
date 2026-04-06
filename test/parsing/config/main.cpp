@@ -401,31 +401,31 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 
 TEST_CASE("Test parsing errors")
 {
-    SUBCASE("invalid client_max_body_size value")
-    {
-        auto configResult = parseConfigFile("test_files/invalidMaxBodySize.conf");
-        CHECK(configResult.has_value() == false);
-        CHECK(configResult.error().empty() == false);
-    }
+    const std::vector<std::string> invalidConfigs = {
+        "test_files/invalidMaxBodySize.conf",
+        "test_files/invalidMaxBodySizeCount.conf",
+        "test_files/invalidListen.conf",
+        "test_files/invalidListenCount.conf",
+        "test_files/invalidErrorPage.conf",
+        "test_files/invalidLocation.conf",
+        "test_files/invalidRedirect.conf",
+        "test_files/invalidCGI.conf",
+        "test_files/invalidAutoIndex.conf",
 
-    SUBCASE("invalid client_max_body_size argument count")
-    {
-        auto configResult = parseConfigFile("test_files/invalidMaxBodySizeCount.conf");
-        CHECK(configResult.has_value() == false);
-        CHECK(configResult.error().empty() == false);
-    }
 
-    SUBCASE("invalid listen value")
-    {
-        auto configResult = parseConfigFile("test_files/invalidListen.conf");
-        CHECK(configResult.has_value() == false);
-        CHECK(configResult.error().empty() == false);
-    }
+    };
 
-    SUBCASE("invalid listen argument count")
+    for (size_t i = 0; i < invalidConfigs.size(); ++i)
     {
-        auto configResult = parseConfigFile("test_files/invalidListenCount.conf");
-        CHECK(configResult.has_value() == false);
-        CHECK(configResult.error().empty() == false);
+        const std::string& path = invalidConfigs[i];
+
+        SUBCASE(path.c_str())
+        {
+            auto configResult = parseConfigFile(path);
+            CHECK(configResult.has_value() == false);
+            CHECK(configResult.error().empty() == false);
+            CHECK(configResult.error() != "Config file could not be opened");
+            // std::cout << configResult.error() << std::endl;
+        }
     }
 }
