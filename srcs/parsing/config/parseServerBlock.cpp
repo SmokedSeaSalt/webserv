@@ -27,7 +27,7 @@ static auto parseErrorPage(ServerBlock& serverBlock, std::string buf)
         size_t pos = 0;
         errorCode = std::stoi(tokens[1], &pos);
         if (pos != tokens[1].size())
-            return std::unexpected("Invalid redirect code");
+            return std::unexpected("Invalid error code at: " + buf);
         // todo: what are valid int values for error codes?
     }
     catch (...)
@@ -61,7 +61,7 @@ static auto parseMaxBodySize(ServerBlock& serverBlock, std::string buf)
         size_t pos = 0;
         maxBodySize = std::stoi(tokens[1], &pos);
         if (pos != tokens[1].size())
-            return std::unexpected("Invalid redirect code");
+            return std::unexpected("Invalid max body size at: " + buf);
     }
     catch (...)
     {
