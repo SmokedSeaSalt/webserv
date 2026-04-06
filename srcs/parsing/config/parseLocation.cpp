@@ -9,6 +9,9 @@ static auto parseMethods(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     AcceptedMethods methods;
+
+    if (tokens.size() < 2)
+            return std::unexpected("Invalid method argument count");
     for (size_t i = 1; i < tokens.size(); i++)
     {
         if (tokens[i] == "GET")
@@ -47,7 +50,7 @@ static auto parseRedirect(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     if (tokens.size() != 3)
-            return std::unexpected("Invalid argument count");
+            return std::unexpected("Invalid redirect argument count");
     try {
         location.redirectCode = std::stoi(tokens[1]);
     } catch (...) {
@@ -61,7 +64,7 @@ static auto parseRoot(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     if (tokens.size() != 2)
-            return std::unexpected("Invalid argument count");
+            return std::unexpected("Invalid root argument count");
     location.root = tokens[1];
     return {};
 }
@@ -70,7 +73,7 @@ static auto parseAutoIndex(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     if (tokens.size() != 2)
-            return std::unexpected("Invalid argument count");
+            return std::unexpected("Invalid autoindex argument count");
     if (tokens[1] == "on")
         location.directoryListing = true;
     else if (tokens[1] == "off")
@@ -84,7 +87,7 @@ static auto parseIndex(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     if (tokens.size() != 2)
-            return std::unexpected("Invalid argument count");
+            return std::unexpected("Invalid index argument count");
     location.defaultFile = tokens[1];
     return {};
 }
@@ -93,7 +96,7 @@ static auto parseUploadStore(Location& location, std::vector<std::string> tokens
     -> std::expected<void, std::string>
 {
     if (tokens.size() != 2)
-        return std::unexpected("Invalid argument count");
+        return std::unexpected("Invalid upload store argument count");
     location.uploadLocation = tokens[1];
     location.uploadsAllowed = true;
     return {};
@@ -103,7 +106,7 @@ static auto parseCGI(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     if (tokens.size() != 3)
-        return std::unexpected("Invalid argument count");
+        return std::unexpected("Invalid cgi argument count");
     location.cgiPaths[tokens[1]] = tokens[2];
     return {};
 }
@@ -128,12 +131,14 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix) -> std::expect
         trimTrailingSemicolon(buf);
         if (buf == "}")
             return location;
+        if (buf.empty())
+            continue;
         auto splitResult = split(buf);
         if (!splitResult.has_value())
-            return std::unexpected(splitResult.error());
+            return std::unexpected(splitResult.error() + " at: " + buf);
         tokens = splitResult.value();
         if (tokens.size() < 2)
-            return std::unexpected("Invalid argument count");
+            return std::unexpected("Invalid location directive argument count");
 
         if (functionMap.count(tokens[0]) != 1)
             return std::unexpected("Directive not found: " + tokens[0]);
