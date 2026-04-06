@@ -44,6 +44,7 @@ private:
     // connectionLoop helpers
     auto handleEvent(int fd) -> std::expected<int, std::string>;
     auto handleReceivingEvent(int fd) -> std::expected<void, std::string>;
+    auto handleSendingEvent(int fd) -> std::expected<void, std::string>;
     auto createConnection(int listenSocket) -> std::expected<void, std::string>;
 
 
