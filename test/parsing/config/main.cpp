@@ -5,7 +5,7 @@
 
 TEST_CASE("Test single ServerBlock (test1.conf)")
 {
-    auto configResult = parseConfigFile("test1.conf");
+    auto configResult = parseConfigFile("test_files/test1.conf");
     REQUIRE(configResult.has_value());
 
     const Config& config = configResult.value();
@@ -145,7 +145,7 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
 
 TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 {
-    auto configResult = parseConfigFile("test2.conf");
+    auto configResult = parseConfigFile("test_files/test2.conf");
     REQUIRE_MESSAGE(
         configResult.has_value(), "parseConfigFile(\"test2.conf\") failed: " << configResult.error()
     );
@@ -396,5 +396,36 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.cgiPaths.empty());
             }
         }
+    }
+}
+
+TEST_CASE("Test parsing errors")
+{
+    SUBCASE("invalid client_max_body_size value")
+    {
+        auto configResult = parseConfigFile("test_files/invalidMaxBodySize.conf");
+        CHECK(configResult.has_value() == false);
+        CHECK(configResult.error().empty() == false);
+    }
+
+    SUBCASE("invalid client_max_body_size argument count")
+    {
+        auto configResult = parseConfigFile("test_files/invalidMaxBodySizeCount.conf");
+        CHECK(configResult.has_value() == false);
+        CHECK(configResult.error().empty() == false);
+    }
+
+    SUBCASE("invalid listen value")
+    {
+        auto configResult = parseConfigFile("test_files/invalidListen.conf");
+        CHECK(configResult.has_value() == false);
+        CHECK(configResult.error().empty() == false);
+    }
+
+    SUBCASE("invalid listen argument count")
+    {
+        auto configResult = parseConfigFile("test_files/invalidListenCount.conf");
+        CHECK(configResult.has_value() == false);
+        CHECK(configResult.error().empty() == false);
     }
 }

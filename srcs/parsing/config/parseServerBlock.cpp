@@ -51,6 +51,8 @@ static auto parseMaxBodySize(ServerBlock& serverBlock, std::string buf)
     if (!splitResult.has_value())
         return std::unexpected(splitResult.error());
     tokens = splitResult.value();
+    if (tokens.size() != 2)
+        return std::unexpected("Invalid client_max_body_size argument count at: " + buf);
     try
     {
         maxBodySize = std::stoi(tokens[1]);
