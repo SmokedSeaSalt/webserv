@@ -131,11 +131,15 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix) -> std::expect
     while (std::getline(inFile, buf))
     {
         buf = stringTrim(buf);
-        trimTrailingSemicolon(buf);
         if (buf == "}")
             return location;
         if (buf.empty())
             continue;
+
+        auto semicolonResult = trimTrailingSemicolon(buf);
+        if (!semicolonResult.has_value())
+            return std::unexpected(semicolonResult.error());
+
         auto splitResult = split(buf);
         if (!splitResult.has_value())
             return std::unexpected(splitResult.error() + " at: " + buf);

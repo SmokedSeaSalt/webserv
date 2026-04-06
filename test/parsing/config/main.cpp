@@ -1,5 +1,6 @@
 #include "configParsing.hpp"
 #include "parsing.hpp"
+#include <filesystem>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "../../incl/doctest.h"
 
@@ -411,8 +412,7 @@ TEST_CASE("Test parsing errors")
         "test_files/invalidRedirect.conf",
         "test_files/invalidCGI.conf",
         "test_files/invalidAutoIndex.conf",
-
-
+        "test_files/invalidSemicolon.conf",
     };
 
     for (size_t i = 0; i < invalidConfigs.size(); ++i)
@@ -424,8 +424,31 @@ TEST_CASE("Test parsing errors")
             auto configResult = parseConfigFile(path);
             CHECK(configResult.has_value() == false);
             CHECK(configResult.error().empty() == false);
-            CHECK(configResult.error() != "Config file could not be opened");
-            // std::cout << configResult.error() << std::endl;
+            CHECK_MESSAGE(configResult.error() != "Config file could not be opened", 
+            ("File could not be opened. Check permisions or existence of file: " + path));
         }
+    }
+}
+
+TEST_CASE("Test file opening errors")
+{
+    SUBCASE("Non-existent file")
+    {
+        auto configResult = parseConfigFile("blahblah123.conf");
+        CHECK(configResult.has_value() == false);
+        CHECK(configResult.error() == "Config file could not be opened");
+    }
+
+    SUBCASE("File with no read permissions")
+    {
+        // const std::string filepath = "test_files/noPermissions.conf";
+
+        // // Remove all permissions
+        // std::filesystem::permissions(filepath, std::filesystem::perms::none);
+
+        // // Test that parse fails
+        // auto configResult = parseConfigFile(filepath);
+        // CHECK(configResult.has_value() == false);
+        // CHECK(configResult.error() == "Config file could not be opened");
     }
 }
