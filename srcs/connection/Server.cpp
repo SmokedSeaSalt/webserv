@@ -42,6 +42,7 @@ auto Server::handleReceivingEvent(int fd) -> std::expected<void, std::string>
 auto Server::handleSendingEvent(int fd) -> std::expected<void, std::string>
 {
     Client client = clientMap_[fd];
+    // std::string response = client.getResponse();
     // write client.Response to fd
     return {};
 }
@@ -57,6 +58,7 @@ auto Server::handleEvent(int fd) -> std::expected<int, std::string>
     case ClientState::Processing:;
         break;
     case ClientState::Sending:
+        handleSendingEvent(fd);
         break;
     case ClientState::Closed:
         break;
