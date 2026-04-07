@@ -3,9 +3,9 @@
 ################################################################################
 
 NAME = webserv
-CPP = $(HOME)/sgoinfre/LLVM-21.1.8-Linux-X64/bin/clang++
+CPP = c++
 CPPFLAGS = -Wall -Werror -Wextra -MMD --std=c++23 --stdlib=libc++ -g
-LDFLAGS = -Wl,-rpath,$(HOME)/sgoinfre/LLVM-21.1.8-Linux-X64/lib/x86_64-unknown-linux-gnu -lc++ -lc++abi
+LDFLAGS = -Wl,-rpath,$(HOME)/.local/lib/x86_64-unknown-linux-gnu -lc++ -lc++abi
 DEBUGFLAGS = -g
 ASANFLAGS = -fsanitize=address,undefined -g
 
@@ -81,6 +81,27 @@ LLVM_DIR = $(HOME)/sgoinfre/LLVM-$(LLVM_VERSION)-Linux-X64
 install_cpp23:
 	wget -P $(HOME)/sgoinfre https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVM_VERSION)/$(LLVM_TAR)
 	tar xf $(HOME)/sgoinfre/$(LLVM_TAR) -C $(HOME)/sgoinfre
+
+	# Create target directories if they don't exist
+	mkdir -p $(HOME)/.local/lib/x86_64-unknown-linux-gnu
+	mkdir -p $(HOME)/.local/bin
+
+	# Copy the libraries
+	cp -r $(HOME)/sgoinfre/LLVM-$(LLVM_VERSION)-Linux-X64/lib/x86_64-unknown-linux-gnu/* \
+	      $(HOME)/.local/lib/x86_64-unknown-linux-gnu/
+
+	# Create/update symlink for c++
+	ln -sf $(HOME)/sgoinfre/LLVM-$(LLVM_VERSION)-Linux-X64/bin/clang++ \
+	       $(HOME)/.local/bin/c++
+
+cpp23_to_path:
+	# Ensure ~/.local/bin is at the front of PATH in bashrc
+	grep -qxF 'export PATH="$(HOME)/.local/bin:$$PATH"' $(HOME)/.bashrc || \
+	echo 'export PATH="$(HOME)/.local/bin:$$PATH"' >> $(HOME)/.bashrc
+
+	# Ensure ~/.local/bin is at the front of PATH in zshrc
+	grep -qxF 'export PATH="$(HOME)/.local/bin:$$PATH"' $(HOME)/.zshrc || \
+	echo 'export PATH="$(HOME)/.local/bin:$$PATH"' >> $(HOME)/.zshrc
 
 .PHONY += install_cpp23
 
