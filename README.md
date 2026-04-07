@@ -31,3 +31,4 @@ The following things can be configured:
 - https://www.geeksforgeeks.org/cpp/socket-programming-in-cpp/
 - https://beej.us/guide/bgnet/html/
 - https://towardsdev.com/cpp-23-std-expected-tutorial-modern-error-handling-guide-2026-9494ebb44e81
+- send(): https://cplusplus.com/forum/general/266899/
