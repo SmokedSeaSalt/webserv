@@ -4,6 +4,9 @@
 #include <unordered_map>
 #include <vector>
 
+#ifndef HTTPRULES
+#define HTTPRULES
+
 struct HTTPMessage
 {
         std::string                                               method;
@@ -44,3 +47,5 @@ class HTTPRules
 
     private:
 };
+
+#endif // HTTPRULES

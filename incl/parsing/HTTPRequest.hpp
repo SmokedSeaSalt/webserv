@@ -1,8 +1,11 @@
-#include "parsing/HTTPRules.hpp"
-#include "parsing/parsing.hpp"
+#include "HTTPRules.hpp"
+#include "parsing.hpp"
 #include <expected>
 #include <set>
 #include <string>
+
+#ifndef HTTPREQUEST
+#define HTTPREQUEST
 
 enum class RequestState
 {
@@ -15,10 +18,12 @@ enum class RequestState
 class HTTPRequest : public HTTPRules
 {
     public:
+        auto getMessage() -> HTTPMessage;
+
         auto newData(std::string data) -> std::expected<void, std::string>;
 
-    private:
-        RequestState state_;
+        private:
+        RequestState state_ = RequestState::kStartLine;
         std::string  buffer_;
         HTTPMessage  message_;
 
@@ -28,3 +33,5 @@ class HTTPRequest : public HTTPRules
 
         auto expectBody() -> bool;
 };
+
+#endif // HTTPREQUEST

@@ -1,4 +1,4 @@
-#include "parsing/HTTPRules.hpp"
+#include "HTTPRules.hpp"
 #include <algorithm>
 #include <cctype>
 
@@ -39,8 +39,8 @@ auto HTTPRules::is_field_content(unsigned char c) -> bool
 // TODO test when empty. should be valid
 auto HTTPRules::is_field_value(std::string value) -> bool
 {
-    bool first    = is_field_vchar(*value.begin());
-    bool last     = is_field_vchar(*value.end());
+    bool first    = is_field_vchar(value.front());
+    bool last     = is_field_vchar(value.back());
     bool validKey = std::all_of(value.begin(), value.end(), HTTPRules::is_field_content);
 
     return (first && last && validKey);
@@ -72,8 +72,7 @@ auto HTTPRules::is_segment(std::string str) -> bool
         if (insidePctEncoded > 0)
         {
             if (!is_hexdig(c))
-                ;
-            return false;
+                return false;
             insidePctEncoded--;
             continue;
         }
@@ -120,8 +119,7 @@ auto HTTPRules::is_query(std::string str) -> bool
         if (insidePctEncoded > 0)
         {
             if (!is_hexdig(c))
-                ;
-            return false;
+                return false;
             insidePctEncoded--;
             continue;
         }
@@ -166,7 +164,7 @@ auto HTTPRules::validateMethod(std::string str) -> std::expected<bool, std::stri
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages#request_targets
 auto HTTPRules::validateRequestTarget(std::string str) -> std::expected<bool, std::string>
 {
-    if(!is_origin_form(str))
+    if (!is_origin_form(str))
         return std::unexpected("400 Bad Request");
     return true;
 }

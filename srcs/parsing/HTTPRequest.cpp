@@ -1,5 +1,11 @@
-#include "parsing/HTTPRequest.hpp"
+#include "HTTPRequest.hpp"
 
+auto HTTPRequest::getMessage() -> HTTPMessage
+{
+    return this->message_;
+}
+
+#include <iostream>
 auto HTTPRequest::newData(std::string data) -> std::expected<void, std::string>
 {
     this->buffer_ += data;
@@ -21,6 +27,7 @@ auto HTTPRequest::newData(std::string data) -> std::expected<void, std::string>
         }
         case (RequestState::kHeaders):
         {
+            std::cout << this->buffer_.substr(0, pos) << std::endl;
             if (pos == 0) // indicates last "\r\n"
             {
                 if (this->expectBody())
@@ -37,7 +44,7 @@ auto HTTPRequest::newData(std::string data) -> std::expected<void, std::string>
         }
         case (RequestState::kBody):
         {
-            //TODO make this better
+            // TODO make this better
             parseBody(this->buffer_.substr(0, pos));
             break;
         }
@@ -48,8 +55,8 @@ auto HTTPRequest::newData(std::string data) -> std::expected<void, std::string>
             break;
         }
         }
-        this->buffer_.erase(pos + this->delimiter_.size());
-        std::string::size_type pos = this->buffer_.find(this->delimiter_);
+        this->buffer_.erase(0, pos + this->delimiter_.size());
+        pos = this->buffer_.find(this->delimiter_);
     }
 
     return {};
@@ -73,12 +80,12 @@ auto HTTPRequest::parseStartLine(std::string line) -> std::expected<size_t, std:
         return std::unexpected(ret.error());
 
     this->message_.requestTarget = line.substr(pos1 + 1, pos2 - pos1 - 1);
-    auto ret                     = validateRequestTarget(this->message_.requestTarget);
+    ret                          = validateRequestTarget(this->message_.requestTarget);
     if (!ret.has_value())
         return std::unexpected(ret.error());
 
     this->message_.protocol = line.substr(pos2 + 1);
-    auto ret                = validateProtocol(this->message_.protocol);
+    ret                     = validateProtocol(this->message_.protocol);
     if (!ret.has_value())
         return std::unexpected(ret.error());
 
@@ -118,6 +125,7 @@ auto HTTPRequest::parseHeader(std::string line) -> std::expected<size_t, std::st
 auto HTTPRequest::parseBody(std::string line) -> std::expected<size_t, std::string>
 {
     this->message_.body += line;
+    return line.size();
 }
 
 auto HTTPRequest::expectBody() -> bool
