@@ -5,7 +5,6 @@ auto HTTPRequest::getMessage() -> HTTPMessage
     return this->message_;
 }
 
-#include <iostream>
 auto HTTPRequest::newData(std::string data) -> std::expected<void, std::string>
 {
     this->buffer_ += data;
@@ -27,7 +26,6 @@ auto HTTPRequest::newData(std::string data) -> std::expected<void, std::string>
         }
         case (RequestState::kHeaders):
         {
-            std::cout << this->buffer_.substr(0, pos) << std::endl;
             if (pos == 0) // indicates last "\r\n"
             {
                 if (this->expectBody())
