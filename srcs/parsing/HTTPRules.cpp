@@ -7,7 +7,7 @@ const std::set<std::string> HTTPRules::supportedMethods_ = {"GET", "HEAD", "POST
 const std::string           HTTPRules::HTTPVersion_      = "HTTP/1.1";
 
 
-auto HTTPRules::is_tchar(unsigned char c) -> bool
+auto HTTPRules::is_tchar(const unsigned char& c) -> bool
 {
     return (std::isalnum(c) || c == '!' || c == '#' || c == '$' || c == '%' || c == '&' ||
             c == '\'' || c == '*' || c == '+' || c == '-' || c == '.' || c == '^' || c == '_' ||
@@ -15,30 +15,30 @@ auto HTTPRules::is_tchar(unsigned char c) -> bool
 }
 
 // all visable charachters. ascii value 32 -> 126 and tab
-auto HTTPRules::is_vchar(unsigned char c) -> bool
+auto HTTPRules::is_vchar(const unsigned char& c) -> bool
 {
     return ((c >= 0x21 && c <= 0x7e));
 }
 
-auto HTTPRules::is_obs_text(unsigned char c) -> bool
+auto HTTPRules::is_obs_text(const unsigned char& c) -> bool
 {
     return (c >= 0x80 && c <= 0xff);
 }
 
-auto HTTPRules::is_field_vchar(unsigned char c) -> bool
+auto HTTPRules::is_field_vchar(const unsigned char& c) -> bool
 {
     return (is_vchar(c) || is_obs_text(c));
 }
 
 // does not really check for ABNF field-vchar [ 1*( SP / HTAB / field-vchar ) field-vchar ]
 // but it is way better to use in is_valid_field_value this way
-auto HTTPRules::is_field_content(unsigned char c) -> bool
+auto HTTPRules::is_field_content(const unsigned char& c) -> bool
 {
     return (is_vchar(c) || is_obs_text(c) || c == ' ' || c == '\t');
 }
 
 // TODO test when empty. should be valid
-auto HTTPRules::is_field_value(std::string value) -> bool
+auto HTTPRules::is_field_value(const std::string& value) -> bool
 {
     bool first    = is_field_vchar(value.front());
     bool last     = is_field_vchar(value.back());
@@ -47,24 +47,24 @@ auto HTTPRules::is_field_value(std::string value) -> bool
     return (first && last && validKey);
 }
 
-auto HTTPRules::is_unreserved(unsigned char c) -> bool
+auto HTTPRules::is_unreserved(const unsigned char& c) -> bool
 {
     return (std::isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~');
 }
 
-auto HTTPRules::is_sub_delims(unsigned char c) -> bool
+auto HTTPRules::is_sub_delims(const unsigned char& c) -> bool
 {
     return (c == '!' || c == '$' || c == '&' || c == '\'' || c == '(' || c == ')' || c == '*' ||
             c == '+' || c == ',' || c == ';' || c == '=');
 }
 
-auto HTTPRules::is_hexdig(unsigned char c) -> bool
+auto HTTPRules::is_hexdig(const unsigned char& c) -> bool
 {
     return (isdigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
 }
 
 // TODO test when empty. should be valid
-auto HTTPRules::is_segment(std::string str) -> bool
+auto HTTPRules::is_segment(const std::string& str) -> bool
 {
     int insidePctEncoded = 0;
 
@@ -91,7 +91,7 @@ auto HTTPRules::is_segment(std::string str) -> bool
 }
 
 // 1* ( "/" segment)
-auto HTTPRules::is_absolute_path(std::string str) -> bool
+auto HTTPRules::is_absolute_path(const std::string& str) -> bool
 {
     if (str.empty() || str.front() != '/')
         return false;
@@ -111,7 +111,7 @@ auto HTTPRules::is_absolute_path(std::string str) -> bool
     return true;
 }
 
-auto HTTPRules::is_query(std::string str) -> bool
+auto HTTPRules::is_query(const std::string& str) -> bool
 {
     int insidePctEncoded = 0;
 
@@ -137,7 +137,7 @@ auto HTTPRules::is_query(std::string str) -> bool
     return true;
 }
 
-auto HTTPRules::is_origin_form(std::string str) -> bool
+auto HTTPRules::is_origin_form(const std::string& str) -> bool
 {
     auto pos = str.find("?");
     if (pos == std::string::npos)
@@ -155,7 +155,7 @@ auto HTTPRules::is_origin_form(std::string str) -> bool
     return true;
 }
 
-auto HTTPRules::validateMethod(std::string str) -> std::expected<bool, ResponseStatusCode>
+auto HTTPRules::validateMethod(const std::string& str) -> std::expected<bool, ResponseStatusCode>
 {
     if (supportedMethods_.contains(str))
         return true;
@@ -163,21 +163,21 @@ auto HTTPRules::validateMethod(std::string str) -> std::expected<bool, ResponseS
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages#request_targets
-auto HTTPRules::validateRequestTarget(std::string str) -> std::expected<bool, ResponseStatusCode>
+auto HTTPRules::validateRequestTarget(const std::string& str) -> std::expected<bool, ResponseStatusCode>
 {
     if (!is_origin_form(str))
         return std::unexpected(ResponseStatusCode::kBadRequest);
     return true;
 }
 
-auto HTTPRules::validateProtocol(std::string str) -> std::expected<bool, ResponseStatusCode>
+auto HTTPRules::validateProtocol(const std::string& str) -> std::expected<bool, ResponseStatusCode>
 {
     if (str != HTTPVersion_)
         return std::unexpected(ResponseStatusCode::kHTTPVersionNotSupported);
     return true;
 }
 
-auto HTTPRules::validateHeader(std::string key, std::string value) -> bool
+auto HTTPRules::validateHeader(const std::string& key, const std::string& value) -> bool
 {
     bool validKey   = std::all_of(key.begin(), key.end(), HTTPRules::is_tchar);
     bool validValue = HTTPRules::is_field_value(value);
