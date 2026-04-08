@@ -5,7 +5,7 @@ auto HTTPRequest::getMessage() -> HTTPMessage
     return this->message_;
 }
 
-auto HTTPRequest::newData(std::string data) -> std::expected<void, std::string>
+auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode, ResponseStatusCode>
 {
     this->buffer_ += data;
 
@@ -57,20 +57,20 @@ auto HTTPRequest::newData(std::string data) -> std::expected<void, std::string>
         pos = this->buffer_.find(this->delimiter_);
     }
 
-    return {};
+    return ResponseStatusCode::kOK;
 }
 
-auto HTTPRequest::parseStartLine(std::string line) -> std::expected<size_t, std::string>
+auto HTTPRequest::parseStartLine(std::string line) -> std::expected<size_t, ResponseStatusCode>
 {
     auto pos1 = line.find(' ');
     if (pos1 == std::string::npos)
-        return std::unexpected("400 Bad Request");
+        return std::unexpected(ResponseStatusCode::kBadRequest);
     auto pos2 = line.find(' ', pos1 + 1);
     if (pos2 == std::string::npos)
-        return std::unexpected("400 Bad Request");
+        return std::unexpected(ResponseStatusCode::kBadRequest);
 
     if (line.find(' ', pos2 + 1) != std::string::npos)
-        return std::unexpected("400 Bad Request");
+        return std::unexpected(ResponseStatusCode::kBadRequest);
 
     this->message_.method = line.substr(0, pos1);
     auto ret              = validateMethod(this->message_.method);
@@ -94,11 +94,11 @@ auto HTTPRequest::parseStartLine(std::string line) -> std::expected<size_t, std:
 // make lowercase -> store in key
 // trim whitespaces -> store in value
 // validate if the header is valid
-auto HTTPRequest::parseHeader(std::string line) -> std::expected<size_t, std::string>
+auto HTTPRequest::parseHeader(std::string line) -> std::expected<size_t, ResponseStatusCode>
 {
     auto colon_pos = line.find(":");
     if (colon_pos == std::string::npos || colon_pos == 0)
-        return std::unexpected("400 Bad Request");
+        return std::unexpected(ResponseStatusCode::kBadRequest);
 
     std::string key   = line.substr(0, colon_pos);
     key               = to_lower(key);
@@ -114,13 +114,13 @@ auto HTTPRequest::parseHeader(std::string line) -> std::expected<size_t, std::st
 
     auto ret = validateHeader(key, value);
     if (!ret)
-        return std::unexpected("400 Bad Request");
+        return std::unexpected(ResponseStatusCode::kBadRequest);
     this->message_.headers[key].push_back(value);
 
     return line.size();
 }
 
-auto HTTPRequest::parseBody(std::string line) -> std::expected<size_t, std::string>
+auto HTTPRequest::parseBody(std::string line) -> std::expected<size_t, ResponseStatusCode>
 {
     this->message_.body += line;
     return line.size();

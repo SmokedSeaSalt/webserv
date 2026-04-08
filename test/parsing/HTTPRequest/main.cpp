@@ -18,7 +18,7 @@ TEST_CASE("Basic test")
 
 	auto ret = request.newData(basic);
 	if (!ret.has_value())
-		std::cout << ret.error() << std::endl;
+		std::cout << static_cast<int>(ret.error()) << std::endl;
 	REQUIRE(ret.has_value());
 
 	SUBCASE("First line")
@@ -56,7 +56,7 @@ TEST_CASE("Basic test per byte")
 	{
 		auto ret = request.newData(basic.substr(i, 1));
 		if (!ret.has_value())
-			std::cout << ret.error() << std::endl;
+			std::cout << static_cast<int>(ret.error()) << std::endl;
 		REQUIRE(ret.has_value());
 		i++;
 	}

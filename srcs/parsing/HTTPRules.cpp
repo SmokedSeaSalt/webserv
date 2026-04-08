@@ -6,6 +6,7 @@ const std::string           HTTPRules::delimiter_        = "\r\n";
 const std::set<std::string> HTTPRules::supportedMethods_ = {"GET", "HEAD", "POST", "DELETE"};
 const std::string           HTTPRules::HTTPVersion_      = "HTTP/1.1";
 
+
 auto HTTPRules::is_tchar(unsigned char c) -> bool
 {
     return (std::isalnum(c) || c == '!' || c == '#' || c == '$' || c == '%' || c == '&' ||
@@ -154,25 +155,25 @@ auto HTTPRules::is_origin_form(std::string str) -> bool
     return true;
 }
 
-auto HTTPRules::validateMethod(std::string str) -> std::expected<bool, std::string>
+auto HTTPRules::validateMethod(std::string str) -> std::expected<bool, ResponseStatusCode>
 {
     if (supportedMethods_.contains(str))
         return true;
-    return std::unexpected("501 Not Implemented");
+    return std::unexpected(ResponseStatusCode::kNotImplemented);
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages#request_targets
-auto HTTPRules::validateRequestTarget(std::string str) -> std::expected<bool, std::string>
+auto HTTPRules::validateRequestTarget(std::string str) -> std::expected<bool, ResponseStatusCode>
 {
     if (!is_origin_form(str))
-        return std::unexpected("400 Bad Request");
+        return std::unexpected(ResponseStatusCode::kBadRequest);
     return true;
 }
 
-auto HTTPRules::validateProtocol(std::string str) -> std::expected<bool, std::string>
+auto HTTPRules::validateProtocol(std::string str) -> std::expected<bool, ResponseStatusCode>
 {
     if (str != HTTPVersion_)
-        return std::unexpected("505 HTTP Version Not Supported");
+        return std::unexpected(ResponseStatusCode::kHTTPVersionNotSupported);
     return true;
 }
 
