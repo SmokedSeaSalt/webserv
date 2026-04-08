@@ -4,8 +4,6 @@
 #include <fstream>
 #include <string>
 
-
-
 static auto parseErrorPage(ServerBlock& serverBlock, std::string buf)
     -> std::expected<void, std::string>
 {
@@ -25,7 +23,7 @@ static auto parseErrorPage(ServerBlock& serverBlock, std::string buf)
     try
     {
         size_t pos = 0;
-        errorCode = std::stoi(tokens[1], &pos);
+        errorCode  = std::stoi(tokens[1], &pos);
         if (pos != tokens[1].size())
             return std::unexpected("Invalid error code at: " + buf);
         // todo: what are valid int values for error codes?
@@ -58,7 +56,7 @@ static auto parseMaxBodySize(ServerBlock& serverBlock, std::string buf)
         return std::unexpected("Invalid client_max_body_size argument count at: " + buf);
     try
     {
-        size_t pos = 0;
+        size_t pos  = 0;
         maxBodySize = std::stoi(tokens[1], &pos);
         if (pos != tokens[1].size())
             return std::unexpected("Invalid max body size at: " + buf);
@@ -80,7 +78,7 @@ static auto parseListen(ServerBlock& serverBlock, std::string buf)
     std::vector<std::string> tokens;
     std::string              ip;
     std::string              portStr;
-    int                      port;  
+    int                      port;
 
     auto semicolonResult = trimTrailingSemicolon(buf);
     if (!semicolonResult.has_value())
@@ -97,7 +95,7 @@ static auto parseListen(ServerBlock& serverBlock, std::string buf)
     if (colonIndex == std::string::npos)
         return std::unexpected("Invalid listen format at: " + buf);
 
-    ip = tokens[1].substr(0, colonIndex);
+    ip      = tokens[1].substr(0, colonIndex);
     portStr = tokens[1].substr(colonIndex + 1);
     if (ip.empty() || portStr.empty())
         return std::unexpected("Invalid listen format at: " + buf);
@@ -105,7 +103,7 @@ static auto parseListen(ServerBlock& serverBlock, std::string buf)
     try
     {
         std::size_t pos = 0;
-        port = std::stoi(portStr, &pos);
+        port            = std::stoi(portStr, &pos);
         if (pos != portStr.size())
             return std::unexpected("Invalid port at: " + buf);
     }
@@ -153,7 +151,8 @@ auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
             auto splitResult = split(buf);
             if (!splitResult.has_value())
                 return std::unexpected(splitResult.error());
-            if (splitResult.value().size() != 3 || !(splitResult.value()[0] == "location" && splitResult.value()[2] == "{"))
+            if (splitResult.value().size() != 3 ||
+                !(splitResult.value()[0] == "location" && splitResult.value()[2] == "{"))
                 return std::unexpected("Parse error at: " + buf);
             auto result = parseLocation(inFile, splitResult.value()[1]);
             if (!result.has_value())

@@ -4,14 +4,14 @@
 #include <fstream>
 #include <functional>
 #include <string>
- 
+
 static auto parseMethods(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     AcceptedMethods methods;
 
     if (tokens.size() < 2)
-            return std::unexpected("Invalid method argument count");
+        return std::unexpected("Invalid method argument count");
     for (size_t i = 1; i < tokens.size(); i++)
     {
         if (tokens[i] == "GET")
@@ -50,13 +50,16 @@ static auto parseRedirect(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     if (tokens.size() != 3)
-            return std::unexpected("Invalid redirect argument count");
-    try {
-        size_t pos = 0;
+        return std::unexpected("Invalid redirect argument count");
+    try
+    {
+        size_t pos            = 0;
         location.redirectCode = std::stoi(tokens[1], &pos);
         if (pos != tokens[1].size())
             return std::unexpected("Invalid redirect code");
-    } catch (...) {
+    }
+    catch (...)
+    {
         return std::unexpected("Invalid redirect code");
     }
     location.redirectLocation = tokens[2];
@@ -67,7 +70,7 @@ static auto parseRoot(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     if (tokens.size() != 2)
-            return std::unexpected("Invalid root argument count");
+        return std::unexpected("Invalid root argument count");
     location.root = tokens[1];
     return {};
 }
@@ -76,7 +79,7 @@ static auto parseAutoIndex(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     if (tokens.size() != 2)
-            return std::unexpected("Invalid autoindex argument count");
+        return std::unexpected("Invalid autoindex argument count");
     if (tokens[1] == "on")
         location.directoryListing = true;
     else if (tokens[1] == "off")
@@ -90,7 +93,7 @@ static auto parseIndex(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     if (tokens.size() != 2)
-            return std::unexpected("Invalid index argument count");
+        return std::unexpected("Invalid index argument count");
     location.defaultFile = tokens[1];
     return {};
 }
@@ -114,12 +117,14 @@ static auto parseCGI(Location& location, std::vector<std::string> tokens)
     return {};
 }
 
-auto parseLocation(std::ifstream& inFile, std::string pathPrefix) -> std::expected<Location, std::string>
+auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
+    -> std::expected<Location, std::string>
 {
-    Location    location;
-    std::string buf;
+    Location                 location;
+    std::string              buf;
     std::vector<std::string> tokens;
-    std::map<std::string, std::function<std::expected<void, std::string>(Location& location, std::vector<std::string>)>>
+    std::map<std::string, std::function<std::expected<void, std::string>(Location & location,
+                                                                         std::vector<std::string>)>>
         functionMap{
             {"methods", parseMethods}, {"return", parseRedirect},
             {"root", parseRoot},       {"autoindex", parseAutoIndex},
@@ -156,52 +161,45 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix) -> std::expect
     return std::unexpected("Location block closing bracket not found");
 }
 
-
-
-
-
-
-
- 
-        // if (buf.find("methods") == 0)
-        // {
-        //     auto result = parseMethods(location, buf);
-        //     if (!result.has_value())
-        //         return std::unexpected(result.error());
-        // }
-        // else if (buf.find("return") == 0)
-        // {
-        //     auto result = parseRedirect(location, buf);
-        //     if (!result.has_value())
-        //         return std::unexpected(result.error());
-        // }
-        // else if (buf.find("root") == 0)
-        // {
-        //     auto result = parseRoot(location, buf);
-        //     if (!result.has_value())
-        //         return std::unexpected(result.error());
-        // }
-        // else if (buf.find("autoindex") == 0)
-        // {
-        //     auto result = parseAutoIndex(location, buf);
-        //     if (!result.has_value())
-        //         return std::unexpected(result.error());
-        // }
-        // else if (buf.find("index") == 0)
-        // {
-        //     auto result = parseIndex(location, buf);
-        //     if (!result.has_value())
-        //         return std::unexpected(result.error());
-        // }
-        // else if (buf.find("upload_store") == 0)
-        // {
-        //     auto result = parseUploadStore(location, buf);
-        //     if (!result.has_value())
-        //         return std::unexpected(result.error());
-        // }
-        // else if (buf.find("cgi") == 0)
-        // {
-        //     auto result = parseCGI(location, buf);
-        //     if (!result.has_value())
-        //         return std::unexpected(result.error());
-        // }
+// if (buf.find("methods") == 0)
+// {
+//     auto result = parseMethods(location, buf);
+//     if (!result.has_value())
+//         return std::unexpected(result.error());
+// }
+// else if (buf.find("return") == 0)
+// {
+//     auto result = parseRedirect(location, buf);
+//     if (!result.has_value())
+//         return std::unexpected(result.error());
+// }
+// else if (buf.find("root") == 0)
+// {
+//     auto result = parseRoot(location, buf);
+//     if (!result.has_value())
+//         return std::unexpected(result.error());
+// }
+// else if (buf.find("autoindex") == 0)
+// {
+//     auto result = parseAutoIndex(location, buf);
+//     if (!result.has_value())
+//         return std::unexpected(result.error());
+// }
+// else if (buf.find("index") == 0)
+// {
+//     auto result = parseIndex(location, buf);
+//     if (!result.has_value())
+//         return std::unexpected(result.error());
+// }
+// else if (buf.find("upload_store") == 0)
+// {
+//     auto result = parseUploadStore(location, buf);
+//     if (!result.has_value())
+//         return std::unexpected(result.error());
+// }
+// else if (buf.find("cgi") == 0)
+// {
+//     auto result = parseCGI(location, buf);
+//     if (!result.has_value())
+//         return std::unexpected(result.error());
+// }

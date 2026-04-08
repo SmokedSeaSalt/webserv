@@ -1,12 +1,11 @@
 #ifndef MOCKHTTPREQUEST_HPP
 #define MOCKHTTPREQUEST_HPP
 
-
+#include "HTTPRequest.hpp"
+#include "parsing.hpp"
+#include <expected>
 #include <set>
 #include <string>
-#include <expected>
-#include "parsing.hpp"
-#include "HTTPRequest.hpp"
 
 class HTTPRequest
 {

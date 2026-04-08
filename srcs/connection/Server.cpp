@@ -1,6 +1,7 @@
 #include "Server.hpp"
 #include "connection.hpp"
 #include <arpa/inet.h>
+#include <expected>
 #include <fcntl.h>
 #include <iostream>
 #include <map>
@@ -10,7 +11,6 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <expected>
 
 Server::Server(Config config) : config_(config) {}
 

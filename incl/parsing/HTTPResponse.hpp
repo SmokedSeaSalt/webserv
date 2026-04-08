@@ -8,4 +8,4 @@ class HTTPResponse : public HTTPRules
     public:
 };
 
-#endif //HTTPRESPONSE
+#endif // HTTPRESPONSE

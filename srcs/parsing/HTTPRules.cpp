@@ -6,7 +6,6 @@ const std::string           HTTPRules::delimiter_        = "\r\n";
 const std::set<std::string> HTTPRules::supportedMethods_ = {"GET", "HEAD", "POST", "DELETE"};
 const std::string           HTTPRules::HTTPVersion_      = "HTTP/1.1";
 
-
 auto HTTPRules::is_tchar(const unsigned char& c) -> bool
 {
     return (std::isalnum(c) || c == '!' || c == '#' || c == '$' || c == '%' || c == '&' ||
@@ -163,7 +162,8 @@ auto HTTPRules::validateMethod(const std::string& str) -> std::expected<bool, Re
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages#request_targets
-auto HTTPRules::validateRequestTarget(const std::string& str) -> std::expected<bool, ResponseStatusCode>
+auto HTTPRules::validateRequestTarget(const std::string& str)
+    -> std::expected<bool, ResponseStatusCode>
 {
     if (!is_origin_form(str))
         return std::unexpected(ResponseStatusCode::kBadRequest);

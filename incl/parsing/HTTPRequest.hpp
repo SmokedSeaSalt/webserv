@@ -22,7 +22,7 @@ class HTTPRequest : public HTTPRules
 
         auto newData(std::string data) -> std::expected<ResponseStatusCode, ResponseStatusCode>;
 
-        private:
+    private:
         RequestState state_ = RequestState::kStartLine;
         std::string  buffer_;
         HTTPMessage  message_;

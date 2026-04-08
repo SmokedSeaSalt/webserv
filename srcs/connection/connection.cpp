@@ -69,7 +69,6 @@
 //         nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);
 //         if (nfds == -1)
 //             perror("epoll_wait"); exit(EXIT_FAILURE);
-        
 
 //         for (int n = 0; n < nfds; ++n)
 //         {

@@ -1,8 +1,8 @@
 #include "configParsing.hpp"
-#include <string>
+#include "parsing.hpp"
 #include <expected>
 #include <fstream>
-#include "parsing.hpp"
+#include <string>
 
 auto trimTrailingSemicolon(std::string& str) -> std::expected<void, std::string>
 {
@@ -12,11 +12,11 @@ auto trimTrailingSemicolon(std::string& str) -> std::expected<void, std::string>
     return {};
 }
 
-auto	parseConfigFile(std::string configFile) -> std::expected<Config, std::string>
+auto parseConfigFile(std::string configFile) -> std::expected<Config, std::string>
 {
-    Config          config;
-    std::ifstream   inFile;
-    std::string     buf;
+    Config        config;
+    std::ifstream inFile;
+    std::string   buf;
 
     inFile.open(configFile);
     if (!inFile.is_open())
@@ -25,7 +25,7 @@ auto	parseConfigFile(std::string configFile) -> std::expected<Config, std::strin
     while (std::getline(inFile, buf))
     {
         buf = stringTrim(buf);
-        
+
         if (buf == "server {")
         {
             auto serverBlock = parseServerBlock(inFile);

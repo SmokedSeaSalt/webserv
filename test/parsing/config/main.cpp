@@ -147,9 +147,8 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
 TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 {
     auto configResult = parseConfigFile("test_files/test2.conf");
-    REQUIRE_MESSAGE(
-        configResult.has_value(), "parseConfigFile(\"test2.conf\") failed: " << configResult.error()
-    );
+    REQUIRE_MESSAGE(configResult.has_value(),
+                    "parseConfigFile(\"test2.conf\") failed: " << configResult.error());
 
     const Config& config = configResult.value();
     REQUIRE(config.serverBlocks.size() == 2);
@@ -403,16 +402,11 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 TEST_CASE("Test parsing errors")
 {
     const std::vector<std::string> invalidConfigs = {
-        "test_files/invalidMaxBodySize.conf",
-        "test_files/invalidMaxBodySizeCount.conf",
-        "test_files/invalidListen.conf",
-        "test_files/invalidListenCount.conf",
-        "test_files/invalidErrorPage.conf",
-        "test_files/invalidLocation.conf",
-        "test_files/invalidRedirect.conf",
-        "test_files/invalidCGI.conf",
-        "test_files/invalidAutoIndex.conf",
-        "test_files/invalidSemicolon.conf",
+        "test_files/invalidMaxBodySize.conf", "test_files/invalidMaxBodySizeCount.conf",
+        "test_files/invalidListen.conf",      "test_files/invalidListenCount.conf",
+        "test_files/invalidErrorPage.conf",   "test_files/invalidLocation.conf",
+        "test_files/invalidRedirect.conf",    "test_files/invalidCGI.conf",
+        "test_files/invalidAutoIndex.conf",   "test_files/invalidSemicolon.conf",
     };
 
     for (size_t i = 0; i < invalidConfigs.size(); ++i)
@@ -424,8 +418,9 @@ TEST_CASE("Test parsing errors")
             auto configResult = parseConfigFile(path);
             CHECK(configResult.has_value() == false);
             CHECK(configResult.error().empty() == false);
-            CHECK_MESSAGE(configResult.error() != "Config file could not be opened", 
-            ("File could not be opened. Check permisions or existence of file: " + path));
+            CHECK_MESSAGE(
+                configResult.error() != "Config file could not be opened",
+                ("File could not be opened. Check permisions or existence of file: " + path));
         }
     }
 }
