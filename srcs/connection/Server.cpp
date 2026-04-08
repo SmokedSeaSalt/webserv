@@ -10,6 +10,7 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <expected>
 
 Server::Server(Config config) : config_(config) {}
 
@@ -93,7 +94,7 @@ auto Server::createConnection(int listenSocket) -> std::expected<void, std::stri
     clientMap_.emplace(connectionSocket, Client{.socketfd = connectionSocket,
                                                 .state    = ClientState::Receiving,
                                                 .request  = HTTPRequest{},
-                                                .response = HTTPMessage{},
+                                                .response = HTTPResponse{},
                                                 .error    = ErrorType::None});
     return {};
 }

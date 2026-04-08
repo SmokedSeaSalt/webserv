@@ -3,6 +3,7 @@
 
 #include "parsing.hpp"
 #include "HTTPRequest.hpp"
+#include "HTTPResponse.hpp"
 #define MAX_EVENTS 10
 #define BUFFER_SIZE 10
 
@@ -29,7 +30,7 @@ struct Client
         int         socketfd;
         ClientState state;
         HTTPRequest request; // todo: change this to HTTPRequest when merge with mathijs
-        HTTPMessage response;
+        HTTPResponse response;
         ErrorType   error;
 };
 
