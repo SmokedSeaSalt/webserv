@@ -78,10 +78,14 @@ LLVM_VERSION = 21.1.8
 LLVM_TAR = LLVM-$(LLVM_VERSION)-Linux-X64.tar.xz
 LLVM_DIR = $(HOME)/sgoinfre/LLVM-$(LLVM_VERSION)-Linux-X64
 
-install_cpp23:
+
+install_cpp23: download_cpp23 move_cpp23_to_home add_local_cpp23_to_path
+
+download_cpp23:
 	wget -P $(HOME)/sgoinfre https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVM_VERSION)/$(LLVM_TAR)
 	tar xf $(HOME)/sgoinfre/$(LLVM_TAR) -C $(HOME)/sgoinfre
 
+move_cpp23_to_home:
 	# Create target directories if they don't exist
 	mkdir -p $(HOME)/.local/lib/x86_64-unknown-linux-gnu
 	mkdir -p $(HOME)/.local/bin
@@ -94,7 +98,7 @@ install_cpp23:
 	ln -sf $(HOME)/sgoinfre/LLVM-$(LLVM_VERSION)-Linux-X64/bin/clang++ \
 	       $(HOME)/.local/bin/c++
 
-cpp23_to_path:
+add_local_cpp23_to_path:
 	# Ensure ~/.local/bin is at the front of PATH in bashrc
 	grep -qxF 'export PATH="$(HOME)/.local/bin:$$PATH"' $(HOME)/.bashrc || \
 	echo 'export PATH="$(HOME)/.local/bin:$$PATH"' >> $(HOME)/.bashrc
