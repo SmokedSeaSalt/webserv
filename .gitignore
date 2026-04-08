@@ -1,3 +1,7 @@
 .vscode
 build
+webserv
+macos_help.txt
+*.json.vscode
+build
 doctest.h
