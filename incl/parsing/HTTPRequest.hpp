@@ -1,11 +1,11 @@
+#ifndef HTTPREQUEST
+#define HTTPREQUEST
+
 #include "HTTPRules.hpp"
 #include "parsing.hpp"
 #include <expected>
 #include <set>
 #include <string>
-
-#ifndef HTTPREQUEST
-#define HTTPREQUEST
 
 enum class RequestState
 {

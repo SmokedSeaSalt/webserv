@@ -1,11 +1,11 @@
+#ifndef HTTPRULES
+#define HTTPRULES
+
 #include <expected>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#ifndef HTTPRULES
-#define HTTPRULES
 
 struct HTTPMessage
 {
