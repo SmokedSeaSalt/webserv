@@ -27,10 +27,7 @@ for dir in "${DIRS[@]}"; do
 
     if [ -d "$dir" ]; then
         cd "$dir"
-        if ! make all >/dev/null 2>&1; then
-            echo "Make failed in $dir"
-            exit 1
-        fi
+        make all
 		make run --no-print-directory
         if ! make fclean >/dev/null 2>&1; then
             echo "Make failed in $dir"
