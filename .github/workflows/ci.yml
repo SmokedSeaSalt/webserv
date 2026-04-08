@@ -18,5 +18,5 @@ jobs:
       #   run: make
 
       - name: Run tests
-        run: make LDFLAGS="" test
+        run: make CPPFLAGS="-Wall -Werror -Wextra -MMD --std=c++23 -stdlib=libc++" LDFLAGS="" test
       
