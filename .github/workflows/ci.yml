@@ -1,0 +1,21 @@
+name: webserv_CI
+run-name: Deploy to ${{ inputs.deploy_target }} by @${{ github.actor }}
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: make
+
+      - name: Run tests
+        run: make test
+      
