@@ -2,7 +2,7 @@
 # Basics                                                                       #
 ################################################################################
 
-NAME = webserv
+NAME = HTTPRequest_test
 CPP = c++
 CPPFLAGS = -Wall -Werror -Wextra -MMD --std=c++23 --stdlib=libc++
 LDFLAGS = -Wl,-rpath,$(HOME)/.local/lib/x86_64-unknown-linux-gnu -lc++ -lc++abi
@@ -15,6 +15,7 @@ ASANFLAGS = -fsanitize=address,undefined
 
 BUILD_DIR = build
 ROOT_DIR := $(abspath ../../..)
+DOCTEST=$(ROOT_DIR)/test/incl/doctest.h
 
 SRC =	main.cpp \
 		HTTPRequest.cpp \
@@ -29,7 +30,6 @@ DEP = $(OBJ:.o=.d)
 
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing
 
-
 ################################################################################
 # Rules                                                                        #
 ################################################################################
@@ -38,9 +38,9 @@ all: $(NAME)
 	@printf "$(COLOUR_BLUE)Executable: $(NAME)\n$(COLOUR_END)"
 
 run: all
-	./$(NAME)
+	@./$(NAME) -ni -nv
 
-$(NAME): $(OBJ) Makefile
+$(NAME): $(DOCTEST) $(OBJ) Makefile
 	@$(CPP) $(LDFLAGS) $(OBJ) -o $@
 	@printf "$(COLOUR_GREEN)Compilation done👍\n$(COLOUR_END)"
 
@@ -66,50 +66,12 @@ asan: re
 $(BUILD_DIR):
 	mkdir -p $@
 
+$(DOCTEST):
+	mkdir -p $(ROOT_DIR)/test/incl && wget -q https://raw.githubusercontent.com/doctest/doctest/master/doctest/doctest.h -O $(ROOT_DIR)/test/incl/doctest.h && ls -lh $(ROOT_DIR)/test/incl/doctest.h
+
 -include $(DEP)
 
-.PHONY:	clean fclean re all debug asan
-
-################################################################################
-# Installs                                                                     #
-################################################################################
-
-LLVM_VERSION = 21.1.8
-LLVM_TAR = LLVM-$(LLVM_VERSION)-Linux-X64.tar.xz
-LLVM_DIR = $(HOME)/sgoinfre/LLVM-$(LLVM_VERSION)-Linux-X64
-
-install_cpp23: download_cpp23 move_cpp23_to_home add_local_cpp23_to_path
-
-download_cpp23:
-	wget -P $(HOME)/sgoinfre https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVM_VERSION)/$(LLVM_TAR)
-	tar -xf $(HOME)/sgoinfre/$(LLVM_TAR) -C $(HOME)/sgoinfre
-
-move_cpp23_to_home:
-	# Create target directories if they don't exist
-	mkdir -p $(HOME)/.local/lib/x86_64-unknown-linux-gnu
-	mkdir -p $(HOME)/.local/bin
-
-	# Copy the libraries
-	cp -r $(LLVM_DIR)/lib/x86_64-unknown-linux-gnu/* \
-	      $(HOME)/.local/lib/x86_64-unknown-linux-gnu/
-
-	# Create/update symlink for c++
-	ln -sf $(LLVM_DIR)/bin/clang++ \
-	       $(HOME)/.local/bin/c++
-
-add_local_cpp23_to_path:
-	# Ensure ~/.local/bin is at the front of PATH in bashrc
-	grep -qxF 'export PATH="$(HOME)/.local/bin:$$PATH"' $(HOME)/.bashrc || \
-	echo 'export PATH="$(HOME)/.local/bin:$$PATH"' >> $(HOME)/.bashrc
-
-	# Ensure ~/.local/bin is at the front of PATH in zshrc
-	grep -qxF 'export PATH="$(HOME)/.local/bin:$$PATH"' $(HOME)/.zshrc || \
-	echo 'export PATH="$(HOME)/.local/bin:$$PATH"' >> $(HOME)/.zshrc
-
-	@printf "$(COLOUR_GREEN)Make sure to source your shell config file \
-	for the changes in path to register!\n$(COLOUR_END)"
-
-.PHONY += install_cpp23 download_cpp23 move_cpp23_to_home add_local_cpp23_to_path
+.PHONY:	clean fclean re all run debug asan
 
 ################################################################################
 # Terminal beautification                                                      #

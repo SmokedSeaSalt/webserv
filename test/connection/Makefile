@@ -2,12 +2,12 @@
 # Basics                                                                       #
 ################################################################################
 
-NAME = webserv
-CPP = $(HOME)/sgoinfre/LLVM-21.1.8-Linux-X64/bin/clang++
+NAME = connection_test
+CPP = c++
 CPPFLAGS = -Wall -Werror -Wextra -MMD --std=c++23 --stdlib=libc++
-LDFLAGS = -Wl,-rpath,$(HOME)/sgoinfre/LLVM-21.1.8-Linux-X64/lib/x86_64-unknown-linux-gnu -lc++ -lc++abi
+LDFLAGS = -Wl,-rpath,$(HOME)/.local/lib/x86_64-unknown-linux-gnu -lc++ -lc++abi
 DEBUGFLAGS = -g
-ASANFLAGS = -fsanitize=address,undefined -g
+ASANFLAGS = -fsanitize=address,undefined
 
 ################################################################################
 # ENV		                                                                   #
@@ -18,17 +18,19 @@ PORT = 4242
 ################################################################################
 
 BUILD_DIR = build
+ROOT_DIR := $(abspath ../..)
+DOCTEST=$(ROOT_DIR)/test/incl/doctest.h
 
 SRC =	main.cpp \
 		Server.cpp \
 		HTTPRequest.cpp
 
-INCLUDE_FLAGS = -I../mocks/incl -I../../incl/connection -I../../incl/parsing -I../../srcs/connection
+INCLUDE_FLAGS = -Imocks/incl -I$(ROOT_DIR)/incl/connection -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/srcs/connection
 
 OBJ = $(addprefix $(BUILD_DIR)/,$(patsubst %.cpp,%.o,$(SRC)))
 DEP = $(OBJ:.o=.d)
 
-vpath %.cpp .:../../srcs/connection
+vpath %.cpp .:$(ROOT_DIR)/srcs/connection
 vpath %.cpp .:mocks/srcs/
 
 ################################################################################
@@ -37,11 +39,12 @@ vpath %.cpp .:mocks/srcs/
 
 all: $(NAME)
 	@printf "$(COLOUR_BLUE)Executable: $(NAME)\n$(COLOUR_END)"
-	
-run: all
-	./$(NAME)
 
-$(NAME): $(OBJ) Makefile
+run: all
+	@./$(NAME) -ni -nv
+#	go start test zoek het uit
+
+$(NAME): $(DOCTEST) $(OBJ) Makefile
 	@$(CPP) $(LDFLAGS) $(OBJ) -o $@
 	@printf "$(COLOUR_GREEN)Compilation done👍\n$(COLOUR_END)"
 
@@ -55,35 +58,24 @@ clean:
 fclean: clean
 	rm -f $(NAME)
 
-re: fclean
-	$(MAKE) --no-print-directory
+re: fclean all
 
 debug: CPPFLAGS += $(DEBUGFLAGS)
 debug: re
 
-asan: CPPFLAGS += $(ASANFLAGS)
+asan: CPPFLAGS += $(ASANFLAGS) $(DEBUGFLAGS)
+asan: LDFLAGS += $(ASANFLAGS)
 asan: re
 
 $(BUILD_DIR):
 	mkdir -p $@
 
+$(DOCTEST):
+	mkdir -p $(ROOT_DIR)/test/incl && wget -q https://raw.githubusercontent.com/doctest/doctest/master/doctest/doctest.h -O $(ROOT_DIR)/test/incl/doctest.h && ls -lh $(ROOT_DIR)/test/incl/doctest.h
+
 -include $(DEP)
 
-.PHONY:	clean fclean re all debug asan
-
-################################################################################
-# Installs                                                                     #
-################################################################################
-
-LLVM_VERSION = 21.1.8
-LLVM_TAR = LLVM-$(LLVM_VERSION)-Linux-X64.tar.xz
-LLVM_DIR = $(HOME)/sgoinfre/LLVM-$(LLVM_VERSION)-Linux-X64
-
-install_cpp23:
-	wget -P $(HOME)/sgoinfre https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVM_VERSION)/$(LLVM_TAR)
-	tar xf $(HOME)/sgoinfre/$(LLVM_TAR) -C $(HOME)/sgoinfre
-
-.PHONY += install_cpp23
+.PHONY:	clean fclean re all run debug asan
 
 ################################################################################
 # Terminal beautification                                                      #
