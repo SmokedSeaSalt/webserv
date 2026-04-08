@@ -7,7 +7,7 @@ CPP = c++
 CPPFLAGS = -Wall -Werror -Wextra -MMD --std=c++23 --stdlib=libc++ -g
 LDFLAGS = -Wl,-rpath,$(HOME)/.local/lib/x86_64-unknown-linux-gnu -lc++ -lc++abi
 DEBUGFLAGS = -g
-ASANFLAGS = -fsanitize=address,undefined -g
+ASANFLAGS = -fsanitize=address,undefined
 
 ################################################################################
 # Source files                                                                 #
@@ -54,13 +54,13 @@ clean:
 fclean: clean
 	rm -f $(NAME)
 
-re: fclean
-	$(MAKE) --no-print-directory
+re: fclean all
 
 debug: CPPFLAGS += $(DEBUGFLAGS)
 debug: re
 
-asan: CPPFLAGS += $(ASANFLAGS)
+asan: CPPFLAGS += $(ASANFLAGS) $(DEBUGFLAGS)
+asan: LDFLAGS += $(ASANFLAGS)
 asan: re
 
 $(BUILD_DIR):
