@@ -3,6 +3,10 @@
 #include "HTTPRequest.hpp"
 #include <iostream>
 
+////////////////////////////////////////////////////////////////////////////////
+// Basic                                                                      //
+////////////////////////////////////////////////////////////////////////////////
+
 TEST_CASE("Basic test")
 {
 	HTTPRequest request{};
@@ -77,3 +81,46 @@ TEST_CASE("Basic test per byte")
 		CHECK(request.getMessage().body.empty());
 	}
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// invalid first line                                                         //
+////////////////////////////////////////////////////////////////////////////////
+
+TEST_CASE("Invalid method")
+{
+	HTTPRequest request{};
+	std::string basic = "INVALID /index.html HTTP/1.1\r\n\r\n";
+
+	auto ret = request.newData(basic);
+	REQUIRE(!ret.has_value());
+	CHECK(ret.error() == ResponseStatusCode::kNotImplemented);
+}
+
+TEST_CASE("Invalid target")
+{
+	HTTPRequest request{};
+	std::string basic = "GET test/index.html HTTP/1.1\r\n\r\n";
+
+	auto ret = request.newData(basic);
+	REQUIRE(!ret.has_value());
+	CHECK(ret.error() == ResponseStatusCode::kBadRequest);
+}
+
+TEST_CASE("Invalid version")
+{
+	HTTPRequest request{};
+	std::string basic = "GET /index.html HTTP/1.0\r\n\r\n";
+
+	auto ret = request.newData(basic);
+	REQUIRE(!ret.has_value());
+	CHECK(ret.error() == ResponseStatusCode::kHTTPVersionNotSupported);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// invalid headers                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// invalid body                                                               //
+////////////////////////////////////////////////////////////////////////////////
+
