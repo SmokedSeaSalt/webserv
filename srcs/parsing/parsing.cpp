@@ -6,5 +6,5 @@ auto to_lower(std::string str) -> std::string
     {
         c = std::tolower(static_cast<unsigned char>(c));
     }
-     return str;
+    return str;
 }
