@@ -18,7 +18,7 @@ jobs:
       #   run: make
 
       - name: Clang format dry run
-        run: clang-format --dry-run --Werror **/*.(cpp|hpp)
+        run: git ls-files '*.cpp' '*.hpp' | xargs -r clang-format --dry-run --Werror
 
       - name: Run tests
         run: make CPPFLAGS="-MMD --std=c++23" LDFLAGS="" test
