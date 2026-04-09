@@ -17,6 +17,9 @@ jobs:
       # - name: Build
       #   run: make
 
+      - name: Clang format dry run
+        run: clang-format --dry-run --Werror **/*.(cpp|hpp)
+
       - name: Run tests
         run: make CPPFLAGS="-MMD --std=c++23" LDFLAGS="" test
       
