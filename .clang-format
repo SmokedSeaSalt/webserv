@@ -31,7 +31,7 @@ AllowShortBlocksOnASingleLine: Never
 AllowShortIfStatementsOnASingleLine: Never
 
 ### Line Length
-ColumnLimit: 100
+ColumnLimit: 0
 
 ### Pointers & References
 PointerAlignment: Left   # int* x

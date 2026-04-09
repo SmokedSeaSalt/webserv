@@ -32,7 +32,8 @@ TEST_CASE("Server receives and prints request")
     CHECK(setupRes.has_value());
 
     // Run server in background thread
-    std::thread serverThread([&server]() { server.connection_loop(); });
+    std::thread serverThread([&server]()
+                             { server.connection_loop(); });
     serverThread.detach();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 

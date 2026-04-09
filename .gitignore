@@ -6,3 +6,4 @@ macos_help.txt
 build
 doctest.h
 config_test
+setup_pre_push_hook.sh

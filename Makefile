@@ -45,6 +45,9 @@ $(BUILD_DIR)/%.o: %.cpp Makefile | $(BUILD_DIR)
 	@printf "$(COLOUR_BLUE)Compiling $< \n$(COLOUR_END)"
 	@$(CPP) $(CPPFLAGS) $(INCLUDE_FLAGS) -c $< -o $@ -MF $(BUILD_DIR)/$*.d
 
+format:
+	git ls-files '*.cpp' '*.hpp' | xargs -r clang-format -i
+
 clean:
 	rm -rf $(BUILD_DIR)
 
@@ -65,7 +68,7 @@ $(BUILD_DIR):
 
 -include $(DEP)
 
-.PHONY:	clean fclean re all run debug asan test
+.PHONY:	clean fclean re all run debug asan test format
 
 ################################################################################
 # Testing                                                                      #
