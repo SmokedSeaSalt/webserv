@@ -1,6 +1,5 @@
 #include "Execution.hpp"
 
-
 // Public Functions
 Execution::Execution(Config config) : config_(config) {}
 
@@ -25,13 +24,8 @@ auto Execution::validateRequest(const HTTPRequest& request) -> ResponseStatusCod
 
 auto Execution::buildErrorResponse(const HTTPRequest& request) -> HTTPResponse
 {
-
 }
 
 auto Execution::processValidRequest(const HTTPRequest& request) -> HTTPResponse
 {
-
 }
-
-
-

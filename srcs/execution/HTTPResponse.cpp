@@ -2,10 +2,10 @@
 
 void HTTPResponse::setResponseStatusCode(ResponseStatusCode statusCode)
 {
-	statusCode_ = statusCode;
+    statusCode_ = statusCode;
 }
 
 ResponseStatusCode HTTPResponse::getResponseStatusCode()
 {
-	return statusCode_;
+    return statusCode_;
 }

@@ -6,9 +6,8 @@
 class HTTPResponse : public HTTPRules
 {
     public:
-        void setResponseStatusCode(ResponseStatusCode statusCode);
+        void               setResponseStatusCode(ResponseStatusCode statusCode);
         ResponseStatusCode getResponseStatusCode();
-
 
     private:
         ResponseStatusCode statusCode_;

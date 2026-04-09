@@ -1,9 +1,9 @@
 #ifndef EXECUTION_HPP
 #define EXECUTION_HPP
 
-#include "configParsing.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
+#include "configParsing.hpp"
 
 class Execution
 {
@@ -18,8 +18,6 @@ class Execution
         auto validateRequest(const HTTPRequest& request) -> ResponseStatusCode;
         auto buildErrorResponse(const HTTPRequest& request) -> HTTPResponse;
         auto processValidRequest(const HTTPRequest& request) -> HTTPResponse;
-
-
 };
 
 #endif // EXECUTION_HPP
