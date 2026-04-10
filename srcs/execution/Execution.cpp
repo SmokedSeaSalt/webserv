@@ -30,5 +30,4 @@ auto Execution::buildErrorResponse(const HTTPRequest& request) -> HTTPResponse
 
 auto Execution::processValidRequest(const HTTPRequest& request) -> HTTPResponse
 {
-
 }

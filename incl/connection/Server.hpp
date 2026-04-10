@@ -1,9 +1,9 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
+#include "Execution.hpp"
 #include "configParsing.hpp"
 #include "connection.hpp"
-#include "Execution.hpp"
 #include <expected>
 #include <netinet/in.h>
 #include <set>
