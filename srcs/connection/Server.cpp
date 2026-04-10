@@ -56,7 +56,11 @@ auto Server::handleEvent(int fd) -> std::expected<int, std::string>
     case ClientState::Receiving:
         handleReceivingEvent(fd);
         break;
-    case ClientState::Processing:;
+    case ClientState::Received:
+        execution.execute(clientMap_[fd].request);
+        clientMap_[fd].state = ClientState::Processing;
+        break;
+    case ClientState::Processing:
         break;
     case ClientState::Sending:
         handleSendingEvent(fd);

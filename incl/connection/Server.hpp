@@ -3,6 +3,7 @@
 
 #include "configParsing.hpp"
 #include "connection.hpp"
+#include "Execution.hpp"
 #include <expected>
 #include <netinet/in.h>
 #include <set>
@@ -29,6 +30,7 @@ class Server
         std::map<int, Client> clientMap_;
         std::set<int>         listenSockets_;
         int                   epollfd_;
+        Execution             execution;
 
         // setup() helpers
         auto setupListenSocket(std::string ip, int port) -> std::expected<int, std::string>;

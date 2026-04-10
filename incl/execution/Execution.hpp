@@ -15,7 +15,7 @@ class Execution
     private:
         Config config_;
 
-        auto validateRequest(const HTTPRequest& request) -> ResponseStatusCode;
+        auto checkRequestConfigCompliance(const HTTPRequest& request) -> ResponseStatusCode;
         auto buildErrorResponse(const HTTPRequest& request) -> HTTPResponse;
         auto processValidRequest(const HTTPRequest& request) -> HTTPResponse;
 };
