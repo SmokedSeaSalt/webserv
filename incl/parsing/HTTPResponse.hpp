@@ -9,18 +9,17 @@ class HTTPResponse : public HTTPRules
         auto createPacket() -> std::string;
         auto createErrorPacket(ResponseStatusCode) -> std::string;
 
-        auto setHeader(std::string key, std::string value);
-        auto addHeaderValue(std::string key, std::string value);
-        auto setBody(std::string data);
+        auto setHeader(std::string key, std::string value) -> void;
+        auto addHeaderValue(std::string key, std::string value) -> void;
+        auto setBody(std::string data) -> void;
+        auto setProtocol(std::string protocol) -> void;
 
     private:
         HTTPMessage message_;
 
-        auto createFirstLine() -> std::string;
+        auto createFirstLine(ResponseStatusCode errorCode) -> std::string;
         auto createHeaders() -> std::string;
-        auto createBody() -> std::string;
-
-        
+        auto createBody(ResponseStatusCode errorCode) -> std::string;
 
 };
 
