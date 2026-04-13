@@ -12,6 +12,8 @@ class HTTPResponse : public HTTPRules
         auto setHeader(std::string key, std::string value) -> void;
         auto addHeaderValue(std::string key, std::string value) -> void;
         auto setBody(std::string data) -> void;
+        auto addBodydata(std::string data) -> void;
+
         auto setProtocol(std::string protocol) -> void;
 
     private:
@@ -20,6 +22,8 @@ class HTTPResponse : public HTTPRules
         auto createFirstLine(ResponseStatusCode errorCode) -> std::string;
         auto createHeaders() -> std::string;
         auto createBody(ResponseStatusCode errorCode) -> std::string;
+        auto httpDate() -> std::string;
+
 
 };
 
