@@ -3,12 +3,12 @@
 #include <chrono>
 #include "parsing.hpp"
 
-auto HTTPResponse::createPacket() -> std::string
+auto HTTPResponse::createPacket() const -> std::string
 {
     return (createFirstLine(ResponseStatusCode::kOK) + createHeaders() + createBody());
 }
 
-auto HTTPResponse::createErrorPacket(ResponseStatusCode errorCode) -> std::string
+auto HTTPResponse::createErrorPacket(ResponseStatusCode errorCode) const -> std::string
 {
     return (createFirstLine(errorCode) + createHeaders() + createBody());
 }
@@ -43,12 +43,12 @@ auto HTTPResponse::setProtocol(std::string protocol) -> void
     this->message_.protocol = protocol;
 }
 
-auto HTTPResponse::createFirstLine(ResponseStatusCode errorCode) -> std::string
+auto HTTPResponse::createFirstLine(ResponseStatusCode errorCode) const -> std::string
 {
     return (this->message_.protocol + " " + statusCodeToString(errorCode) + this->delimiter_);
 }
 
-auto HTTPResponse::createHeaders() -> std::string
+auto HTTPResponse::createHeaders() const -> std::string
 {
     std::string result;
     result += "server: webserv" + this->delimiter_;
@@ -64,13 +64,13 @@ auto HTTPResponse::createHeaders() -> std::string
     return (result + this->delimiter_);
 }
 
-auto HTTPResponse::httpDate() -> std::string
+auto HTTPResponse::httpDate() const -> std::string
 {
     auto now = std::chrono::system_clock::now();
     return std::format("{:%a, %d %b %Y %H:%M:%S GMT}", now);
 }
 
-auto HTTPResponse::createBody() -> std::string
+auto HTTPResponse::createBody() const -> std::string
 {
     return this->message_.body;
 }

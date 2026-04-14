@@ -6,8 +6,8 @@
 class HTTPResponse : public HTTPRules
 {
     public:
-        auto createPacket() -> std::string;
-        auto createErrorPacket(ResponseStatusCode) -> std::string;
+        auto createPacket() const -> std::string;
+        auto createErrorPacket(ResponseStatusCode) const -> std::string;
 
         auto setHeader(std::string key, std::string value) -> void;
         auto addHeaderValue(std::string key, std::string value) -> void;
@@ -19,10 +19,10 @@ class HTTPResponse : public HTTPRules
     private:
         HTTPMessage message_;
 
-        auto createFirstLine(ResponseStatusCode errorCode) -> std::string;
-        auto createHeaders() -> std::string;
-        auto createBody() -> std::string;
-        auto httpDate() -> std::string;
+        auto createFirstLine(ResponseStatusCode errorCode) const -> std::string;
+        auto createHeaders() const -> std::string;
+        auto createBody() const -> std::string;
+        auto httpDate() const -> std::string;
 
 };
 
