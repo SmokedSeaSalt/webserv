@@ -66,7 +66,7 @@ auto HTTPResponse::createHeaders() const -> std::string
 
 auto HTTPResponse::httpDate() const -> std::string
 {
-    auto now = std::chrono::system_clock::now();
+    auto now = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
     return std::format("{:%a, %d %b %Y %H:%M:%S GMT}", now);
 }
 
