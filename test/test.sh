@@ -20,6 +20,7 @@ DIRS=(
     "test/connection"
     "test/parsing/config"
     "test/parsing/HTTPRequest"
+    "test/parsing/HTTPResponse"
 )
 
 for dir in "${DIRS[@]}"; do

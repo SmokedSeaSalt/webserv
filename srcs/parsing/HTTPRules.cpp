@@ -184,3 +184,11 @@ auto HTTPRules::validateHeader(const std::string& key, const std::string& value)
 
     return (validKey && validValue);
 }
+
+auto HTTPRules::statusCodeToString(ResponseStatusCode code) -> std::string
+{
+    auto it = kStatusCodeStrings.find(code);
+    if (it != kStatusCodeStrings.end())
+        return it->second;
+    return "500 Internal Server Error"; // safe fallback
+}

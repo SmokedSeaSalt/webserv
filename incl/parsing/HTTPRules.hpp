@@ -18,22 +18,39 @@ struct HTTPMessage
 
 enum class ResponseStatusCode
 {
-    kOK               = 200,
-    kCreated          = 201,
-    kBadRequest       = 400,
-    kUnauthorized     = 401, // if we want access based on coockies/header values
-    kForbidden        = 403, // if we want access based on coockies/header values
-    kNotFound         = 404,
-    kMethodNotAllowed = 405,
-    kRequestTimeout   = 408,
-    kContentTooLarge  = 413, // body larger than server limit, do we need this?
-    kURITooLong =
-        414, // maybe check if exeeds system path length including relative server root path?
+    kOK                      = 200,
+    kCreated                 = 201,
+    kBadRequest              = 400,
+    kUnauthorized            = 401, // if we want access based on coockies/header values
+    kForbidden               = 403, // if we want access based on coockies/header values
+    kNotFound                = 404,
+    kMethodNotAllowed        = 405,
+    kRequestTimeout          = 408,
+    kContentTooLarge         = 413, // body larger than server limit, do we need this?
+    kURITooLong              = 414, // maybe check if exeeds system path length including relative server root path?
     kUnsupportedMediaType    = 415,
     kImATeapot               = 418, // important
     kInternalServerError     = 500, // IDK if fork/execve crashes?
     kNotImplemented          = 501,
     kHTTPVersionNotSupported = 505,
+};
+
+inline const std::unordered_map<ResponseStatusCode, std::string> kStatusCodeStrings = {
+    {ResponseStatusCode::kOK, "200 OK"},
+    {ResponseStatusCode::kCreated, "201 Created"},
+    {ResponseStatusCode::kBadRequest, "400 Bad Request"},
+    {ResponseStatusCode::kUnauthorized, "401 Unauthorized"},
+    {ResponseStatusCode::kForbidden, "403 Forbidden"},
+    {ResponseStatusCode::kNotFound, "404 Not Found"},
+    {ResponseStatusCode::kMethodNotAllowed, "405 Method Not Allowed"},
+    {ResponseStatusCode::kRequestTimeout, "408 Request Timeout"},
+    {ResponseStatusCode::kContentTooLarge, "413 Content Too Large"},
+    {ResponseStatusCode::kURITooLong, "414 URI Too Long"},
+    {ResponseStatusCode::kUnsupportedMediaType, "415 Unsupported Media Type"},
+    {ResponseStatusCode::kImATeapot, "418 I'm a Teapot"},
+    {ResponseStatusCode::kInternalServerError, "500 Internal Server Error"},
+    {ResponseStatusCode::kNotImplemented, "501 Not Implemented"},
+    {ResponseStatusCode::kHTTPVersionNotSupported, "505 HTTP Version Not Supported"},
 };
 
 class HTTPRules
@@ -60,13 +77,12 @@ class HTTPRules
         static auto is_query(const std::string& str) -> bool;
         static auto is_origin_form(const std::string& str) -> bool;
 
-        static auto validateMethod(const std::string& str)
-            -> std::expected<bool, ResponseStatusCode>;
-        static auto validateRequestTarget(const std::string& str)
-            -> std::expected<bool, ResponseStatusCode>;
-        static auto validateProtocol(const std::string& str)
-            -> std::expected<bool, ResponseStatusCode>;
+        static auto validateMethod(const std::string& str) -> std::expected<bool, ResponseStatusCode>;
+        static auto validateRequestTarget(const std::string& str) -> std::expected<bool, ResponseStatusCode>;
+        static auto validateProtocol(const std::string& str) -> std::expected<bool, ResponseStatusCode>;
         static auto validateHeader(const std::string& key, const std::string& value) -> bool;
+
+        static auto statusCodeToString(ResponseStatusCode code) -> std::string;
 
     private:
 };
