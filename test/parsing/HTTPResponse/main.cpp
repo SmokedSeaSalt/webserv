@@ -10,7 +10,7 @@
 TEST_CASE("Basic test")
 {
     HTTPResponse response{};
-    std::string basic = "HTTP/1.1 200 OK \r\n"
+    std::string basic = "HTTP/1.1 200 OK\r\n"
                         "Host: localhost:8080\r\n"
                         "User-Agent: curl/7.68.0\r\n"
                         "Accept: */*\r\n"
@@ -21,9 +21,23 @@ TEST_CASE("Basic test")
 	response.addHeaderValue("User-Agent", "curl/7.68.0");
 	response.addHeaderValue("Accept", "*/*");
 
-	CHECK(response.createPacket().contains("host: localhost:8080"));
-	CHECK(response.createPacket().contains("user-agent: curl/7.68.0"));
-	CHECK(response.createPacket().contains("accept: */*"));
-	CHECK(response.createPacket().contains("date:"));
-	CHECK(response.createPacket().contains("server: webserv"));
+	SUBCASE("Normal response")
+	{
+		CHECK(response.createPacket().contains("HTTP/1.1 200 OK"));
+		CHECK(response.createPacket().contains("host: localhost:8080"));
+		CHECK(response.createPacket().contains("user-agent: curl/7.68.0"));
+		CHECK(response.createPacket().contains("accept: */*"));
+		CHECK(response.createPacket().contains("date:"));
+		CHECK(response.createPacket().contains("server: webserv"));
+	}
+
+	SUBCASE("Error response")
+	{
+		CHECK(response.createErrorPacket(ResponseStatusCode::kNotFound).contains("HTTP/1.1 404 Not Found"));
+		CHECK(response.createErrorPacket(ResponseStatusCode::kNotFound).contains("host: localhost:8080"));
+		CHECK(response.createErrorPacket(ResponseStatusCode::kNotFound).contains("user-agent: curl/7.68.0"));
+		CHECK(response.createErrorPacket(ResponseStatusCode::kNotFound).contains("accept: */*"));
+		CHECK(response.createErrorPacket(ResponseStatusCode::kNotFound).contains("date:"));
+		CHECK(response.createErrorPacket(ResponseStatusCode::kNotFound).contains("server: webserv"));
+	}
 }
