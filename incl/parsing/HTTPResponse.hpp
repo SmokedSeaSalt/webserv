@@ -9,12 +9,13 @@ class HTTPResponse : public HTTPRules
         auto createPacket() const -> std::string;
         auto createErrorPacket(ResponseStatusCode) const -> std::string;
 
-        auto setHeader(std::string key, std::string value) -> void;
-        auto addHeaderValue(std::string key, std::string value) -> void;
-        auto setBody(std::string data) -> void;
-        auto addBodyData(std::string data) -> void;
+        auto setHeader(std::string key, std::string value) -> std::expected<void, ResponseStatusCode>;
+        auto addHeaderValue(std::string key, std::string value) -> std::expected<void, ResponseStatusCode>;;
+        auto clearAllHeaders() -> void;
+        auto setBody(std::string data) -> std::expected<void, ResponseStatusCode>;;
+        auto addBodyData(std::string data) -> std::expected<void, ResponseStatusCode>;;
 
-        auto setProtocol(std::string protocol) -> void;
+        auto setProtocol(std::string protocol) -> std::expected<void, ResponseStatusCode>;;
 
     private:
         HTTPMessage message_;
