@@ -21,10 +21,8 @@ class HTTPRequest : public HTTPRules
         auto getMessage() const -> HTTPMessage;
         auto setMessage() -> HTTPMessage;
 
-
         auto newData(std::string data) -> std::expected<ResponseStatusCode, ResponseStatusCode>;
         auto getState() const -> RequestState;
-
 
     private:
         RequestState state_ = RequestState::kStartLine;

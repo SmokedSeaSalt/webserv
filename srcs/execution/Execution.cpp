@@ -39,7 +39,7 @@ auto Execution::buildErrorResponse(const HTTPMessage& request) -> HTTPResponse
 
 auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, std::string>
 {
-    HTTPResponse    httpResponse;
+    HTTPResponse httpResponse;
     if (request.method == "GET")
     {
         auto fileContents = readFileContents(request);
@@ -53,11 +53,9 @@ auto Execution::readFileContents(const HTTPMessage& request) -> std::expected<st
 {
     std::string filePath = request.requestTarget;
 
-    auto size = std::filesystem::file_size(filePath);
-    std::string content(size, '\0');
+    auto          size = std::filesystem::file_size(filePath);
+    std::string   content(size, '\0');
     std::ifstream in(filePath);
     in.read(&content[0], size);
     return content;
 }
-
-

@@ -14,8 +14,8 @@ class HTTPResponse : public HTTPRules
         std::string        getBody();
 
     private:
-        std::string header;
-        std::string body;
+        std::string        header;
+        std::string        body;
         ResponseStatusCode statusCode_;
 };
 
