@@ -1,30 +1,31 @@
 #include "HTTPResponse.hpp"
 #include <format>
 #include <chrono>
+#include "parsing.hpp"
 
 auto HTTPResponse::createPacket() -> std::string
 {
-    return (createFirstLine(ResponseStatusCode::kOK) + createHeaders() + createBody(ResponseStatusCode::kOK));
+    return (createFirstLine(ResponseStatusCode::kOK) + createHeaders() + createBody());
 }
 
 auto HTTPResponse::createErrorPacket(ResponseStatusCode errorCode) -> std::string
 {
-    //Allow header mandatory on 405 Method Not Allowed responses
-    //WWW-Authenticate header mandatory on 401 Unauthorized responses
-    return (createFirstLine(errorCode) + createHeaders() + createBody(errorCode));
+    return (createFirstLine(errorCode) + createHeaders() + createBody());
 }
 
 auto HTTPResponse::setHeader(std::string key, std::string value) -> void
 {
-    if (this->message_.headers.contains(key))
-        this->message_.headers[key][0] = value;
+    std::string keyLower = to_lower(key);
+    if (this->message_.headers.contains(keyLower))
+        this->message_.headers[keyLower].clear();
     else
-        this->message_.headers[key].push_back(value);
+        this->message_.headers[keyLower].push_back(value);
 }
 
 auto HTTPResponse::addHeaderValue(std::string key, std::string value) -> void
 {
-    this->message_.headers[key].push_back(value);
+    std::string keyLower = to_lower(key);
+    this->message_.headers[keyLower].push_back(value);
 }
 
 auto HTTPResponse::setBody(std::string data) -> void
@@ -32,7 +33,7 @@ auto HTTPResponse::setBody(std::string data) -> void
     this->message_.body = data;
 }
 
-auto HTTPResponse::addBodydata(std::string data) -> void
+auto HTTPResponse::addBodyData(std::string data) -> void
 {
     this->message_.body += data;
 }
@@ -50,15 +51,8 @@ auto HTTPResponse::createFirstLine(ResponseStatusCode errorCode) -> std::string
 auto HTTPResponse::createHeaders() -> std::string
 {
     std::string result;
-    //set some mandatory ones
-    result += "Server: webserv" + this->delimiter_;
-    //Date: timestamp.
-    result += "Date: " + httpDate() + this->delimiter_;
-    //Connection: close
-
-    //Content-Length header required if there is a body and you're not using chunked transfer encoding
-    //Content-Type header required if there is a body, otherwise clients don't know how to interpret it
-
+    result += "server: webserv" + this->delimiter_;
+    result += "date: " + httpDate() + this->delimiter_;
 
     for (const auto& [key, values] : this->message_.headers)
     {
@@ -72,14 +66,11 @@ auto HTTPResponse::createHeaders() -> std::string
 
 auto HTTPResponse::httpDate() -> std::string
 {
-    auto now = std::chrono::utc_clock::now();
+    auto now = std::chrono::system_clock::now();
     return std::format("{:%a, %d %b %Y %H:%M:%S GMT}", now);
 }
 
-auto HTTPResponse::createBody(ResponseStatusCode errorCode) -> std::string
+auto HTTPResponse::createBody() -> std::string
 {
-//check if chucked or not
-//check for error code in config
-//otherwise just return stored data
     return this->message_.body;
 }
