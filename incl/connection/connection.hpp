@@ -29,7 +29,7 @@ struct Client
 {
         int          socketfd;
         ClientState  state;
-        HTTPRequest  request; // todo: change this to HTTPRequest when merge with mathijs
+        HTTPRequest  request;
         HTTPResponse response;
         ErrorType    error;
 };

@@ -1,6 +1,6 @@
 #include "HTTPRequest.hpp"
 
-auto HTTPRequest::getMessage() -> HTTPMessage
+auto HTTPRequest::getMessage() const -> HTTPMessage
 {
     return this->message_;
 }
@@ -140,4 +140,9 @@ auto HTTPRequest::expectBody() -> bool
         return true;
     }
     return false;
+}
+
+auto HTTPRequest::getState() const -> RequestState
+{
+    return this->state_;
 }

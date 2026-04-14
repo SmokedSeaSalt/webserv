@@ -36,6 +36,8 @@ auto Server::handleReceivingEvent(int fd) -> std::expected<void, std::string>
 
     buf[numBytes] = '\0';
     clientMap_[fd].request.newData(buf);
+    if (clientMap_[fd].request.getState() == RequestState::KDone)
+        clientMap_[fd].state = ClientState::Received;
 
     return {};
 }
@@ -55,10 +57,11 @@ auto Server::handleEvent(int fd) -> std::expected<int, std::string>
     {
     case ClientState::Receiving:
         handleReceivingEvent(fd);
-        break;
-    case ClientState::Received:
-        execution.execute(clientMap_[fd].request);
-        clientMap_[fd].state = ClientState::Processing;
+        if (clientMap_[fd].state == ClientState::Received)
+        {
+            execution.execute(clientMap_[fd].request);
+            clientMap_[fd].state = ClientState::Processing;
+        }
         break;
     case ClientState::Processing:
         break;

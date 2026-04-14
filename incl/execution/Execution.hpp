@@ -10,14 +10,17 @@ class Execution
     public:
         Execution(Config config);
 
-        auto execute(const HTTPRequest& request) -> HTTPResponse;
+        auto execute(const HTTPMessage& request) -> HTTPResponse;
 
     private:
         Config config_;
 
-        auto checkRequestConfigCompliance(const HTTPRequest& request) -> ResponseStatusCode;
-        auto buildErrorResponse(const HTTPRequest& request) -> HTTPResponse;
-        auto processValidRequest(const HTTPRequest& request) -> HTTPResponse;
+        auto checkRequestConfigCompliance(const HTTPMessage& request) -> ResponseStatusCode;
+        auto buildErrorResponse(const HTTPMessage& request) -> HTTPResponse;
+        auto processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, std::string>;
+        auto readFileContents(const HTTPMessage& request) -> std::expected<std::string, std::string>;
+        
+
 };
 
 #endif // EXECUTION_HPP
