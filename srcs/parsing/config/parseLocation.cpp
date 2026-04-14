@@ -126,9 +126,12 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
     std::map<std::string, std::function<std::expected<void, std::string>(Location & location,
                                                                          std::vector<std::string>)>>
         functionMap{
-            {"methods", parseMethods}, {"return", parseRedirect},
-            {"root", parseRoot},       {"autoindex", parseAutoIndex},
-            {"index", parseIndex},     {"upload_store", parseUploadStore},
+            {"methods", parseMethods},
+            {"return", parseRedirect},
+            {"root", parseRoot},
+            {"autoindex", parseAutoIndex},
+            {"index", parseIndex},
+            {"upload_store", parseUploadStore},
             {"cgi", parseCGI},
         };
 
