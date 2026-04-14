@@ -8,53 +8,71 @@ auto HTTPRequest::getMessage() -> HTTPMessage
 auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode, ResponseStatusCode>
 {
     this->buffer_ += data;
-
-    std::string::size_type pos = this->buffer_.find(this->delimiter_);
-    while (pos != std::string::npos)
+    
+    while(true)
     {
-
         switch (this->state_)
         {
-        case (RequestState::kStartLine):
+        case RequestState::kStartLine:
         {
-            const auto ret = parseStartLine(this->buffer_.substr(0, pos));
+            std::string::size_type pos = this->buffer_.find(this->delimiter_);
+            if (pos == std::string::npos)
+                return ResponseStatusCode::kOK;
+            auto ret = parseStartLine(this->buffer_.substr(0, pos));
             if (!ret.has_value())
                 return std::unexpected(ret.error());
+            this->buffer_.erase(0, pos + this->delimiter_.size());
 
             this->state_ = RequestState::kHeaders;
             break;
         }
-        case (RequestState::kHeaders):
+        
+        case RequestState::kHeaders:
         {
-            if (pos == 0) // indicates last "\r\n"
+            std::string::size_type pos = this->buffer_.find(this->delimiter_);
+            if (pos == std::string::npos)
+                return ResponseStatusCode::kOK;
+            if (pos == 0)
             {
                 if (this->expectBody())
                     this->state_ = RequestState::kBody;
                 else
                     this->state_ = RequestState::KDone;
+                this->buffer_.erase(0, pos + this->delimiter_.size());
                 break;
             }
-            const auto ret = parseHeader(this->buffer_.substr(0, pos));
+            auto ret = parseHeader(this->buffer_.substr(0, pos));
             if (!ret.has_value())
                 return std::unexpected(ret.error());
+            this->buffer_.erase(0, pos + this->delimiter_.size());
+            
+            break;
+        }
+
+        case RequestState::kBody:
+        {
+            this->message_.body += buffer_;
+            if (this->bodyType_ == BodyType::kBytes)
+            {
+                return ResponseStatusCode::kOK;
+            }
+            if (this->bodyType_ == BodyType::kChunked)
+            {
+                return ResponseStatusCode::kOK;
+            }
 
             break;
         }
-        case (RequestState::kBody):
+
+        case RequestState::KDone:
         {
-            // TODO make this better
-            parseBody(this->buffer_.substr(0, pos));
-            break;
-        }
-        case (RequestState::KDone):
-        {
-            // TODO
-            // should never get here? return error too much data?
+            if (this->buffer_.empty())
+                return ResponseStatusCode::kOK;
+            return std::unexpected(ResponseStatusCode::kBadRequest);
+            
             break;
         }
         }
-        this->buffer_.erase(0, pos + this->delimiter_.size());
-        pos = this->buffer_.find(this->delimiter_);
     }
 
     return ResponseStatusCode::kOK;
@@ -131,13 +149,21 @@ auto HTTPRequest::expectBody() -> bool
     if (this->message_.headers.contains("transfer-encoding"))
     {
         if (this->message_.headers["transfer-encoding"][0] == "chunked")
+        {
+            this->bodyType_ = BodyType::kChunked;
             return true;
+        }
     }
     if (this->message_.headers.contains("content-length"))
     {
         if (this->message_.headers["content-length"][0] == "0")
+        {
+            this->bodyType_ = BodyType::kNone;
             return false;
+        }
+        this->bodyType_ = BodyType::kBytes;
         return true;
     }
+    this->bodyType_ = BodyType::kNone;
     return false;
 }

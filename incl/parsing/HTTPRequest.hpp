@@ -15,6 +15,13 @@ enum class RequestState
     KDone
 };
 
+enum class BodyType
+{
+    kNone,
+    kChunked,
+    kBytes,
+};
+
 class HTTPRequest : public HTTPRules
 {
     public:
@@ -26,6 +33,7 @@ class HTTPRequest : public HTTPRules
         RequestState state_ = RequestState::kStartLine;
         std::string  buffer_;
         HTTPMessage  message_;
+        BodyType     bodyType_;
 
         auto parseStartLine(std::string line) -> std::expected<size_t, ResponseStatusCode>;
         auto parseHeader(std::string line) -> std::expected<size_t, ResponseStatusCode>;
