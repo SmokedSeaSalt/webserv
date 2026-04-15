@@ -15,15 +15,15 @@ auto HTTPRequest::getExpectedBodyLength() const -> size_t
 auto HTTPRequest::resetMessage() -> void
 {
     this->state_ = RequestState::kStartLine;
-    
-    //TODO
+
+    // TODO
 }
 
 auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode, ResponseStatusCode>
 {
     this->buffer_ += data;
 
-    while(true)
+    while (true)
     {
         switch (this->state_)
         {
@@ -89,10 +89,10 @@ auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode,
             }
             if (this->bodyType_ == BodyType::kChunked)
             {
-                //check line by line.
-                //check expected bytes \r\n.
-                //read expected bytes.
-                //decode and put into message_.body.
+                // check line by line.
+                // check expected bytes \r\n.
+                // read expected bytes.
+                // decode and put into message_.body.
                 return ResponseStatusCode::kOK;
             }
 
@@ -200,7 +200,7 @@ auto HTTPRequest::expectBody() -> std::expected<bool, ResponseStatusCode>
         {
             this->expectedBodyLength_ = std::stol(this->message_.headers["content-length"][0]);
         }
-        catch(const std::exception& e)
+        catch (const std::exception& e)
         {
             return std::unexpected(ResponseStatusCode::kBadRequest);
         }
