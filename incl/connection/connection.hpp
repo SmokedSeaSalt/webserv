@@ -10,7 +10,6 @@
 enum class ClientState
 {
     Receiving,
-    Received,
     Processing,
     Sending,
     Closed,

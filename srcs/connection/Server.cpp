@@ -1,5 +1,6 @@
 #include "Server.hpp"
 #include "connection.hpp"
+#include "Execution.hpp"
 #include <arpa/inet.h>
 #include <expected>
 #include <fcntl.h>
@@ -12,7 +13,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-Server::Server(Config config) : config_(config) {}
+Server::Server(Config config) : config_(config), execution_(config) {}
 
 Server::~Server() {}
 
@@ -36,8 +37,6 @@ auto Server::handleReceivingEvent(int fd) -> std::expected<void, std::string>
 
     buf[numBytes] = '\0';
     clientMap_[fd].request.newData(buf);
-    if (clientMap_[fd].request.getState() == RequestState::KDone)
-        clientMap_[fd].state = ClientState::Received;
 
     return {};
 }
@@ -57,12 +56,10 @@ auto Server::handleEvent(int fd) -> std::expected<int, std::string>
     {
     case ClientState::Receiving:
         handleReceivingEvent(fd);
-        if (clientMap_[fd].state == ClientState::Received)
-        {
-            execution.execute(clientMap_[fd].request);
-            clientMap_[fd].state = ClientState::Processing;
-        }
-        break;
+        if (clientMap_[fd].request.getState() != RequestState::KDone)
+            break;
+        execution_.execute(clientMap_[fd].request.getMessage());
+        clientMap_[fd].state = ClientState::Processing;
     case ClientState::Processing:
         break;
     case ClientState::Sending:

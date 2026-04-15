@@ -23,15 +23,21 @@ DOCTEST=$(ROOT_DIR)/test/incl/doctest.h
 
 SRC =	main.cpp \
 		Server.cpp \
-		HTTPRequest.cpp
+		HTTPRequest.cpp \
+		HTTPResponse.cpp \
+		Execution.cpp \
+		HTTPRules.cpp \
+		parsing.cpp
 
-INCLUDE_FLAGS = -Imocks/incl -I$(ROOT_DIR)/incl/connection -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/srcs/connection
+INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/connection -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/srcs/connection -I$(ROOT_DIR)/incl/execution
 
 OBJ = $(addprefix $(BUILD_DIR)/,$(patsubst %.cpp,%.o,$(SRC)))
 DEP = $(OBJ:.o=.d)
 
 vpath %.cpp .:$(ROOT_DIR)/srcs/connection
-vpath %.cpp .:mocks/srcs/
+vpath %.cpp .:$(ROOT_DIR)/srcs/parsing
+vpath %.cpp .:$(ROOT_DIR)/srcs/execution
+
 
 ################################################################################
 # Rules                                                                        #

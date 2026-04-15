@@ -30,7 +30,7 @@ class Server
         std::map<int, Client> clientMap_;
         std::set<int>         listenSockets_;
         int                   epollfd_;
-        Execution             execution;
+        Execution             execution_;
 
         // setup() helpers
         auto setupListenSocket(std::string ip, int port) -> std::expected<int, std::string>;
