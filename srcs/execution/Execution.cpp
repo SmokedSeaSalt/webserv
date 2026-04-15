@@ -1,5 +1,6 @@
 #include "Execution.hpp"
 #include <filesystem>
+#include "executionHelpers.hpp"
 
 // Public Functions
 Execution::Execution(Config config) : config_(config) {}
@@ -17,7 +18,7 @@ auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
             buildErrorResponse(request); // todo check this error handling
         response = validRequest.value();
     }
-    
+
     // request.state = ;
     return response;
 }
@@ -42,20 +43,24 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
     HTTPResponse httpResponse;
     if (request.method == "GET")
     {
-        auto fileContents = readFileContents(request);
-        if (!fileContents.has_value())
-            return std::unexpected("Error: readFileContents failed");
+        auto processGetResult = processGet(request);
+        if (!processGetResult.has_value())
+            return std::unexpected("Error: processGet failed");
+        httpResponse = processGetResult.value();
     }
     return httpResponse;
 }
 
-auto Execution::readFileContents(const HTTPMessage& request) -> std::expected<std::string, std::string>
-{
-    std::string filePath = request.requestTarget;
 
-    auto          size = std::filesystem::file_size(filePath);
-    std::string   content(size, '\0');
-    std::ifstream in(filePath);
-    in.read(&content[0], size);
-    return content;
+
+auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, std::string>
+{
+    HTTPResponse response;
+
+    auto readFileResult = readFile(request.requestTarget);
+    if (!readFileResult.has_value())
+        return std::unexpected(readFileResult.error());
+    // do stuff
+    response.addBodyData(readFileResult.value());
+    return response;
 }
