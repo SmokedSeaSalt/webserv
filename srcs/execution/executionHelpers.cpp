@@ -1,7 +1,7 @@
 #include <expected>
-#include <string>
 #include <filesystem>
 #include <fstream>
+#include <string>
 
 auto readFile(std::string path) -> std::expected<std::string, std::string>
 {

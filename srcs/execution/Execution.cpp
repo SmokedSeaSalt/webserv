@@ -1,6 +1,6 @@
 #include "Execution.hpp"
-#include <filesystem>
 #include "executionHelpers.hpp"
+#include <filesystem>
 
 // Public Functions
 Execution::Execution(Config config) : config_(config) {}
@@ -50,8 +50,6 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
     }
     return httpResponse;
 }
-
-
 
 auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, std::string>
 {

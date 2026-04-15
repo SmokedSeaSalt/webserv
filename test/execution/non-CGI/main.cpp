@@ -7,12 +7,11 @@
 
 TEST_CASE("Test readFile")
 {
-    std::filesystem::path filePath = std::filesystem::current_path() / "assets" / "helloWorld.html";
-    auto readFileResult = readFile(filePath.string());
+    std::filesystem::path filePath       = std::filesystem::current_path() / "assets" / "helloWorld.html";
+    auto                  readFileResult = readFile(filePath.string());
     REQUIRE(readFileResult.has_value());
     CHECK(readFileResult.value() == "<p>Hello world</p>");
 }
-
 
 // TEST_CASE()
 // {
