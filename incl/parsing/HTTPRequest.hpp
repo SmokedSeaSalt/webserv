@@ -25,7 +25,9 @@ enum class BodyType
 class HTTPRequest : public HTTPRules
 {
     public:
-        auto getMessage() -> HTTPMessage;
+        auto getMessage() const -> HTTPMessage;
+        auto getExpectedBodyLength() const -> size_t;
+        auto resetMessage() -> void;
 
         auto newData(std::string data) -> std::expected<ResponseStatusCode, ResponseStatusCode>;
 
@@ -34,12 +36,13 @@ class HTTPRequest : public HTTPRules
         std::string  buffer_;
         HTTPMessage  message_;
         BodyType     bodyType_;
+        size_t       expectedBodyLength_;
 
         auto parseStartLine(std::string line) -> std::expected<size_t, ResponseStatusCode>;
         auto parseHeader(std::string line) -> std::expected<size_t, ResponseStatusCode>;
         auto parseBody(std::string line) -> std::expected<size_t, ResponseStatusCode>;
 
-        auto expectBody() -> bool;
+        auto expectBody() -> std::expected<bool, ResponseStatusCode>;
 };
 
 #endif // HTTPREQUEST

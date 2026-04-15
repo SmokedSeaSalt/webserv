@@ -1,14 +1,28 @@
 #include "HTTPRequest.hpp"
 
-auto HTTPRequest::getMessage() -> HTTPMessage
+auto HTTPRequest::getMessage() const -> HTTPMessage
 {
     return this->message_;
+}
+
+auto HTTPRequest::getExpectedBodyLength() const -> size_t
+{
+    return this->expectedBodyLength_;
+}
+
+// Resets everything it had parsed, but leaves the buffer.
+// This is to help implementing persistant HTTP/1.1 connections.
+auto HTTPRequest::resetMessage() -> void
+{
+    this->state_ = RequestState::kStartLine;
+    
+    //TODO
 }
 
 auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode, ResponseStatusCode>
 {
     this->buffer_ += data;
-    
+
     while(true)
     {
         switch (this->state_)
@@ -26,7 +40,7 @@ auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode,
             this->state_ = RequestState::kHeaders;
             break;
         }
-        
+
         case RequestState::kHeaders:
         {
             std::string::size_type pos = this->buffer_.find(this->delimiter_);
@@ -34,7 +48,10 @@ auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode,
                 return ResponseStatusCode::kOK;
             if (pos == 0)
             {
-                if (this->expectBody())
+                auto ret = this->expectBody();
+                if (!ret.has_value())
+                    return std::unexpected(ret.error());
+                if (ret.value())
                     this->state_ = RequestState::kBody;
                 else
                     this->state_ = RequestState::KDone;
@@ -45,19 +62,37 @@ auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode,
             if (!ret.has_value())
                 return std::unexpected(ret.error());
             this->buffer_.erase(0, pos + this->delimiter_.size());
-            
+
             break;
         }
 
         case RequestState::kBody:
         {
-            this->message_.body += buffer_;
             if (this->bodyType_ == BodyType::kBytes)
             {
+                if (this->buffer_.size() + this->message_.body.size() <= this->expectedBodyLength_)
+                {
+                    this->message_.body += buffer_;
+                    this->buffer_.erase();
+                    if (this->message_.body.size() == this->expectedBodyLength_)
+                        this->state_ = RequestState::KDone;
+                }
+                else
+                {
+                    const auto lengthLeft = this->expectedBodyLength_ - this->message_.body.size();
+                    this->message_.body += buffer_.substr(0, lengthLeft);
+                    this->buffer_.erase(0, lengthLeft);
+                    this->state_ = RequestState::KDone;
+                }
+
                 return ResponseStatusCode::kOK;
             }
             if (this->bodyType_ == BodyType::kChunked)
             {
+                //check line by line.
+                //check expected bytes \r\n.
+                //read expected bytes.
+                //decode and put into message_.body.
                 return ResponseStatusCode::kOK;
             }
 
@@ -69,7 +104,7 @@ auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode,
             if (this->buffer_.empty())
                 return ResponseStatusCode::kOK;
             return std::unexpected(ResponseStatusCode::kBadRequest);
-            
+
             break;
         }
         }
@@ -144,7 +179,7 @@ auto HTTPRequest::parseBody(std::string line) -> std::expected<size_t, ResponseS
     return line.size();
 }
 
-auto HTTPRequest::expectBody() -> bool
+auto HTTPRequest::expectBody() -> std::expected<bool, ResponseStatusCode>
 {
     if (this->message_.headers.contains("transfer-encoding"))
     {
@@ -161,6 +196,15 @@ auto HTTPRequest::expectBody() -> bool
             this->bodyType_ = BodyType::kNone;
             return false;
         }
+        try
+        {
+            this->expectedBodyLength_ = std::stol(this->message_.headers["content-length"][0]);
+        }
+        catch(const std::exception& e)
+        {
+            return std::unexpected(ResponseStatusCode::kBadRequest);
+        }
+
         this->bodyType_ = BodyType::kBytes;
         return true;
     }
