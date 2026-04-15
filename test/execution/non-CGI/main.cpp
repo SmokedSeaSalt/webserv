@@ -1,7 +1,7 @@
 #include "Execution.hpp"
+#include "HTTPResponse.hpp"
 #include "configParsing.hpp"
 #include "executionHelpers.hpp"
-#include "HTTPResponse.hpp"
 #include <filesystem>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "../../incl/doctest.h"
@@ -17,8 +17,8 @@ TEST_CASE("Test readFile")
 auto checkPacket(std::string packet) -> bool
 {
     std::istringstream stream(packet);
-    std::string line;
-    bool foundStatus, foundServer, foundDate, foundBody = false;
+    std::string        line;
+    bool               foundStatus, foundServer, foundDate, foundBody = false;
 
     int lineNum = 0;
     while (std::getline(stream, line, '\n'))
