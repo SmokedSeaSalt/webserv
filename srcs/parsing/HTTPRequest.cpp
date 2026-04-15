@@ -89,10 +89,28 @@ auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode,
             }
             if (this->bodyType_ == BodyType::kChunked)
             {
-                // check line by line.
-                // check expected bytes \r\n.
-                // read expected bytes.
-                // decode and put into message_.body.
+                size_t chunkSize;
+                auto   pos1 = this->buffer_.find(this->delimiter_);
+                auto   pos2 = this->buffer_.find(this->delimiter_, pos1 + 1);
+                if (pos1 == std::string::npos || pos2 == std::string::npos)
+                    return ResponseStatusCode::kOK;
+                try
+                {
+                    chunkSize = std::stoul(this->buffer_.substr(0, pos1), nullptr, 16);
+                }
+                catch (const std::exception& e)
+                {
+                    return std::unexpected(ResponseStatusCode::kBadRequest);
+                }
+                if (chunkSize == 0)
+                {
+                    this->buffer_.erase(pos2 + this->delimiter_.size());
+                    this->state_ = RequestState::KDone;
+                    return ResponseStatusCode::kOK;
+                }
+                this->message_.body += buffer_.substr(pos1 + this->delimiter_.size(), pos2 - (pos1 + this->delimiter_.size() + 1));
+                this->buffer_.erase(pos2 + this->delimiter_.size());
+
                 return ResponseStatusCode::kOK;
             }
 
@@ -198,7 +216,7 @@ auto HTTPRequest::expectBody() -> std::expected<bool, ResponseStatusCode>
         }
         try
         {
-            this->expectedBodyLength_ = std::stol(this->message_.headers["content-length"][0]);
+            this->expectedBodyLength_ = std::stoul(this->message_.headers["content-length"][0]);
         }
         catch (const std::exception& e)
         {
