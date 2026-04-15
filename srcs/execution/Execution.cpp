@@ -7,7 +7,7 @@ Execution::Execution(Config config) : config_(config) {}
 auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
 {
     HTTPResponse response;
-    
+
     if (checkRequestConfigCompliance(request) != ResponseStatusCode::kOK)
         response = buildErrorResponse(request);
     else
