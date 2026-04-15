@@ -18,7 +18,16 @@ ROOT_DIR := $(abspath ../../..)
 DOCTEST=$(ROOT_DIR)/test/incl/doctest.h
 
 SRC =	main.cpp \
-		executionHelpers.cpp
+		parseConfig.cpp \
+		parseLocation.cpp \
+		parseServerBlock.cpp \
+		Execution.cpp \
+		HTTPResponse.cpp \
+		executionHelpers.cpp \
+		HTTPRules.cpp \
+		parsing.cpp \
+		stringTrim.cpp \
+		split.cpp
 
 
 
