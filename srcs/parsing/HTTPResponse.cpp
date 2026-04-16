@@ -1,7 +1,7 @@
 #include "HTTPResponse.hpp"
-#include <format>
-#include <chrono>
 #include "parsing.hpp"
+#include <chrono>
+#include <format>
 
 auto HTTPResponse::createPacket() const -> std::string
 {
@@ -40,7 +40,6 @@ auto HTTPResponse::clearAllHeaders() -> void
 {
     this->message_.headers.clear();
 }
-
 
 auto HTTPResponse::setBody(std::string data) -> std::expected<void, ResponseStatusCode>
 {
