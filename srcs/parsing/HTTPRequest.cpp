@@ -1,4 +1,5 @@
 #include "HTTPRequest.hpp"
+#include <print>
 
 auto HTTPRequest::getMessage() const -> HTTPMessage
 {
@@ -15,8 +16,11 @@ auto HTTPRequest::getExpectedBodyLength() const -> size_t
 auto HTTPRequest::resetMessage() -> void
 {
     this->state_ = RequestState::kStartLine;
-
-    // TODO
+    this->message_.body.clear();
+    this->message_.headers.clear();
+    this->message_.method.clear();
+    this->message_.protocol.clear();
+    this->message_.requestTarget.clear();
 }
 
 auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode, ResponseStatusCode>
@@ -85,7 +89,7 @@ auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode,
                     this->state_ = RequestState::KDone;
                 }
 
-                return ResponseStatusCode::kOK;
+                break;
             }
             if (this->bodyType_ == BodyType::kChunked)
             {
@@ -108,10 +112,10 @@ auto HTTPRequest::newData(std::string data) -> std::expected<ResponseStatusCode,
                     this->state_ = RequestState::KDone;
                     return ResponseStatusCode::kOK;
                 }
-                this->message_.body += buffer_.substr(pos1 + this->delimiter_.size(), pos2 - (pos1 + this->delimiter_.size() + 1));
-                this->buffer_.erase(pos2 + this->delimiter_.size());
+                this->message_.body += buffer_.substr(pos1 + this->delimiter_.size(), pos2 - (pos1 + this->delimiter_.size()));
+                this->buffer_.erase(0, pos2 + this->delimiter_.size());
 
-                return ResponseStatusCode::kOK;
+                break;
             }
 
             break;
