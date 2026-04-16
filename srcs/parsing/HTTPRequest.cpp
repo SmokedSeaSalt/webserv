@@ -81,7 +81,7 @@ auto HTTPRequest::newData(std::string data) -> std::expected<RequestState, Respo
 
 /// @brief
 /// @return Expected -> false: newData should continue.
-/// Expected -> false: newData should also return.
+/// Expected -> true: newData should also return.
 /// Unexpected -> ResponseStatusCode of error found.
 auto HTTPRequest::processStartLine() -> std::expected<bool, ResponseStatusCode>
 {
@@ -100,7 +100,7 @@ auto HTTPRequest::processStartLine() -> std::expected<bool, ResponseStatusCode>
 
 /// @brief
 /// @return Expected -> false: newData should continue.
-/// Expected -> false: newData should also return.
+/// Expected -> true: newData should also return.
 /// Unexpected -> ResponseStatusCode of error found.
 auto HTTPRequest::processHeaders() -> std::expected<bool, ResponseStatusCode>
 {
@@ -129,7 +129,7 @@ auto HTTPRequest::processHeaders() -> std::expected<bool, ResponseStatusCode>
 
 /// @brief
 /// @return Expected -> false: newData should continue.
-/// Expected -> false: newData should also return.
+/// Expected -> true: newData should also return.
 /// Unexpected -> ResponseStatusCode of error found.
 auto HTTPRequest::processBody() -> std::expected<bool, ResponseStatusCode>
 {
