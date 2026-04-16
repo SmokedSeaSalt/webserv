@@ -58,7 +58,7 @@ auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResp
     auto readFileResult = readFile(request.requestTarget);
     if (!readFileResult.has_value())
         return std::unexpected(readFileResult.error());
-    // do stuff
+    // todo response.addHeaderValue("",);
     response.addBodyData(readFileResult.value());
     return response;
 }

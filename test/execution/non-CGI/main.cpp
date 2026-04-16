@@ -14,7 +14,7 @@ TEST_CASE("Test readFile")
     CHECK(readFileResult.value() == "<p>Hello world</p>");
 }
 
-auto checkPacket(std::string packet) -> bool
+auto checkPacket(std::string packet, std::string expectedBody) -> bool
 {
     std::istringstream stream(packet);
     std::string        line;
@@ -37,15 +37,18 @@ auto checkPacket(std::string packet) -> bool
             foundServer = true;
         if (lineNum == 2 && line.find("date: ") != 0)
             foundDate = true;
-        if (lineNum == 4 && line == "<p>Hello world</p>")
+        if (lineNum == 4 && line == expectedBody)
             foundBody = true;
         lineNum++;
     }
+    CHECK(foundStatus);
+    CHECK(foundServer);
+    CHECK(foundDate);
+    CHECK(foundBody);
     return foundStatus && foundServer && foundDate && foundBody;
 }
 
-// temp test case
-TEST_CASE("Hardcoded full path get test")
+TEST_CASE("Hardcoded full path get html file test")
 {
     auto configResult = parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
@@ -65,6 +68,32 @@ TEST_CASE("Hardcoded full path get test")
     CHECK(httpMessage.protocol == "HTTP/1.1");
 
     HTTPResponse response = execution.execute(httpMessage);
-    CHECK(checkPacket(response.createPacket()));
+    checkPacket(response.createPacket(), "<p>Hello world</p>");
+    // CHECK(repsonse. == "");
+}
+
+// temp test case
+TEST_CASE("Hardcoded full path get png file test")
+{
+    auto configResult = parseConfigFile("config.conf");
+    REQUIRE(configResult.has_value());
+    Config    config = configResult.value();
+    Execution execution(config);
+
+    HTTPMessage httpMessage;
+    httpMessage.method            = "GET";
+    httpMessage.requestTarget     = "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/example.png";
+    httpMessage.protocol          = "HTTP/1.1";
+    httpMessage.headers["host"]   = {"localhost:8080"};
+    httpMessage.headers["accept"] = {"text/html"};
+    httpMessage.body              = "";
+
+    CHECK(httpMessage.method == "GET");
+    CHECK(httpMessage.requestTarget == "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/example.png");
+    CHECK(httpMessage.protocol == "HTTP/1.1");
+
+    HTTPResponse response = execution.execute(httpMessage);
+    
+    checkPacket(response.createPacket(), );
     // CHECK(repsonse. == "");
 }

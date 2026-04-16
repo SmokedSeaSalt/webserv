@@ -36,6 +36,7 @@ auto Server::handleReceivingEvent(int fd) -> std::expected<void, std::string>
         return std::unexpected("recv failed");
 
     buf[numBytes] = '\0';
+    // todo error handling
     clientMap_[fd].request.newData(buf);
 
     return {};
