@@ -22,5 +22,5 @@ jobs:
       #   run: make
 
       - name: Run tests
-        run: make CPPFLAGS="-MMD --std=c++23 -stdlib=libc++" LDFLAGS="-stdlib=libc++" CXX=clang++-18 test
+        run: make CPPFLAGS="-MMD --std=c++23 -stdlib=libc++" LDFLAGS="-stdlib=libc++" CPP=clang++-18 test
 
