@@ -29,7 +29,7 @@ class HTTPRequest : public HTTPRules
         auto getExpectedBodyLength() const -> size_t;
         auto resetMessage() -> void;
 
-        auto newData(std::string data) -> std::expected<ResponseStatusCode, ResponseStatusCode>;
+        auto newData(std::string data) -> std::expected<RequestState, ResponseStatusCode>;
 
     private:
         RequestState state_ = RequestState::kStartLine;
@@ -37,6 +37,10 @@ class HTTPRequest : public HTTPRules
         HTTPMessage  message_;
         BodyType     bodyType_;
         size_t       expectedBodyLength_;
+
+        auto processStartLine() -> std::expected<bool, ResponseStatusCode>;
+        auto processHeaders() -> std::expected<bool, ResponseStatusCode>;
+        auto processBody() -> std::expected<bool, ResponseStatusCode>;
 
         auto parseStartLine(std::string line) -> std::expected<size_t, ResponseStatusCode>;
         auto parseHeader(std::string line) -> std::expected<size_t, ResponseStatusCode>;
