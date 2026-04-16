@@ -73,27 +73,27 @@ TEST_CASE("Hardcoded full path get html file test")
 }
 
 // temp test case
-TEST_CASE("Hardcoded full path get png file test")
-{
-    auto configResult = parseConfigFile("config.conf");
-    REQUIRE(configResult.has_value());
-    Config    config = configResult.value();
-    Execution execution(config);
+// TEST_CASE("Hardcoded full path get png file test")
+// {
+//     auto configResult = parseConfigFile("config.conf");
+//     REQUIRE(configResult.has_value());
+//     Config    config = configResult.value();
+//     Execution execution(config);
 
-    HTTPMessage httpMessage;
-    httpMessage.method            = "GET";
-    httpMessage.requestTarget     = "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/example.png";
-    httpMessage.protocol          = "HTTP/1.1";
-    httpMessage.headers["host"]   = {"localhost:8080"};
-    httpMessage.headers["accept"] = {"text/html"};
-    httpMessage.body              = "";
+//     HTTPMessage httpMessage;
+//     httpMessage.method            = "GET";
+//     httpMessage.requestTarget     = "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/example.png";
+//     httpMessage.protocol          = "HTTP/1.1";
+//     httpMessage.headers["host"]   = {"localhost:8080"};
+//     httpMessage.headers["accept"] = {"text/html"};
+//     httpMessage.body              = "";
 
-    CHECK(httpMessage.method == "GET");
-    CHECK(httpMessage.requestTarget == "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/example.png");
-    CHECK(httpMessage.protocol == "HTTP/1.1");
+//     CHECK(httpMessage.method == "GET");
+//     CHECK(httpMessage.requestTarget == "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/example.png");
+//     CHECK(httpMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse response = execution.execute(httpMessage);
-    
-    checkPacket(response.createPacket(), );
-    // CHECK(repsonse. == "");
-}
+//     HTTPResponse response = execution.execute(httpMessage);
+
+//     checkPacket(response.createPacket(), );
+//     // CHECK(repsonse. == "");
+// }

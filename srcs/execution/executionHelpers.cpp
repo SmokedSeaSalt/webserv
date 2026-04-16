@@ -10,14 +10,14 @@
 /// @return string with file contents
 auto readFile(std::string pathString) -> std::expected<std::string, ResponseStatusCode>
 {
-    std::error_code         ec;
+    std::error_code ec;
     std::filesystem::path{pathString};
 
     std::filesystem::exists(path, ec);
     if (ec == std::errc::no_such_file_or_directory)
         return std::unexpected(ResponseStatusCode::kNotFound);
 
-    std::uintmax_t  size = std::filesystem::file_size(path, ec);
+    std::uintmax_t size = std::filesystem::file_size(path, ec);
     if (ec)
     {
 
