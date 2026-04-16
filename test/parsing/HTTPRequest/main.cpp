@@ -17,9 +17,7 @@ TEST_CASE("Basic test")
                         "\r\n";
 
     auto ret = request.newData(basic);
-    if (!ret.has_value())
-        std::cout << static_cast<int>(ret.error()) << std::endl;
-    REQUIRE(ret.has_value());
+    REQUIRE_MESSAGE(ret.has_value(), "Error val: ", static_cast<int>(ret.error()));
 
     SUBCASE("First line")
     {
@@ -55,9 +53,7 @@ TEST_CASE("Basic test per byte")
     while (i < basic.length())
     {
         auto ret = request.newData(basic.substr(i, 1));
-        if (!ret.has_value())
-            std::cout << static_cast<int>(ret.error()) << std::endl;
-        REQUIRE(ret.has_value());
+        REQUIRE_MESSAGE(ret.has_value(), "Error val: ", static_cast<int>(ret.error()));
         i++;
     }
 
@@ -98,9 +94,7 @@ TEST_CASE("Basic body test")
                         "abcdefgh";
 
     auto ret = request.newData(basic);
-    if (!ret.has_value())
-        std::cout << static_cast<int>(ret.error()) << std::endl;
-    REQUIRE(ret.has_value());
+    REQUIRE_MESSAGE(ret.has_value(), "Error val: ", static_cast<int>(ret.error()));
 
     SUBCASE("First line")
     {
@@ -142,9 +136,7 @@ TEST_CASE("Basic chunked body test")
                         "01234567890\r\n";
 
     auto ret = request.newData(basic);
-    if (!ret.has_value())
-        std::cout << static_cast<int>(ret.error()) << std::endl;
-    REQUIRE(ret.has_value());
+    REQUIRE_MESSAGE(ret.has_value(), "Error val: ", static_cast<int>(ret.error()));
 
     SUBCASE("First line")
     {
@@ -207,7 +199,7 @@ TEST_CASE("Invalid version")
 // Invalid headers                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-TEST_CASE("Basic test")
+TEST_CASE("invalid header")
 {
     HTTPRequest request{};
     std::string basic = "GET /index.html HTTP/1.1\r\n"
