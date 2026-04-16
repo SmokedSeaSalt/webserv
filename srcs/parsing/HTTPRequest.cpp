@@ -180,13 +180,11 @@ auto HTTPRequest::processBody() -> std::expected<bool, ResponseStatusCode>
     }
     if (this->bodyType_ == BodyType::kNone)
     {
-        //should never get here
+        // should never get here
         return false;
     }
     return false;
-
 }
-
 
 auto HTTPRequest::parseStartLine(std::string line) -> std::expected<size_t, ResponseStatusCode>
 {
