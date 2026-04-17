@@ -6,12 +6,14 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "../../incl/doctest.h"
 
-TEST_CASE("Test readFile")
+//////////////////
+// helpers ///////
+/////////////////
+static auto loadBinaryFile(const std::filesystem::path& path) -> std::string
 {
-    std::filesystem::path filePath       = std::filesystem::current_path() / "assets" / "helloWorld.html";
-    auto                  readFileResult = readFile(filePath.string());
-    REQUIRE(readFileResult.has_value());
-    CHECK(readFileResult.value() == "<p>Hello world</p>");
+    std::ifstream in(path, std::ios::binary);
+    REQUIRE(in.is_open());
+    return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
 }
 
 auto checkPacket(std::string packet, std::string expectedBody) -> bool
@@ -23,24 +25,20 @@ auto checkPacket(std::string packet, std::string expectedBody) -> bool
     int lineNum = 0;
     while (std::getline(stream, line, '\n'))
     {
-        if (lineNum == 3)
-        {
-            lineNum++;
-            continue;
-        }
         if (!line.empty() && line.back() == '\r')
             line.pop_back();
 
         if (lineNum == 0 && line == "HTTP/1.1 200 OK")
             foundStatus = true;
-        if (lineNum == 1 && line.find("server: webserv") != std::string::npos)
+        if (line.find("server: webserv") != std::string::npos)
             foundServer = true;
-        if (lineNum == 2 && line.find("date: ") != 0)
+        if (line.find("date: ") != 0)
             foundDate = true;
-        if (lineNum == 4 && line == expectedBody)
+        if (line == expectedBody)
             foundBody = true;
         lineNum++;
     }
+
     CHECK(foundStatus);
     CHECK(foundServer);
     CHECK(foundDate);
@@ -48,23 +46,65 @@ auto checkPacket(std::string packet, std::string expectedBody) -> bool
     return foundStatus && foundServer && foundDate && foundBody;
 }
 
-TEST_CASE("Hardcoded full path get html file test")
+//////////////////
+// readFile tests/
+//////////////////
+TEST_CASE("Test readFile html (200)")
+{
+    std::filesystem::path filePath       = std::filesystem::current_path() / "assets" / "helloWorld.html";
+    auto                  readFileResult = readFile(filePath.string());
+    REQUIRE(readFileResult.has_value());
+    CHECK(readFileResult.value() == "<p>Hello world</p>");
+}
+
+TEST_CASE("Test readFile png (200)")
+{
+    int                   len            = 23997;
+    std::filesystem::path filePath       = std::filesystem::current_path() / "assets/example.png";
+    auto                  readFileResult = readFile(filePath.string());
+    REQUIRE(readFileResult.has_value());
+    CHECK(readFileResult.value().length() == len);
+    CHECK(readFileResult.value() == loadBinaryFile(filePath));
+}
+
+TEST_CASE("Test readFile in forbidden folder (403)")
+{
+    std::filesystem::path filePath       = std::filesystem::current_path() / "assets/noPermissions/other.html";
+    auto                  readFileResult = readFile(filePath.string());
+    REQUIRE(!readFileResult.has_value());
+    CHECK(readFileResult.error() == ResponseStatusCode::kForbidden);
+}
+
+TEST_CASE("Test readFile non existent file (404)")
+{
+    std::filesystem::path filePath       = std::filesystem::current_path() / "assets/abc123nonExistent.html";
+    auto                  readFileResult = readFile(filePath.string());
+    REQUIRE(!readFileResult.has_value());
+    CHECK(readFileResult.error() == ResponseStatusCode::kNotFound);
+}
+
+/////////////////
+// execute tests/
+/////////////////
+
+TEST_CASE("Test full path get html file")
 {
     auto configResult = parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Config    config = configResult.value();
-    Execution execution(config);
+    Config      config = configResult.value();
+    Execution   execution(config);
+    std::string path = std::filesystem::current_path() / "assets/helloWorld.html";
 
     HTTPMessage httpMessage;
     httpMessage.method            = "GET";
-    httpMessage.requestTarget     = "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/helloWorld.html";
+    httpMessage.requestTarget     = path;
     httpMessage.protocol          = "HTTP/1.1";
     httpMessage.headers["host"]   = {"localhost:8080"};
     httpMessage.headers["accept"] = {"text/html"};
     httpMessage.body              = "";
 
     CHECK(httpMessage.method == "GET");
-    CHECK(httpMessage.requestTarget == "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/helloWorld.html");
+    CHECK(httpMessage.requestTarget == path);
     CHECK(httpMessage.protocol == "HTTP/1.1");
 
     HTTPResponse response = execution.execute(httpMessage);
@@ -72,8 +112,44 @@ TEST_CASE("Hardcoded full path get html file test")
     // CHECK(repsonse. == "");
 }
 
-// temp test case
-// TEST_CASE("Hardcoded full path get png file test")
+TEST_CASE("Test full path get png file test")
+{
+    auto configResult = parseConfigFile("config.conf");
+    REQUIRE(configResult.has_value());
+    Config      config = configResult.value();
+    Execution   execution(config);
+    std::string path         = std::filesystem::current_path() / "assets/example.png";
+    std::string expectedBody = loadBinaryFile(path);
+
+    HTTPMessage httpMessage;
+    httpMessage.method            = "GET";
+    httpMessage.requestTarget     = path;
+    httpMessage.protocol          = "HTTP/1.1";
+    httpMessage.headers["host"]   = {"localhost:8080"};
+    httpMessage.headers["accept"] = {"text/html"};
+    httpMessage.body              = "";
+
+    CHECK(httpMessage.method == "GET");
+    CHECK(httpMessage.requestTarget == path);
+    CHECK(httpMessage.protocol == "HTTP/1.1");
+
+    HTTPResponse response = execution.execute(httpMessage);
+    std::string  packet   = response.createPacket();
+
+    CHECK(packet.rfind("HTTP/1.1 200 OK\r\n", 0) == 0);
+    // TODO: also check if header content-type is set correctly
+    const std::string sep = "\r\n\r\n";
+
+    size_t bodyPos = packet.find(sep);
+    REQUIRE(bodyPos != std::string::npos);
+
+    std::string body = packet.substr(bodyPos + sep.size());
+
+    CHECK(body.size() == expectedBody.size());
+    CHECK(body == expectedBody);
+}
+
+// TEST_CASE("Hardcoded full path get html file in forbidden folder test")
 // {
 //     auto configResult = parseConfigFile("config.conf");
 //     REQUIRE(configResult.has_value());
@@ -82,18 +158,17 @@ TEST_CASE("Hardcoded full path get html file test")
 
 //     HTTPMessage httpMessage;
 //     httpMessage.method            = "GET";
-//     httpMessage.requestTarget     = "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/example.png";
+//     httpMessage.requestTarget     = "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/noPermissions/other.html";
 //     httpMessage.protocol          = "HTTP/1.1";
 //     httpMessage.headers["host"]   = {"localhost:8080"};
 //     httpMessage.headers["accept"] = {"text/html"};
 //     httpMessage.body              = "";
 
 //     CHECK(httpMessage.method == "GET");
-//     CHECK(httpMessage.requestTarget == "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/example.png");
+//     CHECK(httpMessage.requestTarget == "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/noPermissions/other.html");
 //     CHECK(httpMessage.protocol == "HTTP/1.1");
 
 //     HTTPResponse response = execution.execute(httpMessage);
-
-//     checkPacket(response.createPacket(), );
+//     CHECK(response == ResponseStatusCode::kForbidden);
 //     // CHECK(repsonse. == "");
 // }

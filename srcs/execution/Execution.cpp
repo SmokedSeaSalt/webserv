@@ -38,20 +38,20 @@ auto Execution::buildErrorResponse(const HTTPMessage& request) -> HTTPResponse
     return {};
 }
 
-auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, std::string>
+auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse httpResponse;
     if (request.method == "GET")
     {
         auto processGetResult = processGet(request);
         if (!processGetResult.has_value())
-            return std::unexpected("Error: processGet failed");
+            return std::unexpected(processGetResult.error());
         httpResponse = processGetResult.value();
     }
     return httpResponse;
 }
 
-auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, std::string>
+auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse response;
 
