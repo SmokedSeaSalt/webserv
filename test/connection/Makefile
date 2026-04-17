@@ -28,7 +28,8 @@ SRC =	main.cpp \
 		Execution.cpp \
 		HTTPRules.cpp \
 		parsing.cpp \
-		executionHelpers.cpp
+		executionHelpers.cpp \
+		contentType.cpp
 
 INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/connection -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/srcs/connection -I$(ROOT_DIR)/incl/execution
 

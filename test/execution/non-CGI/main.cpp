@@ -54,27 +54,27 @@ auto checkPacket(std::string packet, std::string expectedContentType, std::strin
 TEST_CASE("test content types")
 {
     // Images
-    CHECK(fileExtentionToContentType("assets/img.png") == "image/png");
-    CHECK(fileExtentionToContentType("assets/img.jpg") == "image/jpeg");
-    CHECK(fileExtentionToContentType("assets/img.jpeg") == "image/jpeg");
-    CHECK(fileExtentionToContentType("assets/img.gif") == "image/gif");
-    CHECK(fileExtentionToContentType("assets/img.webp") == "image/webp");
-    CHECK(fileExtentionToContentType("assets/img.svg") == "image/svg+xml");
-    CHECK(fileExtentionToContentType("assets/img.ico") == "image/x-icon");
+    CHECK(fileExtensionToContentType("assets/img.png") == "image/png");
+    CHECK(fileExtensionToContentType("assets/img.jpg") == "image/jpeg");
+    CHECK(fileExtensionToContentType("assets/img.jpeg") == "image/jpeg");
+    CHECK(fileExtensionToContentType("assets/img.gif") == "image/gif");
+    CHECK(fileExtensionToContentType("assets/img.webp") == "image/webp");
+    CHECK(fileExtensionToContentType("assets/img.svg") == "image/svg+xml");
+    CHECK(fileExtensionToContentType("assets/img.ico") == "image/x-icon");
     // Web
-    CHECK(fileExtentionToContentType("assets/index.html") == "text/html; charset=utf-8");
-    CHECK(fileExtentionToContentType("assets/style.css") == "text/css");
-    CHECK(fileExtentionToContentType("assets/app.js") == "application/javascript");
-    CHECK(fileExtentionToContentType("assets/data.json") == "application/json");
+    CHECK(fileExtensionToContentType("assets/index.html") == "text/html; charset=utf-8");
+    CHECK(fileExtensionToContentType("assets/style.css") == "text/css");
+    CHECK(fileExtensionToContentType("assets/app.js") == "application/javascript");
+    CHECK(fileExtensionToContentType("assets/data.json") == "application/json");
     // Misc
-    CHECK(fileExtentionToContentType("assets/file.pdf") == "application/pdf");
-    CHECK(fileExtentionToContentType("assets/file.txt") == "text/plain; charset=utf-8");
-    CHECK(fileExtentionToContentType("assets/file.xml") == "application/xml");
+    CHECK(fileExtensionToContentType("assets/file.pdf") == "application/pdf");
+    CHECK(fileExtensionToContentType("assets/file.txt") == "text/plain; charset=utf-8");
+    CHECK(fileExtensionToContentType("assets/file.xml") == "application/xml");
     // Extras
-    CHECK(fileExtentionToContentType("assets/file.com.xml") == "application/xml");
-    CHECK(fileExtentionToContentType("ass.ets/img.png") == "image/png");
-    CHECK(fileExtentionToContentType("assets/anotherFolder/file") == "application/octet-stream");
-    CHECK(fileExtentionToContentType("file.mp4") == "application/octet-stream");
+    CHECK(fileExtensionToContentType("assets/file.com.xml") == "application/xml");
+    CHECK(fileExtensionToContentType("ass.ets/img.png") == "image/png");
+    CHECK(fileExtensionToContentType("assets/anotherFolder/file") == "application/octet-stream");
+    CHECK(fileExtensionToContentType("file.mp4") == "application/octet-stream");
 }
 
 //////////////////

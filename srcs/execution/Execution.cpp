@@ -80,7 +80,7 @@ auto Execution::processGetFile(const std::string path) -> std::expected<HTTPResp
     if (!readFileResult.has_value())
         return std::unexpected(readFileResult.error());
     response.addBodyData(readFileResult.value());
-    response.addHeaderValue("content-type", std::string(fileExtentionToContentType(path)));
+    response.addHeaderValue("content-type", std::string(fileExtensionToContentType(path)));
 
     return response;
 }
@@ -144,6 +144,7 @@ auto Execution::processPost(const HTTPMessage& request) -> std::expected<HTTPRes
 {
     (void)request;
     HTTPResponse response;
+
 
     return response;
 }
