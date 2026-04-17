@@ -35,6 +35,7 @@ auto Execution::checkRequestConfigCompliance(const HTTPMessage& request) -> Resp
 auto Execution::buildErrorResponse(const HTTPMessage& request) -> HTTPResponse
 {
     (void)request;
+    // error code, defailt error page
     return {};
 }
 
@@ -55,20 +56,76 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
             return std::unexpected(processHeadResult.error());
         httpResponse = processHeadResult.value();
     }
+    else if (request.method == "POST")
+    {
+        auto processPostResult = processPost(request);
+        if (!processPostResult.has_value())
+            return std::unexpected(processPostResult.error());
+        httpResponse = processPostResult.value();
+    }
     return httpResponse;
+}
+
+auto Execution::processGetDir(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>
+{
+    (void)path;
+    return std::unexpected(ResponseStatusCode::kNotImplemented);
+}
+
+auto Execution::processGetFile(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>
+{
+    HTTPResponse    response;
+
+    auto readFileResult = readFile(path);
+    if (!readFileResult.has_value())
+        return std::unexpected(readFileResult.error());
+    response.addBodyData(readFileResult.value());
+    response.addHeaderValue("content-type", std::string(fileExtentionToContentType(path)));
+
+    return response;
 }
 
 auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
-    HTTPResponse response;
+    std::string     path = request.requestTarget;
+    std::error_code ec;
 
-    auto readFileResult = readFile(request.requestTarget);
-    if (!readFileResult.has_value())
-        return std::unexpected(readFileResult.error());
-    // todo response.addHeaderValue("",);
-    response.addBodyData(readFileResult.value());
-    response.addHeaderValue("content-type", std::string(fileExtentionToContentType(request.requestTarget)));
-    return response;
+    bool fileExists = std::filesystem::exists(path, ec);
+    if (!fileExists)
+    {
+        if (!ec)
+            return std::unexpected(ResponseStatusCode::kNotFound);
+        // todo log("value: "ec.value() " message: " ec.message());
+        return std::unexpected(ecToResponseErrorStatusCode(ec));
+    }
+
+    bool isADirectory = std::filesystem::is_directory(path, ec);
+    if (ec)
+    {
+        // todo log("value: "ec.value() " message: " ec.message());
+        return std::unexpected(ecToResponseErrorStatusCode(ec));
+    }
+    if (isADirectory)
+    {
+        auto processGetDirResult = processGetDir(path);
+        if (!processGetDirResult.has_value())
+        {
+            // todo log
+            return std::unexpected(processGetDirResult.error());
+        }
+        return processGetDirResult.value();
+    }
+    else
+    {
+        
+        auto processGetFileResult = processGetFile(path);
+        if (!processGetFileResult.has_value())
+        {
+            // todo log
+            return std::unexpected(processGetFileResult.error());
+        }
+        return processGetFileResult.value();
+    }
 }
 
 auto Execution::processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
@@ -82,3 +139,12 @@ auto Execution::processHead(const HTTPMessage& request) -> std::expected<HTTPRes
     response.setBody("");
     return response;
 }
+
+auto Execution::processPost(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+{
+    (void)request;
+    HTTPResponse response;
+
+    return response;
+}
+

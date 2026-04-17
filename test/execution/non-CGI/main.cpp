@@ -20,8 +20,7 @@ auto checkPacket(std::string packet, std::string expectedContentType, std::strin
 {
     std::istringstream stream(packet);
     std::string        line;
-    bool               foundStatus, foundServer, foundDate, foundContentType, foundBody = false;
-
+    bool foundStatus = false, foundServer = false, foundDate = false, foundContentType = false, foundBody = false;
     int lineNum = 0;
     while (std::getline(stream, line, '\n'))
     {
@@ -32,9 +31,9 @@ auto checkPacket(std::string packet, std::string expectedContentType, std::strin
             foundStatus = true;
         if (line.find("server: webserv") != std::string::npos)
             foundServer = true;
-        if (line.find("date: ") != 0)
+        if (line.find("date: ") == 0)
             foundDate = true;
-        if (line.find("content-type: " + expectedContentType) != 0)
+        if (line.find("content-type: " + expectedContentType) == 0)
             foundContentType = true;
         if (line == expectedBody)
             foundBody = true;
