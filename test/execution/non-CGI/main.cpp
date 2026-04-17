@@ -76,10 +76,7 @@ TEST_CASE("test content types")
     CHECK(fileExtentionToContentType("ass.ets/img.png") == "image/png");
     CHECK(fileExtentionToContentType("assets/anotherFolder/file") == "application/octet-stream");
     CHECK(fileExtentionToContentType("file.mp4") == "application/octet-stream");
-
 }
-
-
 
 //////////////////
 // readFile tests/

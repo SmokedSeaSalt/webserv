@@ -53,7 +53,7 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
 
 auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
-    HTTPResponse    response;
+    HTTPResponse response;
 
     auto readFileResult = readFile(request.requestTarget);
     if (!readFileResult.has_value())
