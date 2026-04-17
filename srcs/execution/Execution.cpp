@@ -74,7 +74,7 @@ auto Execution::processGetDir(const std::string path) -> std::expected<HTTPRespo
 
 auto Execution::processGetFile(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
-    HTTPResponse    response;
+    HTTPResponse response;
 
     auto readFileResult = readFile(path);
     if (!readFileResult.has_value())
@@ -117,7 +117,7 @@ auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResp
     }
     else
     {
-        
+
         auto processGetFileResult = processGetFile(path);
         if (!processGetFileResult.has_value())
         {
@@ -147,4 +147,3 @@ auto Execution::processPost(const HTTPMessage& request) -> std::expected<HTTPRes
 
     return response;
 }
-

@@ -20,8 +20,8 @@ auto checkPacket(std::string packet, std::string expectedContentType, std::strin
 {
     std::istringstream stream(packet);
     std::string        line;
-    bool foundStatus = false, foundServer = false, foundDate = false, foundContentType = false, foundBody = false;
-    int lineNum = 0;
+    bool               foundStatus = false, foundServer = false, foundDate = false, foundContentType = false, foundBody = false;
+    int                lineNum = 0;
     while (std::getline(stream, line, '\n'))
     {
         if (!line.empty() && line.back() == '\r')

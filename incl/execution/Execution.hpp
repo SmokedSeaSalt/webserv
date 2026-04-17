@@ -23,10 +23,8 @@ class Execution
         auto processGetDir(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>;
         auto processGetFile(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>;
 
-
         auto processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
         auto processPost(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
-
 };
 
 #endif // EXECUTION_HPP
