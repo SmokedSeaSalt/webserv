@@ -21,7 +21,6 @@ class Execution
 
         auto processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
         auto processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
-
 };
 
 #endif // EXECUTION_HPP
