@@ -27,7 +27,8 @@ SRC =	main.cpp \
 		HTTPRules.cpp \
 		parsing.cpp \
 		stringTrim.cpp \
-		split.cpp
+		split.cpp \
+		contentType.cpp
 
 
 

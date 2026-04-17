@@ -16,11 +16,11 @@ static auto loadBinaryFile(const std::filesystem::path& path) -> std::string
     return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
 }
 
-auto checkPacket(std::string packet, std::string expectedBody) -> bool
+auto checkPacket(std::string packet, std::string expectedContentType, std::string expectedBody) -> bool
 {
     std::istringstream stream(packet);
     std::string        line;
-    bool               foundStatus, foundServer, foundDate, foundBody = false;
+    bool               foundStatus, foundServer, foundDate, foundContentType, foundBody = false;
 
     int lineNum = 0;
     while (std::getline(stream, line, '\n'))
@@ -34,6 +34,8 @@ auto checkPacket(std::string packet, std::string expectedBody) -> bool
             foundServer = true;
         if (line.find("date: ") != 0)
             foundDate = true;
+        if (line.find("content-type: " + expectedContentType) != 0)
+            foundContentType = true;
         if (line == expectedBody)
             foundBody = true;
         lineNum++;
@@ -42,9 +44,42 @@ auto checkPacket(std::string packet, std::string expectedBody) -> bool
     CHECK(foundStatus);
     CHECK(foundServer);
     CHECK(foundDate);
+    CHECK(foundContentType);
     CHECK(foundBody);
     return foundStatus && foundServer && foundDate && foundBody;
 }
+
+//////////////////
+// content type tests
+//////////////////
+TEST_CASE("test content types")
+{
+    // Images
+    CHECK(fileExtentionToContentType("assets/img.png") == "image/png");
+    CHECK(fileExtentionToContentType("assets/img.jpg") == "image/jpeg");
+    CHECK(fileExtentionToContentType("assets/img.jpeg") == "image/jpeg");
+    CHECK(fileExtentionToContentType("assets/img.gif") == "image/gif");
+    CHECK(fileExtentionToContentType("assets/img.webp") == "image/webp");
+    CHECK(fileExtentionToContentType("assets/img.svg") == "image/svg+xml");
+    CHECK(fileExtentionToContentType("assets/img.ico") == "image/x-icon");
+    // Web
+    CHECK(fileExtentionToContentType("assets/index.html") == "text/html; charset=utf-8");
+    CHECK(fileExtentionToContentType("assets/style.css") == "text/css");
+    CHECK(fileExtentionToContentType("assets/app.js") == "application/javascript");
+    CHECK(fileExtentionToContentType("assets/data.json") == "application/json");
+    // Misc
+    CHECK(fileExtentionToContentType("assets/file.pdf") == "application/pdf");
+    CHECK(fileExtentionToContentType("assets/file.txt") == "text/plain; charset=utf-8");
+    CHECK(fileExtentionToContentType("assets/file.xml") == "application/xml");
+    // Extras
+    CHECK(fileExtentionToContentType("assets/file.com.xml") == "application/xml");
+    CHECK(fileExtentionToContentType("ass.ets/img.png") == "image/png");
+    CHECK(fileExtentionToContentType("assets/anotherFolder/file") == "application/octet-stream");
+    CHECK(fileExtentionToContentType("file.mp4") == "application/octet-stream");
+
+}
+
+
 
 //////////////////
 // readFile tests/
@@ -108,7 +143,7 @@ TEST_CASE("Test full path get html file")
     CHECK(httpMessage.protocol == "HTTP/1.1");
 
     HTTPResponse response = execution.execute(httpMessage);
-    checkPacket(response.createPacket(), "<p>Hello world</p>");
+    checkPacket(response.createPacket(), "text/html; charset=utf-8", "<p>Hello world</p>");
     // CHECK(repsonse. == "");
 }
 
@@ -137,6 +172,8 @@ TEST_CASE("Test full path get png file test")
     std::string  packet   = response.createPacket();
 
     CHECK(packet.rfind("HTTP/1.1 200 OK\r\n", 0) == 0);
+    CHECK(packet.find("content-type: image/png\r\n", 0) != std::string::npos);
+
     // TODO: also check if header content-type is set correctly
     const std::string sep = "\r\n\r\n";
 

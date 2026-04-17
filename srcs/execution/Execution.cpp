@@ -15,7 +15,7 @@ auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
     {
         auto validRequest = processValidRequest(request);
         if (!validRequest.has_value())
-            buildErrorResponse(request); // todo check this error handling
+            return buildErrorResponse(request); // todo check this error handling
         response = validRequest.value();
     }
 
@@ -53,12 +53,13 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
 
 auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
-    HTTPResponse response;
+    HTTPResponse    response;
 
     auto readFileResult = readFile(request.requestTarget);
     if (!readFileResult.has_value())
         return std::unexpected(readFileResult.error());
     // todo response.addHeaderValue("",);
     response.addBodyData(readFileResult.value());
+    response.addHeaderValue("content-type", std::string(fileExtentionToContentType(request.requestTarget)));
     return response;
 }

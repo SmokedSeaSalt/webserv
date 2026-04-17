@@ -21,7 +21,7 @@ static const std::unordered_map<std::string_view, std::string_view> types = {
     {".xml", "application/xml"},
 };
 
-std::string_view fileExtentionToContentType(std::string_view path)
+auto fileExtentionToContentType(std::string_view path) -> std::string_view
 {
     auto dot = path.rfind('.');
     if (dot == std::string_view::npos)
@@ -33,7 +33,8 @@ std::string_view fileExtentionToContentType(std::string_view path)
 }
 
 // todo
-std::string_view contentTypeToFileExtension(std::string_view path)
+auto contentTypeToFileExtension(std::string_view path) -> std::string_view
 {
+    (void)path;
     return "TODO";
 }
