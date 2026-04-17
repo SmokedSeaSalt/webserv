@@ -48,6 +48,13 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
             return std::unexpected(processGetResult.error());
         httpResponse = processGetResult.value();
     }
+    else if (request.method == "HEAD")
+    {
+        auto processHeadResult = processHead(request);
+        if (!processHeadResult.has_value())
+            return std::unexpected(processHeadResult.error());
+        httpResponse = processHeadResult.value();
+    }
     return httpResponse;
 }
 
@@ -61,5 +68,17 @@ auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResp
     // todo response.addHeaderValue("",);
     response.addBodyData(readFileResult.value());
     response.addHeaderValue("content-type", std::string(fileExtentionToContentType(request.requestTarget)));
+    return response;
+}
+
+auto Execution::processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+{
+    HTTPResponse response;
+
+    auto processGetResult = processGet(request);
+    if (!processGetResult.has_value())
+        return std::unexpected(processGetResult.error());
+    response = processGetResult.value();
+    response.setBody("");
     return response;
 }

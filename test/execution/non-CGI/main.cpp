@@ -183,6 +183,31 @@ TEST_CASE("Test full path get png file test")
     CHECK(body == expectedBody);
 }
 
+TEST_CASE("Test HEAD")
+{
+    auto configResult = parseConfigFile("config.conf");
+    REQUIRE(configResult.has_value());
+    Config      config = configResult.value();
+    Execution   execution(config);
+    std::string path = std::filesystem::current_path() / "assets/helloWorld.html";
+
+    HTTPMessage httpMessage;
+    httpMessage.method            = "HEAD";
+    httpMessage.requestTarget     = path;
+    httpMessage.protocol          = "HTTP/1.1";
+    httpMessage.headers["host"]   = {"localhost:8080"};
+    httpMessage.headers["accept"] = {"text/html"};
+    httpMessage.body              = "";
+
+    CHECK(httpMessage.method == "HEAD");
+    CHECK(httpMessage.requestTarget == path);
+    CHECK(httpMessage.protocol == "HTTP/1.1");
+
+    HTTPResponse response = execution.execute(httpMessage);
+    checkPacket(response.createPacket(), "text/html; charset=utf-8", "");
+    // CHECK(repsonse. == "");
+}
+
 // TEST_CASE("Hardcoded full path get html file in forbidden folder test")
 // {
 //     auto configResult = parseConfigFile("config.conf");

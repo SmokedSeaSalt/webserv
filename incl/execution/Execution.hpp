@@ -18,7 +18,10 @@ class Execution
         auto checkRequestConfigCompliance(const HTTPMessage& request) -> ResponseStatusCode;
         auto buildErrorResponse(const HTTPMessage& request) -> HTTPResponse;
         auto processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
+
         auto processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
+        auto processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
+
 };
 
 #endif // EXECUTION_HPP
