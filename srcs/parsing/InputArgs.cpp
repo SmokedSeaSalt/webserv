@@ -1,46 +1,39 @@
-#include "inputArguments.hpp"
+#include "InputArgs.hpp"
 #include <iostream>
-#include <string>
 #include <unistd.h>
 
-auto parseArguments() -> bool
+namespace InputArgs
 {
+
+auto get() -> Args&
+{
+    static Args args;
+    return args;
 }
 
-static void print_usage(const char* prog)
+auto print_usage(const char* prog) -> void
 {
-    std::cerr << "Usage: " << prog << " <CONFIG_FILE>\n"
+    std::cerr << "Usage: [flags] " << prog << " <CONFIG_FILE>\n"
               << "  -p <path> Global relative path\n"
               << "  -l <file> Output logfile instead of stdout\n"
               << "  -d <n>    Debug log level. 0: Nothing, 1: Info, 2: Verbose, 3: Errors, 4: Debug\n"
               << "  -h        Print this message\n";
 }
 
-enum class LogLevel
+auto parseArguments(int argc, char* argv[]) -> bool
 {
-    kSilent  = 0,
-    kInfo    = 1,
-    kVerbose = 2,
-    kErrors  = 3,
-    kDebug   = 4,
-};
-
-int main(int argc, char* argv[])
-{
-    std::string relativePath;
-    std::string logFile;
-    LogLevel    logLevel = LogLevel::kInfo;
-
+    optind = 0; // This fixes some edgecase withing the library.
+    get();
     int opt;
     while ((opt = getopt(argc, argv, "p:l:d:h")) != -1)
     {
         switch (opt)
         {
         case 'p':
-            relativePath = optarg;
+            get().relativePath = optarg;
             break;
         case 'l':
-            logFile = optarg;
+            get().logFile = optarg;
             break;
         case 'd':
             int ret;
@@ -51,30 +44,37 @@ int main(int argc, char* argv[])
             catch (const std::exception& e)
             {
                 print_usage(argv[0]);
-                return 1;
+                return false;
             }
             if (ret < 0 || ret > 4)
             {
                 print_usage(argv[0]);
-                return 1;
+                return false;
             }
-            logLevel = static_cast<LogLevel>(ret);
+            get().logLevel = static_cast<LogLevel>(ret);
 
             break;
         case 'h':
             print_usage(argv[0]);
-            return 1;
+            return false;
         case '?':
             print_usage(argv[0]);
-            return 1;
+            return false;
         default:
             print_usage(argv[0]);
-            return 1;
+            return false;
         }
     }
 
-    for (int i = optind; i < argc; ++i)
+    // all flags should be parsed only config file should be left
+    if (optind != (argc - 1))
     {
-        std::cout << "positional arg: " << argv[i] << "\n";
+        print_usage(argv[0]);
+        return false;
     }
+    get().configFile = argv[optind];
+
+    return true;
 }
+
+} // namespace InputArgs
