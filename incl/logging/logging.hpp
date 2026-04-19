@@ -10,7 +10,6 @@ enum class LogLevel
     kDebug   = 4,
 };
 
-
 namespace Logging
 {
 

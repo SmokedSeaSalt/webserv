@@ -9,10 +9,10 @@ namespace InputArgs
 
 struct Args
 {
-        std::string       relativePath;
-        std::string       logFile;
-        std::string       configFile;
-        LogLevel logLevel = LogLevel::kInfo;
+        std::string relativePath;
+        std::string logFile;
+        std::string configFile;
+        LogLevel    logLevel = LogLevel::kInfo;
 };
 
 auto get() -> Args&;

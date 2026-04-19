@@ -10,7 +10,8 @@ namespace Logging
 auto logfile(FILE* newFile = nullptr) -> FILE*
 {
     static FILE* file = nullptr;
-    if (newFile) file = newFile;
+    if (newFile)
+        file = newFile;
     return file;
 }
 
