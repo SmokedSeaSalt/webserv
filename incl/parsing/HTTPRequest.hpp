@@ -30,6 +30,7 @@ class HTTPRequest : public HTTPRules
         auto resetMessage() -> void;
 
         auto newData(std::string data) -> std::expected<RequestState, ResponseStatusCode>;
+        auto getState() const -> RequestState;
 
     private:
         RequestState state_ = RequestState::kStartLine;

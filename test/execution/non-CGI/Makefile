@@ -2,7 +2,7 @@
 # Basics                                                                       #
 ################################################################################
 
-NAME = connection_test
+NAME = non-CGI_execution_test
 CPP = c++
 CPPFLAGS = -Wall -Werror -Wextra -MMD --std=c++23 --stdlib=libc++
 LDFLAGS = -Wl,-rpath,$(HOME)/.local/lib/x86_64-unknown-linux-gnu -lc++ -lc++abi
@@ -10,33 +10,34 @@ DEBUGFLAGS = -g
 ASANFLAGS = -fsanitize=address,undefined
 
 ################################################################################
-# ENV		                                                                   #
-################################################################################
-PORT = 4242
-################################################################################
 # Source files                                                                 #
 ################################################################################
 
 BUILD_DIR = build
-ROOT_DIR := $(abspath ../..)
+ROOT_DIR := $(abspath ../../..)
 DOCTEST=$(ROOT_DIR)/test/incl/doctest.h
 
 SRC =	main.cpp \
-		Server.cpp \
-		HTTPRequest.cpp \
-		HTTPResponse.cpp \
+		parseConfig.cpp \
+		parseLocation.cpp \
+		parseServerBlock.cpp \
 		Execution.cpp \
+		HTTPResponse.cpp \
+		executionHelpers.cpp \
 		HTTPRules.cpp \
 		parsing.cpp \
-		executionHelpers.cpp \
+		stringTrim.cpp \
+		split.cpp \
 		contentType.cpp
 
-INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/connection -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/srcs/connection -I$(ROOT_DIR)/incl/execution
+
+
+INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution
 
 OBJ = $(addprefix $(BUILD_DIR)/,$(patsubst %.cpp,%.o,$(SRC)))
 DEP = $(OBJ:.o=.d)
 
-vpath %.cpp .:$(ROOT_DIR)/srcs/connection
+vpath %.cpp .:$(ROOT_DIR)/srcs/parsing/config
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing
 vpath %.cpp .:$(ROOT_DIR)/srcs/execution
 
@@ -50,7 +51,6 @@ all: $(NAME)
 
 run: all
 	@./$(NAME) -ni -nv
-#	go start test zoek het uit
 
 $(NAME): $(DOCTEST) $(OBJ) Makefile
 	@$(CPP) $(LDFLAGS) $(OBJ) -o $@

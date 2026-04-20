@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "Execution.hpp"
 #include "connection.hpp"
 #include <arpa/inet.h>
 #include <expected>
@@ -12,7 +13,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-Server::Server(Config config) : config_(config) {}
+Server::Server(Config config) : config_(config), execution_(config) {}
 
 Server::~Server() {}
 
@@ -35,6 +36,7 @@ auto Server::handleReceivingEvent(int fd) -> std::expected<void, std::string>
         return std::unexpected("recv failed");
 
     buf[numBytes] = '\0';
+    // todo error handling
     clientMap_[fd].request.newData(buf);
 
     return {};
@@ -55,8 +57,11 @@ auto Server::handleEvent(int fd) -> std::expected<int, std::string>
     {
     case ClientState::Receiving:
         handleReceivingEvent(fd);
-        break;
-    case ClientState::Processing:;
+        if (clientMap_[fd].request.getState() != RequestState::KDone)
+            break;
+        execution_.execute(clientMap_[fd].request.getMessage());
+        clientMap_[fd].state = ClientState::Processing;
+    case ClientState::Processing:
         break;
     case ClientState::Sending:
         handleSendingEvent(fd);
