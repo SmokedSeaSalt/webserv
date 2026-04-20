@@ -5,12 +5,6 @@
 namespace InputArgs
 {
 
-auto get() -> Args&
-{
-    static Args args;
-    return args;
-}
-
 auto print_usage(const char* prog) -> void
 {
     std::cerr << "Usage: [flags] " << prog << " <CONFIG_FILE>\n"
@@ -23,17 +17,16 @@ auto print_usage(const char* prog) -> void
 auto parseArguments(int argc, char* argv[]) -> bool
 {
     optind = 0; // This fixes some edgecase withing the library.
-    get();
     int opt;
     while ((opt = getopt(argc, argv, "p:l:d:h")) != -1)
     {
         switch (opt)
         {
         case 'p':
-            get().relativePath = optarg;
+            args.relativePath = optarg;
             break;
         case 'l':
-            get().logFile = optarg;
+            args.logFile = optarg;
             break;
         case 'd':
             int ret;
@@ -51,7 +44,7 @@ auto parseArguments(int argc, char* argv[]) -> bool
                 print_usage(argv[0]);
                 return false;
             }
-            get().logLevel = static_cast<LogLevel>(ret);
+            args.logLevel = static_cast<LogLevel>(ret);
 
             break;
         case 'h':
@@ -72,7 +65,7 @@ auto parseArguments(int argc, char* argv[]) -> bool
         print_usage(argv[0]);
         return false;
     }
-    get().configFile = argv[optind];
+    args.configFile = argv[optind];
 
     return true;
 }

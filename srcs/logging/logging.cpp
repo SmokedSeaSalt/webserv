@@ -1,18 +1,31 @@
-#include <chrono>
-#include <format>
-#include <print>
-#include <source_location>
-#include <string_view>
+#include "logging.hpp"
+#include <iostream>
 
 namespace Logging
 {
 
-auto logfile(FILE* newFile = nullptr) -> FILE*
+Logger::~Logger()
 {
-    static FILE* file = nullptr;
-    if (newFile)
-        file = newFile;
-    return file;
+    if (file)
+    {
+        std::fflush(file);
+        std::fclose(file);
+        file = nullptr;
+    }
+}
+
+auto init(const char* path, LogLevel level) -> void
+{
+    g_logger.level = level;
+    if (path == nullptr)
+        return;
+    FILE* file = std::fopen(path, "a");
+    if (file == nullptr)
+    {
+        std::cerr << "Opening logfile failed. Defaulting to logging to cout." << std::endl;
+        return;
+    }
+    g_logger.file = file;
 }
 
 constexpr auto level_name(LogLevel level) -> std::string_view
@@ -27,22 +40,9 @@ constexpr auto level_name(LogLevel level) -> std::string_view
         return "ERROR ";
     case LogLevel::kDebug:
         return "DEBUG ";
+    default:
+        return "";
     }
 }
 
-template <typename... Args>
-auto log_impl(LogLevel level, std::source_location locaction, std::format_string<Args...> format, Args&&... args) -> void
-{
-    if (InputArgs::get().logLevel == LogLevel::kSilent)
-        return;
-    auto msg  = std::format(format, std::forward<Args>(args)...);
-    auto now  = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
-    auto line = std::format("[{:%H:%M:%S}] [{}] [{}:{}] {}", now, level_name(level), locaction.file_name(), locaction.line(), msg);
-
-    std::println("{}", line);
-}
-
 } // namespace Logging
-
-#define LOG(level, format, ...) \
-    Logging::log_impl(level, std::source_location::current(), format __VA_OPT__(, ) __VA_ARGS__)

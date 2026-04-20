@@ -15,7 +15,8 @@ struct Args
         LogLevel    logLevel = LogLevel::kInfo;
 };
 
-auto get() -> Args&;
+inline Args args;
+
 auto print_usage(const char* prog) -> void;
 auto parseArguments(int argc, char* argv[]) -> bool;
 
