@@ -1,0 +1,13 @@
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "../../incl/doctest.h"
+#include "InputArgs.hpp"
+#include <iostream>
+
+////////////////////////////////////////////////////////////////////////////////
+// Basic                                                                      //
+////////////////////////////////////////////////////////////////////////////////
+
+TEST_CASE("Basic test")
+{
+
+}

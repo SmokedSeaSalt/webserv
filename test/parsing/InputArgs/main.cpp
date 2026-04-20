@@ -17,7 +17,7 @@ TEST_CASE("Basic test")
         char*     argv[] = {arg0, arg1};
 
         CHECK(InputArgs::parseArguments(argc, argv) == true);
-        CHECK(InputArgs::get().configFile == "configpath.conf");
+        CHECK(InputArgs::args.configFile == "configpath.conf");
     }
 
     SUBCASE("No config file")
@@ -57,10 +57,10 @@ TEST_CASE("Basic flags")
         char*     argv[] = {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7};
 
         CHECK(InputArgs::parseArguments(argc, argv) == true);
-        CHECK(InputArgs::get().configFile == "configpath.conf");
-        CHECK(InputArgs::get().relativePath == "/user/home/test");
-        CHECK(InputArgs::get().logFile == "logfile.log");
-        CHECK(InputArgs::get().logLevel == InputArgs::LogLevel::kErrors);
+        CHECK(InputArgs::args.configFile == "configpath.conf");
+        CHECK(InputArgs::args.relativePath == "/user/home/test");
+        CHECK(InputArgs::args.logFile == "logfile.log");
+        CHECK(InputArgs::args.logLevel == LogLevel::kErrors);
     }
 
     SUBCASE("Random order")
@@ -77,10 +77,10 @@ TEST_CASE("Basic flags")
         char*     argv[] = {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7};
 
         CHECK(InputArgs::parseArguments(argc, argv) == true);
-        CHECK(InputArgs::get().configFile == "configpath.conf");
-        CHECK(InputArgs::get().relativePath == "/user/home/test");
-        CHECK(InputArgs::get().logFile == "logfile.log");
-        CHECK(InputArgs::get().logLevel == InputArgs::LogLevel::kErrors);
+        CHECK(InputArgs::args.configFile == "configpath.conf");
+        CHECK(InputArgs::args.relativePath == "/user/home/test");
+        CHECK(InputArgs::args.logFile == "logfile.log");
+        CHECK(InputArgs::args.logLevel == LogLevel::kErrors);
     }
 
     SUBCASE("No config file")
