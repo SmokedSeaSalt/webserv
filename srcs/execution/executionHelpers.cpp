@@ -55,6 +55,20 @@ auto readFile(std::string pathString) -> std::expected<std::string, ResponseStat
         return std::unexpected(tmpCode);
     }
 
+    auto permissons = std::filesystem::status(path, ec).permissions();
+    if (ec)
+    {
+        tmpCode = ecToResponseErrorStatusCode(ec);
+        return std::unexpected(tmpCode);
+    }
+
+    if ((permissons & std::filesystem::perms::owner_read) == std::filesystem::perms::none &&
+        (permissons & std::filesystem::perms::group_read) == std::filesystem::perms::none &&
+        (permissons & std::filesystem::perms::others_read) == std::filesystem::perms::none)
+    {
+        return std::unexpected(ResponseStatusCode::kForbidden);
+    }
+
     std::string   content(size, '\0');
     std::ifstream in(path, std::ios::binary);
     if (!in)

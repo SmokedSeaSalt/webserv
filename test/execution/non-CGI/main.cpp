@@ -100,10 +100,13 @@ TEST_CASE("Test readFile png (200)")
 
 TEST_CASE("Test readFile in forbidden folder (403)")
 {
-    std::filesystem::path filePath       = std::filesystem::current_path() / "assets/noPermissions/other.html";
+    std::string fullPath = std::filesystem::current_path() / "assets/noPermissions/other.html";
+    std::system(("chmod 000 " + fullPath).c_str());
+    std::filesystem::path filePath       = fullPath;
     auto                  readFileResult = readFile(filePath.string());
     REQUIRE(!readFileResult.has_value());
     CHECK(readFileResult.error() == ResponseStatusCode::kForbidden);
+    std::system(("chmod 777 " + fullPath).c_str());
 }
 
 TEST_CASE("Test readFile non existent file (404)")
