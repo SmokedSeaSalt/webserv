@@ -8,3 +8,5 @@ auto ecToResponseErrorStatusCode(std::error_code ec) -> ResponseStatusCode;
 
 auto readFile(std::string pathString) -> std::expected<std::string, ResponseStatusCode>;
 auto getAbsFilePath(std::string file) -> std::string;
+
+auto createFileWithContent(std::string pathString, std::string body) -> std::expected<void, ResponseStatusCode>;

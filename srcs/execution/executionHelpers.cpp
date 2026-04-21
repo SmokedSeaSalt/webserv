@@ -35,31 +35,27 @@ auto readFile(std::string pathString) -> std::expected<std::string, ResponseStat
 {
     std::error_code       ec;
     std::filesystem::path path{pathString};
-    ResponseStatusCode    tmpCode;
 
     bool fileExists = std::filesystem::exists(path, ec);
     if (!fileExists)
     {
         if (!ec)
             return std::unexpected(ResponseStatusCode::kNotFound);
-        tmpCode = ecToResponseErrorStatusCode(ec);
         // todo log("value: "ec.value() " message: " ec.message());
-        return std::unexpected(tmpCode);
+        return std::unexpected(ecToResponseErrorStatusCode(ec));
     }
 
     std::uintmax_t size = std::filesystem::file_size(path, ec);
     if (ec)
     {
-        tmpCode = ecToResponseErrorStatusCode(ec);
         // todo log("value: "ec.value() " message: " ec.message());
-        return std::unexpected(tmpCode);
+        return std::unexpected(ecToResponseErrorStatusCode(ec));
     }
 
     auto permissons = std::filesystem::status(path, ec).permissions();
     if (ec)
     {
-        tmpCode = ecToResponseErrorStatusCode(ec);
-        return std::unexpected(tmpCode);
+        return std::unexpected(ecToResponseErrorStatusCode(ec));
     }
 
     if ((permissons & std::filesystem::perms::owner_read) == std::filesystem::perms::none &&
@@ -85,6 +81,63 @@ auto readFile(std::string pathString) -> std::expected<std::string, ResponseStat
     }
     in.close();
     return content;
+}
+
+auto createFileWithContent(std::string pathString, std::string body) -> std::expected<void, ResponseStatusCode>
+{
+    std::error_code       ec;
+    std::filesystem::path path{pathString};
+
+    bool fileExists = std::filesystem::exists(path, ec);
+    if (fileExists)
+    {
+        // todo log
+        return std::unexpected(ResponseStatusCode::kConflict);
+    }
+
+    std::filesystem::path parent = path.parent_path();
+    if (!parent.empty())
+    {
+        bool fileParentExists = std::filesystem::exists(parent, ec);
+        if (ec)
+        {
+            // log
+            return std::unexpected(ecToResponseErrorStatusCode(ec));
+        }
+        if (!fileParentExists)
+        {
+            // log
+            return std::unexpected(ResponseStatusCode::kNotFound);
+        }
+
+        auto permissions = std::filesystem::status(parent, ec).permissions();
+        if (ec)
+        {
+            // log
+            return std::unexpected(ecToResponseErrorStatusCode(ec));
+        }
+
+        if ((permissions & std::filesystem::perms::owner_write) == std::filesystem::perms::none &&
+            (permissions & std::filesystem::perms::group_write) == std::filesystem::perms::none &&
+            (permissions & std::filesystem::perms::others_write) == std::filesystem::perms::none)
+        {
+            return std::unexpected(ResponseStatusCode::kForbidden);
+        }
+    }
+
+    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    if (!out)
+        return std::unexpected(ResponseStatusCode::kInternalServerError);
+
+    out.write(body.data(), static_cast<std::streamsize>(body.size()));
+    if (!out)
+        return std::unexpected(ResponseStatusCode::kInternalServerError);
+
+    out.close();
+    if (!out)
+        return std::unexpected(ResponseStatusCode::kInternalServerError);
+
+    return {};
 }
 
 auto getAbsFilePath(std::string file) -> std::string

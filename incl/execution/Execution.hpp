@@ -16,7 +16,7 @@ class Execution
         Config config_;
 
         auto checkRequestConfigCompliance(const HTTPMessage& request) -> ResponseStatusCode;
-        auto buildErrorResponse(const HTTPMessage& request) -> HTTPResponse;
+        auto buildErrorResponse(const HTTPMessage& request, ResponseStatusCode statusCode) -> HTTPResponse;
         auto processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
 
         auto processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
@@ -24,6 +24,8 @@ class Execution
         auto processGetFile(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>;
 
         auto processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
+
+        auto validateContentType(const HTTPMessage& request);
         auto processPost(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
 };
 

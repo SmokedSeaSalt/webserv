@@ -284,8 +284,3 @@ auto HTTPRequest::expectBody() -> std::expected<bool, ResponseStatusCode>
     this->bodyType_ = BodyType::kNone;
     return false;
 }
-
-auto HTTPRequest::getState() const -> RequestState
-{
-    return this->state_;
-}
