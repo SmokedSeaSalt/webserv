@@ -77,6 +77,9 @@ $(BUILD_DIR):
 test:
 	@./test/test.sh
 
+test_multithread:
+	@./test/test.sh -m
+
 .PHONY += test
 
 ################################################################################
