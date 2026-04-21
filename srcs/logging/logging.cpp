@@ -28,7 +28,7 @@ auto init(const char* path, LogLevel level) -> void
     g_logger.file = file;
 }
 
-constexpr auto level_name(LogLevel level) -> std::string_view
+auto level_name(LogLevel level) -> std::string_view
 {
     switch (level)
     {
@@ -37,9 +37,9 @@ constexpr auto level_name(LogLevel level) -> std::string_view
     case LogLevel::kVerbose:
         return "VERBOSE";
     case LogLevel::kErrors:
-        return "ERROR ";
+        return "ERROR";
     case LogLevel::kDebug:
-        return "DEBUG ";
+        return "DEBUG";
     default:
         return "";
     }

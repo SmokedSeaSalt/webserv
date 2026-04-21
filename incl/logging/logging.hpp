@@ -30,7 +30,7 @@ struct Logger
 
 inline Logger g_logger;
 
-constexpr auto level_name(LogLevel level) -> std::string_view;
+auto level_name(LogLevel level) -> std::string_view;
 
 template <typename... Args>
 auto log_impl(LogLevel level, std::source_location locaction, std::format_string<Args...> format, Args&&... args) -> void
@@ -39,7 +39,7 @@ auto log_impl(LogLevel level, std::source_location locaction, std::format_string
         return;
     auto msg  = std::format(format, std::forward<Args>(args)...);
     auto now  = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
-    auto line = std::format("[{:%H:%M:%S}] [{}] [{}:{}] {}", now, level_name(level), locaction.file_name(), locaction.line(), msg);
+    auto line = std::format("[{:%H:%M:%S} GMT] [{}] [{}:{}] {}", now, level_name(level), locaction.file_name(), locaction.line(), msg);
 
     try
     {
