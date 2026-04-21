@@ -87,7 +87,7 @@ auto Execution::processGetFile(const std::string path) -> std::expected<HTTPResp
 
 auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
-    std::string     path = request.requestTarget;
+    std::string     path = getAbsFilePath(request.requestTarget);
     std::error_code ec;
 
     bool fileExists = std::filesystem::exists(path, ec);
