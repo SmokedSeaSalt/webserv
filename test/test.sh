@@ -21,6 +21,7 @@ DIRS=(
     "test/parsing/config"
     "test/parsing/HTTPRequest"
     "test/parsing/HTTPResponse"
+    "test/logging"
 )
 
 for dir in "${DIRS[@]}"; do

@@ -2,7 +2,7 @@
 # Basics                                                                       #
 ################################################################################
 
-NAME = InputArgs_test
+NAME = logging_test
 CPP = c++
 CPPFLAGS = -Wall -Werror -Wextra -MMD --std=c++23 --stdlib=libc++
 LDFLAGS = -Wl,-rpath,$(HOME)/.local/lib/x86_64-unknown-linux-gnu -lc++ -lc++abi
@@ -14,20 +14,17 @@ ASANFLAGS = -fsanitize=address,undefined
 ################################################################################
 
 BUILD_DIR = build
-ROOT_DIR := $(abspath ../../..)
+ROOT_DIR := $(abspath ../..)
 DOCTEST=$(ROOT_DIR)/test/incl/doctest.h
 
 SRC =	main.cpp \
-		InputArgs.cpp \
 		logging.cpp
 
-INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing
 INCLUDE_FLAGS += -I$(ROOT_DIR)/incl/logging
 
 OBJ = $(addprefix $(BUILD_DIR)/,$(patsubst %.cpp,%.o,$(SRC)))
 DEP = $(OBJ:.o=.d)
 
-vpath %.cpp .:$(ROOT_DIR)/srcs/parsing
 vpath %.cpp .:$(ROOT_DIR)/srcs/logging
 
 ################################################################################
@@ -38,7 +35,7 @@ all: $(NAME)
 	@printf "$(COLOUR_BLUE)Executable: $(NAME)\n$(COLOUR_END)"
 
 run: all
-	@./$(NAME) -ni -nv 2>/dev/null;
+	@./$(NAME) -ni -nv
 
 $(NAME): $(DOCTEST) $(OBJ) Makefile
 	@$(CPP) $(LDFLAGS) $(OBJ) -o $@
