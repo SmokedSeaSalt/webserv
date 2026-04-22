@@ -1,0 +1,16 @@
+#include "configParsing.hpp"
+#include "logging.hpp"
+#include "Server.hpp"
+#include "InputArgs.hpp"
+
+int main(int argc, char **argv)
+{
+	if (!InputArgs::parseArguments(argc, argv))
+		return 1;
+	Logging::init(InputArgs::args.logFile.c_str(), InputArgs::args.logLevel);
+	auto config = parseConfigFile(InputArgs::args.configFile);
+	
+	Server server = Server(config.value());
+	server.setup();
+	server.connection_loop();
+}

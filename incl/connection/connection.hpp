@@ -33,4 +33,6 @@ struct Client
         ErrorType    error;
 };
 
+auto setNonBlocking(int socketfd) -> std::expected<void, std::string>;
+
 #endif // CONNECTION_HPP

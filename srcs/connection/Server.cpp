@@ -1,6 +1,8 @@
 #include "Server.hpp"
+#include "ConnectionManager.hpp"
 #include "Execution.hpp"
 #include "connection.hpp"
+#include "logging.hpp"
 #include <arpa/inet.h>
 #include <expected>
 #include <fcntl.h>
@@ -13,96 +15,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-Server::Server(Config config) : config_(config), execution_(config) {}
+Server::Server(Config config) : config_(config) {}
 
 Server::~Server() {}
-
-auto Server::setNonBlocking(int socketfd) -> std::expected<void, std::string>
-{
-    if (fcntl(socketfd, F_SETFL, O_NONBLOCK) == -1)
-    {
-        perror("fcntl");
-        return std::unexpected("fcntl failed");
-    }
-    return {};
-}
-
-auto Server::handleReceivingEvent(int fd) -> std::expected<void, std::string>
-{
-    std::string buf;
-    buf.resize(BUFFER_SIZE);
-    ssize_t numBytes = recv(fd, buf.data(), BUFFER_SIZE - 1, 0);
-    if (numBytes < 0)
-        return std::unexpected("recv failed");
-
-    buf[numBytes] = '\0';
-    // todo error handling
-    clientMap_[fd].request.newData(buf);
-
-    return {};
-}
-
-auto Server::handleSendingEvent(int fd) -> std::expected<void, std::string>
-{
-    Client client = clientMap_[fd];
-    // std::string response = client.getResponse();
-    // write client.Response to fd
-    return {};
-}
-
-auto Server::handleEvent(int fd) -> std::expected<int, std::string>
-{
-
-    switch (clientMap_[fd].state)
-    {
-    case ClientState::Receiving:
-        handleReceivingEvent(fd);
-        if (clientMap_[fd].request.getState() != RequestState::KDone)
-            break;
-        execution_.execute(clientMap_[fd].request.getMessage());
-        clientMap_[fd].state = ClientState::Processing;
-    case ClientState::Processing:
-        break;
-    case ClientState::Sending:
-        handleSendingEvent(fd);
-        break;
-    case ClientState::Closed:
-        break;
-    case ClientState::Error:
-        break;
-    }
-    return 0; // todo: what to return here?
-}
-
-auto Server::createConnection(int listenSocket) -> std::expected<void, std::string>
-{
-    int connectionSocket;
-
-    // todo: can provide more args to log info on clients
-    connectionSocket = accept(listenSocket, nullptr, nullptr);
-    if (connectionSocket == -1)
-    {
-        perror("accept");
-        return std::unexpected("accept failed");
-    }
-
-    auto setNonBlockingRes = setNonBlocking(connectionSocket);
-    if (!setNonBlockingRes.has_value())
-        return std::unexpected(setNonBlockingRes.error());
-
-    ev_.data.fd = connectionSocket;
-    if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, connectionSocket, &ev_) == -1)
-    {
-        perror("epoll_ctl: connectionSocket");
-        return std::unexpected("epoll_ctl failed");
-    }
-    clientMap_.emplace(connectionSocket, Client{.socketfd = connectionSocket,
-                                                .state    = ClientState::Receiving,
-                                                .request  = HTTPRequest{},
-                                                .response = HTTPResponse{},
-                                                .error    = ErrorType::None});
-    return {};
-}
 
 auto Server::getListenServerAddress(std::string ip, int port)
     -> std::expected<sockaddr_in, std::string>
@@ -196,10 +111,12 @@ auto Server::setup() -> std::expected<void, std::string>
         perror("epoll_create");
         return std::unexpected("epoll_create() failed");
     }
-    ServerBlock test{}; // FOR NOW HARDCODED TEST
-    test.ip   = "";
-    test.port = 8080;
-    config_.serverBlocks.push_back(test); // FOR NOW HARDCODED TEST
+
+    connectionManager_ = std::make_unique<ConnectionManager>(config_, epollfd_);
+    // ServerBlock test{}; // FOR NOW HARDCODED TEST
+    // test.ip   = "";
+    // test.port = 8081;
+    // config_.serverBlocks.push_back(test); // FOR NOW HARDCODED TEST
     auto ret = setupListenSockets();
     if (!ret.has_value())
         return std::unexpected(ret.error());
@@ -221,10 +138,17 @@ auto Server::connection_loop() -> std::expected<void, std::string>
 
         for (int n = 0; n < nfds; ++n)
         {
+            LOG(LogLevel::kDebug, "{}", "mewo");
             if (listenSockets_.contains(events_[n].data.fd))
-                createConnection(events_[n].data.fd);
+            {
+                LOG(LogLevel::kDebug, "{}", "listnesock");
+                connectionManager_->createConnection(events_[n].data.fd);
+            }
             else
-                handleEvent(events_[n].data.fd);
+            {
+                LOG(LogLevel::kDebug, "{}", "else");
+                connectionManager_->handleEvent(events_[n].data.fd);
+            }
         }
     }
     return {};
