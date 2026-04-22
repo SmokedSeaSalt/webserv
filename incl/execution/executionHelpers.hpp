@@ -10,3 +10,5 @@ auto readFile(std::string pathString) -> std::expected<std::string, ResponseStat
 auto getAbsFilePath(std::string file) -> std::string;
 
 auto createFileWithContent(std::string pathString, std::string body) -> std::expected<void, ResponseStatusCode>;
+
+auto deleteFile(std::string pathString) -> std::expected<void, ResponseStatusCode>;

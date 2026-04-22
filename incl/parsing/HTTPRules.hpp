@@ -20,6 +20,7 @@ enum class ResponseStatusCode
 {
     kOK                      = 200,
     kCreated                 = 201,
+    kNoContent               = 204,
     kBadRequest              = 400,
     kUnauthorized            = 401, // if we want access based on coockies/header values
     kForbidden               = 403, // if we want access based on coockies/header values
@@ -39,6 +40,7 @@ enum class ResponseStatusCode
 inline const std::unordered_map<ResponseStatusCode, std::string> kStatusCodeStrings = {
     {ResponseStatusCode::kOK, "200 OK"},
     {ResponseStatusCode::kCreated, "201 Created"},
+    {ResponseStatusCode::kNoContent, "204 No Content"},
     {ResponseStatusCode::kBadRequest, "400 Bad Request"},
     {ResponseStatusCode::kUnauthorized, "401 Unauthorized"},
     {ResponseStatusCode::kForbidden, "403 Forbidden"},

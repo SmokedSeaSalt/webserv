@@ -68,6 +68,13 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
             return std::unexpected(processPostResult.error());
         httpResponse = processPostResult.value();
     }
+    else if (request.method == "DELETE")
+    {
+        auto processDeleteResult = processDelete(request);
+        if (!processDeleteResult.has_value())
+            return std::unexpected(processDeleteResult.error());
+        httpResponse = processDeleteResult.value();
+    }
     return httpResponse;
 }
 
@@ -155,5 +162,19 @@ auto Execution::processPost(const HTTPMessage& request) -> std::expected<HTTPRes
         return std::unexpected(postFileResult.error());
     // todo: any headers need to be set here?
     response.setStatusCode(ResponseStatusCode::kCreated);
+    return response;
+}
+
+auto Execution::processDelete(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+{
+    HTTPResponse    response;
+    std::string     path = getAbsFilePath(request.requestTarget);
+    std::error_code ec;
+
+    auto deleteFileResult = deleteFile(path);
+    if (!deleteFileResult.has_value())
+        return std::unexpected(deleteFileResult.error());
+    // todo: any headers need to be set here?
+    response.setStatusCode(ResponseStatusCode::kNoContent);
     return response;
 }

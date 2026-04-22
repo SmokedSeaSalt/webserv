@@ -140,6 +140,42 @@ auto createFileWithContent(std::string pathString, std::string body) -> std::exp
     return {};
 }
 
+// todo discuss mathijs no deleting dirs (also no creating dirs with post?). In general, it is assumed that the origin server will only allow DELETE on resources for which it has a prescribed mechanism for accomplishing the deletion.
+
+/// @brief deletes a file on the system. directories wont be deleted and will return an error.
+/// @param pathString file path
+/// @return void or an appropriate http status error code
+auto deleteFile(std::string pathString) -> std::expected<void, ResponseStatusCode>
+{
+    std::error_code       ec;
+    std::filesystem::path path{pathString};
+
+    const bool isADirectory = std::filesystem::is_directory(path, ec);
+    if (ec)
+    {
+        // todo log("value: "ec.value() " message: " ec.message());
+        return std::unexpected(ecToResponseErrorStatusCode(ec));
+    }
+    if (isADirectory)
+    {
+        // log
+        return std::unexpected(ResponseStatusCode::kMethodNotAllowed);
+    }
+
+    const bool removed = std::filesystem::remove(path, ec);
+    if (ec)
+    {
+        // log
+        return std::unexpected(ecToResponseErrorStatusCode(ec));
+    }
+    if (!removed)
+    {
+        // log
+        return std::unexpected(ResponseStatusCode::kNotFound);
+    }
+    return {};
+}
+
 auto getAbsFilePath(std::string file) -> std::string
 {
     // todo create actual abs file path using root provided as cli arg
