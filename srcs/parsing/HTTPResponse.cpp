@@ -3,14 +3,14 @@
 #include <chrono>
 #include <format>
 
-auto HTTPResponse::createPacket() const -> std::string
+auto HTTPResponse::createPacket(ResponseStatusCode statusCode) const -> std::string
 {
-    return (createFirstLine(ResponseStatusCode::kOK) + createHeaders() + createBody());
+    return (createFirstLine(statusCode) + createHeaders() + createBody());
 }
 
-auto HTTPResponse::createErrorPacket(ResponseStatusCode errorCode) const -> std::string
+auto HTTPResponse::createPacket() const -> std::string
 {
-    return (createFirstLine(errorCode) + createHeaders() + createBody());
+    return (createFirstLine(this->statusCode_) + createHeaders() + createBody());
 }
 
 auto HTTPResponse::setHeader(std::string key, std::string value) -> std::expected<void, ResponseStatusCode>
@@ -62,6 +62,11 @@ auto HTTPResponse::setProtocol(std::string protocol) -> std::expected<void, Resp
     this->message_.protocol = protocol;
 
     return {};
+}
+
+auto HTTPResponse::setStatusCode(ResponseStatusCode statusCode) -> void
+{
+    this->statusCode_ = statusCode;
 }
 
 auto HTTPResponse::createFirstLine(ResponseStatusCode errorCode) const -> std::string

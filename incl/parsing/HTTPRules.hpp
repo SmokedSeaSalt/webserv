@@ -20,12 +20,14 @@ enum class ResponseStatusCode
 {
     kOK                      = 200,
     kCreated                 = 201,
+    kNoContent               = 204,
     kBadRequest              = 400,
     kUnauthorized            = 401, // if we want access based on coockies/header values
     kForbidden               = 403, // if we want access based on coockies/header values
     kNotFound                = 404,
     kMethodNotAllowed        = 405,
     kRequestTimeout          = 408,
+    kConflict                = 409,
     kContentTooLarge         = 413, // body larger than server limit, do we need this?
     kURITooLong              = 414, // maybe check if exeeds system path length including relative server root path?
     kUnsupportedMediaType    = 415,
@@ -38,12 +40,14 @@ enum class ResponseStatusCode
 inline const std::unordered_map<ResponseStatusCode, std::string> kStatusCodeStrings = {
     {ResponseStatusCode::kOK, "200 OK"},
     {ResponseStatusCode::kCreated, "201 Created"},
+    {ResponseStatusCode::kNoContent, "204 No Content"},
     {ResponseStatusCode::kBadRequest, "400 Bad Request"},
     {ResponseStatusCode::kUnauthorized, "401 Unauthorized"},
     {ResponseStatusCode::kForbidden, "403 Forbidden"},
     {ResponseStatusCode::kNotFound, "404 Not Found"},
     {ResponseStatusCode::kMethodNotAllowed, "405 Method Not Allowed"},
     {ResponseStatusCode::kRequestTimeout, "408 Request Timeout"},
+    {ResponseStatusCode::kConflict, "409 Conflict"},
     {ResponseStatusCode::kContentTooLarge, "413 Content Too Large"},
     {ResponseStatusCode::kURITooLong, "414 URI Too Long"},
     {ResponseStatusCode::kUnsupportedMediaType, "415 Unsupported Media Type"},
@@ -56,6 +60,8 @@ inline const std::unordered_map<ResponseStatusCode, std::string> kStatusCodeStri
 class HTTPRules
 {
     public:
+        static auto statusCodeToString(ResponseStatusCode code) -> std::string;
+
     protected:
         static const std::string           delimiter_;
         static const std::set<std::string> supportedMethods_;
@@ -81,8 +87,6 @@ class HTTPRules
         static auto validateRequestTarget(const std::string& str) -> std::expected<bool, ResponseStatusCode>;
         static auto validateProtocol(const std::string& str) -> std::expected<bool, ResponseStatusCode>;
         static auto validateHeader(const std::string& key, const std::string& value) -> bool;
-
-        static auto statusCodeToString(ResponseStatusCode code) -> std::string;
 
     private:
 };

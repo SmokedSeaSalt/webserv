@@ -1,5 +1,6 @@
 #include "Execution.hpp"
 #include "HTTPResponse.hpp"
+#include "HTTPRules.hpp"
 #include "configParsing.hpp"
 #include "executionHelpers.hpp"
 #include <filesystem>
@@ -16,7 +17,7 @@ static auto loadBinaryFile(const std::filesystem::path& path) -> std::string
     return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
 }
 
-auto checkPacket(std::string packet, std::string expectedContentType, std::string expectedBody) -> bool
+auto checkPacket(std::string packet, std::string expectedContentType, std::string expectedBody, ResponseStatusCode code = ResponseStatusCode::kOK) -> bool
 {
     std::istringstream stream(packet);
     std::string        line;
@@ -27,7 +28,7 @@ auto checkPacket(std::string packet, std::string expectedContentType, std::strin
         if (!line.empty() && line.back() == '\r')
             line.pop_back();
 
-        if (lineNum == 0 && line == "HTTP/1.1 200 OK")
+        if (lineNum == 0 && line == ("HTTP/1.1 " + HTTPRules::statusCodeToString(code)))
             foundStatus = true;
         if (line.find("server: webserv") != std::string::npos)
             foundServer = true;
@@ -210,26 +211,92 @@ TEST_CASE("Test HEAD")
     // CHECK(repsonse. == "");
 }
 
-// TEST_CASE("Hardcoded full path get html file in forbidden folder test")
-// {
-//     auto configResult = parseConfigFile("config.conf");
-//     REQUIRE(configResult.has_value());
-//     Config    config = configResult.value();
-//     Execution execution(config);
+TEST_CASE("Test POST and then GET the file with manual file delete")
+{
+    auto configResult = parseConfigFile("config.conf");
+    REQUIRE(configResult.has_value());
+    Config      config = configResult.value();
+    Execution   execution(config);
+    std::string path         = std::filesystem::current_path() / "assets/newFile.html";
+    std::string fileContents = "<h>This file has been posted</h>";
 
-//     HTTPMessage httpMessage;
-//     httpMessage.method            = "GET";
-//     httpMessage.requestTarget     = "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/noPermissions/other.html";
-//     httpMessage.protocol          = "HTTP/1.1";
-//     httpMessage.headers["host"]   = {"localhost:8080"};
-//     httpMessage.headers["accept"] = {"text/html"};
-//     httpMessage.body              = "";
+    std::system(("rm -rf " + path).c_str());
 
-//     CHECK(httpMessage.method == "GET");
-//     CHECK(httpMessage.requestTarget == "/home/egrisel/Repos/rank05/webserv_personal/test/execution/non-CGI/assets/noPermissions/other.html");
-//     CHECK(httpMessage.protocol == "HTTP/1.1");
+    HTTPMessage httpPostMessage;
+    httpPostMessage.method          = "POST";
+    httpPostMessage.requestTarget   = path;
+    httpPostMessage.protocol        = "HTTP/1.1";
+    httpPostMessage.headers["host"] = {"localhost:8080"};
+    httpPostMessage.body            = fileContents;
 
-//     HTTPResponse response = execution.execute(httpMessage);
-//     CHECK(response == ResponseStatusCode::kForbidden);
-//     // CHECK(repsonse. == "");
-// }
+    CHECK(httpPostMessage.method == "POST");
+    CHECK(httpPostMessage.requestTarget == path);
+    CHECK(httpPostMessage.protocol == "HTTP/1.1");
+
+    HTTPResponse postResponse1 = execution.execute(httpPostMessage);
+    CHECK(postResponse1.createPacket().find("201") != std::string::npos);
+
+    HTTPResponse postResponse2 = execution.execute(httpPostMessage);
+    CHECK(postResponse2.createPacket().find("409") != std::string::npos);
+
+    HTTPMessage httpGetMessage;
+    httpGetMessage.method            = "GET";
+    httpGetMessage.requestTarget     = path;
+    httpGetMessage.protocol          = "HTTP/1.1";
+    httpGetMessage.headers["host"]   = {"localhost:8080"};
+    httpGetMessage.headers["accept"] = {"text/html"};
+    httpGetMessage.body              = "";
+
+    HTTPResponse getResponse = execution.execute(httpGetMessage);
+    checkPacket(getResponse.createPacket(), "text/html; charset=utf-8", fileContents);
+
+    // CHECK(repsonse. == "");
+    std::system(("rm -rf " + path).c_str());
+}
+
+TEST_CASE("Test POST and then GET and then DELETE")
+{
+    auto configResult = parseConfigFile("config.conf");
+    REQUIRE(configResult.has_value());
+    Config      config = configResult.value();
+    Execution   execution(config);
+    std::string path         = std::filesystem::current_path() / "assets/newFile.html";
+    std::string fileContents = "<h>This file has been posted</h>";
+
+    std::system(("rm -rf " + path).c_str());
+
+    // POST the file
+    HTTPMessage httpPostMessage;
+    httpPostMessage.method          = "POST";
+    httpPostMessage.requestTarget   = path;
+    httpPostMessage.protocol        = "HTTP/1.1";
+    httpPostMessage.headers["host"] = {"localhost:8080"};
+    httpPostMessage.body            = fileContents;
+    HTTPResponse postResponse       = execution.execute(httpPostMessage);
+    CHECK(postResponse.createPacket().find("201") != std::string::npos);
+
+    // GET the file
+    HTTPMessage httpGetMessage;
+    httpGetMessage.method            = "GET";
+    httpGetMessage.requestTarget     = path;
+    httpGetMessage.protocol          = "HTTP/1.1";
+    httpGetMessage.headers["host"]   = {"localhost:8080"};
+    httpGetMessage.headers["accept"] = {"text/html"};
+    httpGetMessage.body              = "";
+    HTTPResponse getResponse1        = execution.execute(httpGetMessage);
+    checkPacket(getResponse1.createPacket(), "text/html; charset=utf-8", fileContents);
+
+    // DELETE the file
+    HTTPMessage httpDeleteMessage;
+    httpDeleteMessage.method          = "DELETE";
+    httpDeleteMessage.requestTarget   = path;
+    httpDeleteMessage.protocol        = "HTTP/1.1";
+    httpDeleteMessage.headers["host"] = {"localhost:8080"};
+    httpDeleteMessage.body            = "";
+    HTTPResponse deleteResponse       = execution.execute(httpDeleteMessage);
+    CHECK(deleteResponse.createPacket().find("204") != std::string::npos);
+
+    // GET the already deleted file (should fail)
+    HTTPResponse getResponse2 = execution.execute(httpGetMessage);
+    CHECK(getResponse2.createPacket().find("404") != std::string::npos);
+}

@@ -33,11 +33,11 @@ TEST_CASE("Basic test")
 
     SUBCASE("Error response")
     {
-        CHECK(response.createErrorPacket(ResponseStatusCode::kNotFound).contains("HTTP/1.1 404 Not Found"));
-        CHECK(response.createErrorPacket(ResponseStatusCode::kNotFound).contains("host: localhost:8080"));
-        CHECK(response.createErrorPacket(ResponseStatusCode::kNotFound).contains("user-agent: curl/7.68.0"));
-        CHECK(response.createErrorPacket(ResponseStatusCode::kNotFound).contains("accept: */*"));
-        CHECK(response.createErrorPacket(ResponseStatusCode::kNotFound).contains("date:"));
-        CHECK(response.createErrorPacket(ResponseStatusCode::kNotFound).contains("server: webserv"));
+        CHECK(response.createPacket(ResponseStatusCode::kNotFound).contains("HTTP/1.1 404 Not Found"));
+        CHECK(response.createPacket(ResponseStatusCode::kNotFound).contains("host: localhost:8080"));
+        CHECK(response.createPacket(ResponseStatusCode::kNotFound).contains("user-agent: curl/7.68.0"));
+        CHECK(response.createPacket(ResponseStatusCode::kNotFound).contains("accept: */*"));
+        CHECK(response.createPacket(ResponseStatusCode::kNotFound).contains("date:"));
+        CHECK(response.createPacket(ResponseStatusCode::kNotFound).contains("server: webserv"));
     }
 }

@@ -7,16 +7,17 @@ Execution::Execution(Config config) : config_(config) {}
 
 auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
 {
-    HTTPResponse response;
+    HTTPResponse       response;
+    ResponseStatusCode status = checkRequestConfigCompliance(request);
 
-    if (checkRequestConfigCompliance(request) != ResponseStatusCode::kOK)
-        response = buildErrorResponse(request);
+    if (status != ResponseStatusCode::kOK)
+        response = buildErrorResponse(request, status);
     else
     {
-        auto validRequest = processValidRequest(request);
-        if (!validRequest.has_value())
-            return buildErrorResponse(request); // todo check this error handling
-        response = validRequest.value();
+        auto validRequestResult = processValidRequest(request);
+        if (!validRequestResult.has_value())
+            return buildErrorResponse(request, validRequestResult.error()); // todo check this error handling
+        response = validRequestResult.value();
     }
 
     // request.state = ;
@@ -32,11 +33,15 @@ auto Execution::checkRequestConfigCompliance(const HTTPMessage& request) -> Resp
     return ResponseStatusCode::kOK;
 }
 
-auto Execution::buildErrorResponse(const HTTPMessage& request) -> HTTPResponse
+auto Execution::buildErrorResponse(const HTTPMessage& request, ResponseStatusCode statusCode) -> HTTPResponse
 {
     (void)request;
+    HTTPResponse response;
+
+    response.setStatusCode(statusCode);
+
     // error code, defailt error page
-    return {};
+    return response;
 }
 
 auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
@@ -63,6 +68,13 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
             return std::unexpected(processPostResult.error());
         httpResponse = processPostResult.value();
     }
+    else if (request.method == "DELETE")
+    {
+        auto processDeleteResult = processDelete(request);
+        if (!processDeleteResult.has_value())
+            return std::unexpected(processDeleteResult.error());
+        httpResponse = processDeleteResult.value();
+    }
     return httpResponse;
 }
 
@@ -87,7 +99,7 @@ auto Execution::processGetFile(const std::string path) -> std::expected<HTTPResp
 
 auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
-    std::string     path = request.requestTarget;
+    std::string     path = getAbsFilePath(request.requestTarget);
     std::error_code ec;
 
     bool fileExists = std::filesystem::exists(path, ec);
@@ -142,8 +154,27 @@ auto Execution::processHead(const HTTPMessage& request) -> std::expected<HTTPRes
 
 auto Execution::processPost(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
-    (void)request;
     HTTPResponse response;
+    std::string  path = getAbsFilePath(request.requestTarget);
 
+    auto postFileResult = createFileWithContent(path, request.body);
+    if (!postFileResult.has_value())
+        return std::unexpected(postFileResult.error());
+    // todo: any headers need to be set here?
+    response.setStatusCode(ResponseStatusCode::kCreated);
+    return response;
+}
+
+auto Execution::processDelete(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+{
+    HTTPResponse    response;
+    std::string     path = getAbsFilePath(request.requestTarget);
+    std::error_code ec;
+
+    auto deleteFileResult = deleteFile(path);
+    if (!deleteFileResult.has_value())
+        return std::unexpected(deleteFileResult.error());
+    // todo: any headers need to be set here?
+    response.setStatusCode(ResponseStatusCode::kNoContent);
     return response;
 }

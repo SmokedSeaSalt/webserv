@@ -1,21 +1,22 @@
 #!/bin/bash
-# run_tests.sh
-# Run `make run` in multiple directories and exit immediately if any test fails
 
-
-NC='\e[0m' # No Color
+NC='\e[0m'
 RED='\e[0;31m'
 GREEN='\e[0;32m'
 YELLOW='\e[1;33m'
 BLUE='\e[0;34m'
-CYAN='\e[0;36m'
-WHITE='\e[1;37m'
+
+set -uo pipefail
 
 printf "%b\n" "${BLUE}Starting webserv tester...${NC}"
 
-set -e  # Exit immediately if any command fails
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+LOG_DIR="$ROOT_DIR/test/.logs"
+mkdir -p "$LOG_DIR"
 
-# List of directories containing tests
+# Max parallel jobs in -m mode (override: JOBS=8 bash test/test.sh -m)
+JOBS="${JOBS:-$(nproc)}"
+
 DIRS=(
     "test/connection"
     "test/parsing/config"
@@ -23,24 +24,99 @@ DIRS=(
     "test/parsing/HTTPResponse"
     "test/logging"
     "test/execution/non-CGI"
-
 )
 
-for dir in "${DIRS[@]}"; do
-    echo "=== Running tests in $dir ==="
+run_single() {
+    for dir in "${DIRS[@]}"; do
+        printf "\n%b\n" "${BLUE}=== Running tests in $dir ===${NC}"
 
-    if [ -d "$dir" ]; then
-        cd "$dir"
-        make all
-		make run --no-print-directory
-        if ! make fclean >/dev/null 2>&1; then
-            echo "Make failed in $dir"
-            exit 1
+        if [[ ! -d "$ROOT_DIR/$dir" ]]; then
+            printf "%b\n" "${YELLOW}Warning: $dir does not exist, skipping.${NC}"
+            continue
         fi
-        cd - > /dev/null
-    else
-        echo "Warning: directory $dir does not exist, skipping."
-    fi
-done
 
-printf "%b\n" "${GREEN}All tests complete!${NC}"
+        cd "$ROOT_DIR/$dir" || return 1
+
+        make all || return 1
+        make run --no-print-directory || return 1
+        make fclean >/dev/null 2>&1 || return 1
+    done
+
+    printf "%b\n" "${GREEN}All tests complete!${NC}"
+}
+
+run_one() {
+    local dir="$1"
+    cd "$ROOT_DIR/$dir" || return 1
+    make all
+    make run --no-print-directory
+    make fclean >/dev/null 2>&1
+}
+
+run_multi() {
+    declare -A PID_TO_DIR
+    declare -A PID_TO_LOG
+    PIDS=()
+
+    for dir in "${DIRS[@]}"; do
+        if [[ ! -d "$ROOT_DIR/$dir" ]]; then
+            printf "%b\n" "${YELLOW}Warning: $dir does not exist, skipping.${NC}"
+            continue
+        fi
+
+        while (( "$(jobs -rp | wc -l)" >= JOBS )); do
+            sleep 0.1
+        done
+
+        log="$LOG_DIR/${dir//\//_}.log"
+        printf "%b\n" "${BLUE}Queued: $dir${NC}"
+        (run_one "$dir") >"$log" 2>&1 &
+        pid=$!
+        PIDS+=("$pid")
+        PID_TO_DIR["$pid"]="$dir"
+        PID_TO_LOG["$pid"]="$log"
+    done
+
+    FAILED=0
+
+    for pid in "${PIDS[@]}"; do
+        dir="${PID_TO_DIR[$pid]}"
+        log="${PID_TO_LOG[$pid]}"
+
+        if wait "$pid"; then
+            status_color="$GREEN"
+            status_text="PASS"
+        else
+            status_color="$RED"
+            status_text="FAIL"
+            FAILED=1
+        fi
+
+        # Print full output per case, one block at a time (no interleaving)
+        printf "\n%b\n" "${BLUE}===== $dir =====${NC}"
+        printf "%b\n" "${status_color}Result: ${status_text}${NC}"
+        printf "%b\n" "${YELLOW}--- output ---${NC}"
+        cat "$log" || true
+        printf "%b\n" "${YELLOW}--- end output ---${NC}"
+    done
+
+    if (( FAILED )); then
+        printf "%b\n" "${RED}Some tests failed.${NC}"
+        return 1
+    fi
+
+    printf "%b\n" "${GREEN}All tests complete!${NC}"
+}
+
+case "${1:-}" in
+    "")
+        run_single
+        ;;
+    -m)
+        run_multi
+        ;;
+    *)
+        printf "%b\n" "${YELLOW}Usage: bash test/test.sh [-m]${NC}"
+        exit 2
+        ;;
+esac
