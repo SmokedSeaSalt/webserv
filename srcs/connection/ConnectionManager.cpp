@@ -1,9 +1,9 @@
 #include "ConnectionManager.hpp"
+#include "logging.hpp"
 #include <netinet/in.h>
 #include <sys/epoll.h>
-#include "logging.hpp"
 
-ConnectionManager::ConnectionManager(Config config, int epollfd) : execution_(config), epollfd_(epollfd) , config_(config) {}
+ConnectionManager::ConnectionManager(Config config, int epollfd) : execution_(config), epollfd_(epollfd), config_(config) {}
 
 auto ConnectionManager::handleReceivingEvent(int fd) -> std::expected<void, std::string>
 {
