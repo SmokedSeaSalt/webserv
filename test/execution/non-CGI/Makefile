@@ -32,7 +32,6 @@ SRC =	main.cpp \
 		logging.cpp
 
 
-		
 
 
 
@@ -44,6 +43,8 @@ DEP = $(OBJ:.o=.d)
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing/config
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing
 vpath %.cpp .:$(ROOT_DIR)/srcs/execution
+vpath %.cpp .:$(ROOT_DIR)/srcs/logging
+
 
 
 ################################################################################
