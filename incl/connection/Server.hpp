@@ -1,10 +1,12 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
+#include "ConnectionManager.hpp"
 #include "Execution.hpp"
 #include "configParsing.hpp"
 #include "connection.hpp"
 #include <expected>
+#include <memory>
 #include <netinet/in.h>
 #include <set>
 #include <string>
@@ -24,27 +26,28 @@ class Server
         auto getListenSockets() -> std::set<int>;
 
     private:
-        struct epoll_event    ev_;
-        struct epoll_event    events_[MAX_EVENTS];
-        struct Config         config_;
-        std::map<int, Client> clientMap_;
-        std::set<int>         listenSockets_;
-        int                   epollfd_;
-        Execution             execution_;
+        // std::map<int, Client> clientMap_;
+        struct epoll_event                 ev_;
+        struct epoll_event                 events_[MAX_EVENTS];
+        struct Config                      config_;
+        std::unique_ptr<ConnectionManager> connectionManager_;
+        std::set<int>                      listenSockets_;
+        int                                epollfd_;
+        // Execution             execution_;
 
         // setup() helpers
         auto setupListenSocket(std::string ip, int port) -> std::expected<int, std::string>;
         auto setupListenSockets() -> std::expected<void, std::string>;
-        auto setNonBlocking(int connSock) -> std::expected<void, std::string>;
 
         auto getListenServerAddress(std::string ip, int port)
             -> std::expected<sockaddr_in, std::string>;
 
         // connectionLoop helpers
-        auto handleEvent(int fd) -> std::expected<int, std::string>;
-        auto handleReceivingEvent(int fd) -> std::expected<void, std::string>;
-        auto handleSendingEvent(int fd) -> std::expected<void, std::string>;
-        auto createConnection(int listenSocket) -> std::expected<void, std::string>;
+        // these have been moved to ConnectionManager. delete later.
+        // auto handleEvent(int fd) -> std::expected<int, std::string>;
+        // auto handleReceivingEvent(int fd) -> std::expected<void, std::string>;
+        // auto handleSendingEvent(int fd) -> std::expected<void, std::string>;
+        // auto createConnection(int listenSocket) -> std::expected<void, std::string>;
 
         // cleanup
         auto closeListenSockets() -> void;

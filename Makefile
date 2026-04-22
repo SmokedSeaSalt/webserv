@@ -15,17 +15,42 @@ ASANFLAGS = -fsanitize=address,undefined
 
 BUILD_DIR = build
 
-SRC =	main.cpp \
-		HTTPRequest.cpp \
-		HTTPRules.cpp \
-		parsing.cpp
+ROOT_DIR := $(abspath .)
 
-INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing #TODO
+SRC =	main.cpp \
+		parseConfig.cpp \
+		parseLocation.cpp \
+		parseServerBlock.cpp \
+		Execution.cpp \
+		HTTPResponse.cpp \
+		HTTPRequest.cpp \
+		executionHelpers.cpp \
+		HTTPRules.cpp \
+		parsing.cpp \
+		stringTrim.cpp \
+		split.cpp \
+		contentType.cpp \
+		Server.cpp \
+		ConnectionManager.cpp \
+		connectionHelpers.cpp \
+		InputArgs.cpp \
+		logging.cpp
+
+INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/connection  -I$(ROOT_DIR)/incl/logging#TODO
 
 OBJ = $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SRC))
 DEP = ${OBJ:.o=.d}
 
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing #TODO
+vpath %.cpp .:$(ROOT_DIR)/srcs/parsing/config
+vpath %.cpp .:$(ROOT_DIR)/srcs/logging 
+vpath %.cpp .:$(ROOT_DIR)/srcs/connection
+vpath %.cpp .:$(ROOT_DIR)/srcs/execution
+vpath %.cpp .:$(ROOT_DIR)/srcs
+
+
+
+
 
 ################################################################################
 # Rules                                                                        #
