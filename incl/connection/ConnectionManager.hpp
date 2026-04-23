@@ -3,9 +3,8 @@
 
 #include "Execution.hpp"
 #include "connection.hpp"
-#include <sys/epoll.h>
 #include <netinet/in.h>
-
+#include <sys/epoll.h>
 
 class ConnectionManager
 {
@@ -26,7 +25,6 @@ class ConnectionManager
         auto handleSendingEvent(int fd) -> std::expected<void, std::string>;
 
         auto logNewConnection(int connectionSocket, sockaddr_storage clientAddress, socklen_t addressLen) -> void;
-
 };
 
 #endif // CONNECTIONMANAGER_HPP

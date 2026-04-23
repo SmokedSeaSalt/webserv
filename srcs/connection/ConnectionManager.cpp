@@ -1,9 +1,9 @@
 #include "ConnectionManager.hpp"
 #include "logging.hpp"
+#include <arpa/inet.h> // for client logging
+#include <netdb.h>     // for client logging
 #include <netinet/in.h>
 #include <sys/epoll.h>
-#include <netdb.h> // for client logging
-#include <arpa/inet.h> // for client logging
 
 ConnectionManager::ConnectionManager(Config config, int epollfd) : execution_(config), epollfd_(epollfd), config_(config) {}
 
