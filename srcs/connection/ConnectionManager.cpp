@@ -14,19 +14,32 @@ auto ConnectionManager::handleReceivingEvent(int fd) -> std::expected<void, std:
     ssize_t numBytes = recv(fd, buf.data(), BUFFER_SIZE, 0);
     if (numBytes < 0)
         return std::unexpected("recv failed");
+    if (numBytes == 0)
+        return std::unexpected("Client " + std::to_string(fd) + " has disconnected. recv returned 0.");
+
 
     // todo error handling
-    clientMap_[fd].request.newData(buf);
+
+    auto it = clientMap_.find(fd);
+    if (it == clientMap_.end())
+        return std::unexpected("unknown client fd: " + std::to_string(fd));
+    Client& client = it->second;
+    client.request.newData(buf);
 
     return {};
 }
 
 auto ConnectionManager::handleSendingEvent(int fd) -> std::expected<void, std::string>
 {
-    Client client = clientMap_[fd];
     // std::string response = client.getResponse();
     // write client.Response to fd
-    clientMap_[fd].response.sendDataBackToClient();
+
+    auto it = clientMap_.find(fd);
+    if (it == clientMap_.end())
+        return std::unexpected("unknown client fd: " + std::to_string(fd));
+    Client& client = it->second;
+
+    client.response.sendDataBackToClient();
 
     LOG(LogLevel::kInfo, "Response sent to fd: {}.", fd);
 
@@ -38,33 +51,44 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> std::expec
     int      fd     = epollEvent.data.fd;
     uint32_t events = epollEvent.events;
 
+    auto it = clientMap_.find(fd);
+    if (it == clientMap_.end())
+        return std::unexpected("unknown client fd: " + std::to_string(fd));
+    Client& client = it->second;
+
     if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
     {
-        clientMap_[fd].state = ClientState::Closed;
+        client.state = ClientState::Closed;
         return std::unexpected(("Connection " + std::to_string(fd) + " has been closed"));
     }
 
-    switch (clientMap_[fd].state)
+    switch (client.state)
     {
     case ClientState::Receiving:
     {
+        if (!(events & EPOLLIN))
+            break;
         handleReceivingEvent(fd);
-        if (clientMap_[fd].request.getState() != RequestState::KDone)
+        if (client.request.getState() != RequestState::KDone)
             break;
         LOG(LogLevel::kInfo, "Packet received from fd: {}.", fd);
-        clientMap_[fd].response = execution_.execute(clientMap_[fd].request.getMessage());
-        clientMap_[fd].state    = ClientState::Processing;
+        client.response = execution_.execute(client.request.getMessage());
+        client.state    = ClientState::Processing;
         [[fallthrough]];
     }
     case ClientState::Processing:
     {
-        if (clientMap_[fd].response.isReadyToSend())
-            clientMap_[fd].state = ClientState::Sending;
+        if (client.response.isReadyToSend())
+            client.state = ClientState::Sending;
         else
             break;
     }
     case ClientState::Sending:
+    {
+        if (!(events & EPOLLOUT))
+            break;
         handleSendingEvent(fd);
+    }
         break;
     case ClientState::Closed:
         break;
@@ -102,7 +126,6 @@ auto ConnectionManager::createConnection(const epoll_event& epollEvent) -> std::
 
     if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
     {
-        clientMap_[listenSocket].state = ClientState::Closed;
         return std::unexpected(("Listen socket " + std::to_string(listenSocket) + " has been closed"));
     }
 
