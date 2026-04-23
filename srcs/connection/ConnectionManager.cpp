@@ -11,11 +11,10 @@ auto ConnectionManager::handleReceivingEvent(int fd) -> std::expected<void, std:
 {
     std::string buf;
     buf.resize(BUFFER_SIZE);
-    ssize_t numBytes = recv(fd, buf.data(), BUFFER_SIZE - 1, 0);
+    ssize_t numBytes = recv(fd, buf.data(), BUFFER_SIZE, 0);
     if (numBytes < 0)
         return std::unexpected("recv failed");
 
-    buf[numBytes] = '\0';
     // todo error handling
     clientMap_[fd].request.newData(buf);
 
