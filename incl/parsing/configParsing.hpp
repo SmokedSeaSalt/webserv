@@ -48,6 +48,5 @@ auto parseConfigFile(std::string configFile) -> std::expected<Config, std::strin
 auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::string>;
 auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
     -> std::expected<Location, std::string>;
-auto split(std::string line) -> std::expected<std::vector<std::string>, std::string>;
 auto trimTrailingSemicolon(std::string& str) -> std::expected<void, std::string>;
 #endif // CONFIGPARSING_HPP

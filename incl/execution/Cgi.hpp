@@ -34,7 +34,7 @@ enum class CgiState
 class Cgi
 {
     public:
-        auto createEnv(const HTTPRequest& request) -> void;
+        auto createEnv(const HTTPRequest& request) -> std::vector<std::string>;
         auto newData(std::string data) -> void;
         auto execute() -> void;
         auto createPacket() -> std::string;
@@ -42,6 +42,12 @@ class Cgi
     private:
         CgiState     state_;
         HTTPResponse response_;
+
+        static auto endsInCgi(const std::string& segment) -> bool;
+
+        static std::set<std::string> CgiTypes_;
+
+        static auto isRequestTargetCgi(const std::string target) -> bool;
 };
 
 #endif // CGI_HPP
