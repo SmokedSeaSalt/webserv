@@ -26,14 +26,12 @@ class Server
         auto getListenSockets() -> std::set<int>;
 
     private:
-        // std::map<int, Client> clientMap_;
         struct epoll_event                 ev_;
         struct epoll_event                 events_[MAX_EVENTS];
         struct Config                      config_;
         std::unique_ptr<ConnectionManager> connectionManager_;
         std::set<int>                      listenSockets_;
         int                                epollfd_;
-        // Execution             execution_;
 
         // setup() helpers
         auto setupListenSocket(std::string ip, int port) -> std::expected<int, std::string>;
@@ -41,13 +39,6 @@ class Server
 
         auto getListenServerAddress(std::string ip, int port)
             -> std::expected<sockaddr_in, std::string>;
-
-        // connectionLoop helpers
-        // these have been moved to ConnectionManager. delete later.
-        // auto handleEvent(int fd) -> std::expected<int, std::string>;
-        // auto handleReceivingEvent(int fd) -> std::expected<void, std::string>;
-        // auto handleSendingEvent(int fd) -> std::expected<void, std::string>;
-        // auto createConnection(int listenSocket) -> std::expected<void, std::string>;
 
         // cleanup
         auto closeListenSockets() -> void;
