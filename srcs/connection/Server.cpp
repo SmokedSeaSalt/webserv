@@ -52,10 +52,8 @@ auto Server::setupListenSocket(std::string ip, int port) -> std::expected<int, s
     if (!listenServerAddress.has_value())
         return std::unexpected(listenServerAddress.error());
 
-    if (bind(listenSocket, (struct sockaddr*)&listenServerAddress, sizeof(listenServerAddress)) ==
-        -1)
+    if (bind(listenSocket, reinterpret_cast<struct sockaddr*>(&listenServerAddress.value()), sizeof(listenServerAddress)) == -1)
     {
-        printf("listenSocket: %d", listenSocket);
         perror("bind");
         return std::unexpected("bind() failed");
     }
@@ -99,6 +97,7 @@ auto Server::setupListenSockets() -> std::expected<void, std::string>
             closeListenSockets();
             return std::unexpected("epoll_ctl() failed");
         }
+        LOG(LogLevel::kInfo, "Listen socket ip={} port={} opened at: {}.", serverBlock.ip, serverBlock.port, fd.value());
     }
     return {};
 }
@@ -113,11 +112,7 @@ auto Server::setup() -> std::expected<void, std::string>
     }
 
     connectionManager_ = std::make_unique<ConnectionManager>(config_, epollfd_);
-    // ServerBlock test{}; // FOR NOW HARDCODED TEST
-    // test.ip   = "";
-    // test.port = 8081;
-    // config_.serverBlocks.push_back(test); // FOR NOW HARDCODED TEST
-    auto ret = setupListenSockets();
+    auto ret           = setupListenSockets();
     if (!ret.has_value())
         return std::unexpected(ret.error());
     return {};
