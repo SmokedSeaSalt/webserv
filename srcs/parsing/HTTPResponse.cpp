@@ -101,18 +101,55 @@ auto HTTPResponse::createBody() const -> std::string
     return this->message_.body;
 }
 
-auto HTTPResponse::sendDataBackToClient() -> SendStatus
+auto HTTPResponse::setPacket(std::string packet) -> void
 {
-    // todo
-    return SendStatus::kDone;
+    this->packet_ = std::move(packet);
+    this->totalBytesSent_ = 0;
 }
 
-auto HTTPResponse::isReadyToSend() -> bool
+auto HTTPResponse::getRemainingPacket() -> std::string
 {
-    return readyToSend_;
+    if (this->totalBytesSent_ >= this->packet_.size())
+        return {};
+    return this->packet_.substr(this->totalBytesSent_);
 }
 
-auto HTTPResponse::setReadyToSend() -> void
+auto HTTPResponse::getRemainingPacketLen() -> size_t
 {
-    readyToSend_ = true;
+    if (this->totalBytesSent_ >= this->packet_.size())
+        return 0;
+    return this->packet_.size() - this->totalBytesSent_;
+}
+
+auto HTTPResponse::getPacket() -> std::string
+{
+    return this->packet_;
+}
+
+auto HTTPResponse::incrementTotalBytesSent(size_t bytesSent) -> SendState
+{
+    this->totalBytesSent_ += bytesSent;
+    if (this->totalBytesSent_ >= this->packet_.size())
+    {
+        this->totalBytesSent_ = this->packet_.size();
+        sendState_ = SendState::kDone;
+    }
+    else
+        sendState_ = SendState::kSending;
+    return sendState_;
+}
+
+auto HTTPResponse::getTotalBytesSent() -> size_t
+{
+    return totalBytesSent_;
+}
+
+auto HTTPResponse::getSendState() const -> SendState
+{
+    return sendState_;
+}
+
+auto HTTPResponse::setSendState(SendState state) -> void
+{
+    sendState_ = state;
 }

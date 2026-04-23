@@ -52,6 +52,15 @@ auto Server::setupListenSocket(std::string ip, int port) -> std::expected<int, s
     if (!listenServerAddress.has_value())
         return std::unexpected(listenServerAddress.error());
 
+    // to ensure you can reuse sockets after restarting the server
+    int opt = 1;
+    if (setsockopt(listenSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+    {
+        perror("setsockopt(SO_REUSEADDR)");
+        close(listenSocket);
+        return std::unexpected("setsockopt() failed");
+    }
+
     if (bind(listenSocket, reinterpret_cast<struct sockaddr*>(&listenServerAddress.value()), sizeof(listenServerAddress)) == -1)
     {
         perror("bind");

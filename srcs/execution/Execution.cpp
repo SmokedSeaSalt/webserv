@@ -19,7 +19,7 @@ auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
     if (!validRequestResult.has_value())
         return buildErrorResponse(request, validRequestResult.error()); // todo check this error handling
     response = validRequestResult.value();
-    response.setReadyToSend();
+    response.setSendState(SendState::kReady);
 
     return response;
 }

@@ -38,8 +38,36 @@ auto ConnectionManager::handleSendingEvent(int fd) -> std::expected<void, std::s
     if (it == clientMap_.end())
         return std::unexpected("unknown client fd: " + std::to_string(fd));
     Client& client = it->second;
+    HTTPResponse response = client.response;
 
-    client.response.sendDataBackToClient();
+    SendState sendState = response.getSendState();
+
+    if (sendState == SendState::kReady) // first send, needs to init the packet
+    {
+        std::string packet = response.createPacket();
+        response.setPacket(packet);
+    }
+
+    if (sendState == SendState::kReady || sendState == SendState::kSending)
+    {
+        std::string buf = response.getRemainingPacket();
+
+        ssize_t bytesSent = send(fd, buf.c_str(), response.getRemainingPacketLen(), 0);
+        if (bytesSent < 0)
+        {
+            response.setSendState(SendState::kSending);
+            return std::unexpected("send failed");
+            // todo handle error
+        }
+        if (bytesSent == 0)
+        {
+            response.setSendState(SendState::kSending);
+            
+        }
+
+        response.incrementTotalBytesSent(bytesSent);
+        response.setSendState(SendState::kSending);
+    }
 
     LOG(LogLevel::kInfo, "Response sent to fd: {}.", fd);
 
@@ -68,20 +96,24 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> std::expec
     {
         if (!(events & EPOLLIN))
             break;
-        handleReceivingEvent(fd);
+        auto handleReceivingEventResult = handleReceivingEvent(fd);
+        if (!handleReceivingEventResult.has_value())
+            return std::unexpected(handleReceivingEventResult.error());
         if (client.request.getState() != RequestState::KDone)
             break;
         LOG(LogLevel::kInfo, "Packet received from fd: {}.", fd);
         client.response = execution_.execute(client.request.getMessage());
-        client.state    = ClientState::Processing;
         [[fallthrough]];
     }
     case ClientState::Processing:
     {
-        if (client.response.isReadyToSend())
+        if (client.response.getSendState() == SendState::kReady)
             client.state = ClientState::Sending;
         else
+        {
+            client.state = ClientState::Processing;
             break;
+        }
     }
     case ClientState::Sending:
     {
@@ -89,7 +121,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> std::expec
             break;
         handleSendingEvent(fd);
     }
-        break;
+    break;
     case ClientState::Closed:
         break;
     case ClientState::Error:
