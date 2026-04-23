@@ -18,9 +18,15 @@ class HTTPResponse : public HTTPRules
         auto setProtocol(std::string protocol) -> std::expected<void, ResponseStatusCode>;
         auto setStatusCode(ResponseStatusCode statusCode) -> void;
 
+
+        auto isReadyToSend() -> bool;
+        auto setReadyToSend() -> void;
+
     private:
         HTTPMessage        message_;
         ResponseStatusCode statusCode_ = ResponseStatusCode::kOK;
+        std::string        packet;
+        bool               readyToSend_ = false;
 
         auto createFirstLine(ResponseStatusCode errorCode) const -> std::string;
         auto createHeaders() const -> std::string;

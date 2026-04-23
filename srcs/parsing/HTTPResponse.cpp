@@ -100,3 +100,15 @@ auto HTTPResponse::createBody() const -> std::string
 {
     return this->message_.body;
 }
+
+
+auto HTTPResponse::isReadyToSend() -> bool
+{
+    return readyToSend_;
+}
+
+auto HTTPResponse::setReadyToSend() -> void
+{
+    readyToSend_ = true;
+}
+
