@@ -5,11 +5,11 @@
 
 enum class SendState
 {
-    kIdle,       // nothing prepared yet
-    kReady,      // packet ready to start sending, but no data has been sent yet
-    kSending,    // partial send in progress
-    kDone,       // fully sent
-    kFailed      // send failed
+    kIdle,    // nothing prepared yet
+    kReady,   // packet ready to start sending, but no data has been sent yet
+    kSending, // partial send in progress
+    kDone,    // fully sent
+    kFailed   // send failed
 };
 
 class HTTPResponse : public HTTPRules
@@ -46,8 +46,8 @@ class HTTPResponse : public HTTPRules
         HTTPMessage        message_;
         ResponseStatusCode statusCode_ = ResponseStatusCode::kOK;
         std::string        packet_;
-        size_t             totalBytesSent_  = 0;
-        SendState          sendState_ = SendState::kIdle;
+        size_t             totalBytesSent_ = 0;
+        SendState          sendState_      = SendState::kIdle;
 
         auto createFirstLine(ResponseStatusCode errorCode) const -> std::string;
         auto createHeaders() const -> std::string;

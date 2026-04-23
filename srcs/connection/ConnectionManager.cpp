@@ -17,7 +17,6 @@ auto ConnectionManager::handleReceivingEvent(int fd) -> std::expected<void, std:
     if (numBytes == 0)
         return std::unexpected("Client " + std::to_string(fd) + " has disconnected. recv returned 0.");
 
-
     // todo error handling
 
     auto it = clientMap_.find(fd);
@@ -37,7 +36,7 @@ auto ConnectionManager::handleSendingEvent(int fd) -> std::expected<void, std::s
     auto it = clientMap_.find(fd);
     if (it == clientMap_.end())
         return std::unexpected("unknown client fd: " + std::to_string(fd));
-    Client& client = it->second;
+    Client&      client   = it->second;
     HTTPResponse response = client.response;
 
     SendState sendState = response.getSendState();
@@ -62,7 +61,6 @@ auto ConnectionManager::handleSendingEvent(int fd) -> std::expected<void, std::s
         if (bytesSent == 0)
         {
             response.setSendState(SendState::kSending);
-            
         }
 
         response.incrementTotalBytesSent(bytesSent);

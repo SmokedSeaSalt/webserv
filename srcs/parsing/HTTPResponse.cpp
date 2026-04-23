@@ -103,7 +103,7 @@ auto HTTPResponse::createBody() const -> std::string
 
 auto HTTPResponse::setPacket(std::string packet) -> void
 {
-    this->packet_ = std::move(packet);
+    this->packet_         = std::move(packet);
     this->totalBytesSent_ = 0;
 }
 
@@ -132,7 +132,7 @@ auto HTTPResponse::incrementTotalBytesSent(size_t bytesSent) -> SendState
     if (this->totalBytesSent_ >= this->packet_.size())
     {
         this->totalBytesSent_ = this->packet_.size();
-        sendState_ = SendState::kDone;
+        sendState_            = SendState::kDone;
     }
     else
         sendState_ = SendState::kSending;
