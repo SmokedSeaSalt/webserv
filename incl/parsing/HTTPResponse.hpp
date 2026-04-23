@@ -3,6 +3,13 @@
 
 #include "HTTPRules.hpp"
 
+enum class SendStatus
+{
+    kInProgress, // partial write
+    kDone,       // full response sent
+    kFailed      // send error
+};
+
 class HTTPResponse : public HTTPRules
 {
     public:
@@ -18,6 +25,7 @@ class HTTPResponse : public HTTPRules
         auto setProtocol(std::string protocol) -> std::expected<void, ResponseStatusCode>;
         auto setStatusCode(ResponseStatusCode statusCode) -> void;
 
+        auto sendDataBackToClient() -> SendStatus;
 
         auto isReadyToSend() -> bool;
         auto setReadyToSend() -> void;

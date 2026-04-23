@@ -101,6 +101,11 @@ auto HTTPResponse::createBody() const -> std::string
     return this->message_.body;
 }
 
+auto HTTPResponse::sendDataBackToClient() -> SendStatus
+{
+    // todo
+    return SendStatus::kDone;
+}
 
 auto HTTPResponse::isReadyToSend() -> bool
 {
@@ -111,4 +116,3 @@ auto HTTPResponse::setReadyToSend() -> void
 {
     readyToSend_ = true;
 }
-

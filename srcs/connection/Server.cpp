@@ -135,11 +135,11 @@ auto Server::connection_loop() -> std::expected<void, std::string>
         {
             if (listenSockets_.contains(events_[n].data.fd))
             {
-                connectionManager_->createConnection(events_[n].data.fd);
+                connectionManager_->createConnection(events_[n]); // tddo also pass whole epoll_event struct
             }
             else
             {
-                connectionManager_->handleEvent(events_[n].data.fd);
+                connectionManager_->handleEvent(events_[n]);
             }
         }
     }

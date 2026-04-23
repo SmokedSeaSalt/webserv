@@ -26,26 +26,43 @@ auto ConnectionManager::handleSendingEvent(int fd) -> std::expected<void, std::s
     Client client = clientMap_[fd];
     // std::string response = client.getResponse();
     // write client.Response to fd
+    clientMap_[fd].response.sendDataBackToClient();
 
     LOG(LogLevel::kInfo, "Response sent to fd: {}.", fd);
 
     return {};
 }
 
-auto ConnectionManager::handleEvent(int fd) -> std::expected<int, std::string>
+auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> std::expected<int, std::string>
 {
+    int      fd     = epollEvent.data.fd;
+    uint32_t events = epollEvent.events;
+
+    if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
+    {
+        clientMap_[fd].state = ClientState::Closed;
+        return std::unexpected(("Connection " + std::to_string(fd) + " has been closed"));
+    }
 
     switch (clientMap_[fd].state)
     {
     case ClientState::Receiving:
+    {
         handleReceivingEvent(fd);
         if (clientMap_[fd].request.getState() != RequestState::KDone)
             break;
         LOG(LogLevel::kInfo, "Packet received from fd: {}.", fd);
-        execution_.execute(clientMap_[fd].request.getMessage());
-        clientMap_[fd].state = ClientState::Processing;
+        clientMap_[fd].response = execution_.execute(clientMap_[fd].request.getMessage());
+        clientMap_[fd].state    = ClientState::Processing;
+        [[fallthrough]];
+    }
     case ClientState::Processing:
-        break;
+    {
+        if (clientMap_[fd].response.isReadyToSend())
+            clientMap_[fd].state = ClientState::Sending;
+        else
+            break;
+    }
     case ClientState::Sending:
         handleSendingEvent(fd);
         break;
@@ -75,11 +92,19 @@ auto ConnectionManager::logNewConnection(int connectionSocket, sockaddr_storage 
     }
 }
 
-auto ConnectionManager::createConnection(int listenSocket) -> std::expected<void, std::string>
+auto ConnectionManager::createConnection(const epoll_event& epollEvent) -> std::expected<void, std::string>
 {
     int              connectionSocket;
     sockaddr_storage clientAddress{};
-    socklen_t        addressLen = sizeof(clientAddress);
+    socklen_t        addressLen   = sizeof(clientAddress);
+    int              listenSocket = epollEvent.data.fd;
+    uint32_t         events       = epollEvent.events;
+
+    if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
+    {
+        clientMap_[listenSocket].state = ClientState::Closed;
+        return std::unexpected(("Listen socket " + std::to_string(listenSocket) + " has been closed"));
+    }
 
     // todo: can provide more args to log info on clients
     connectionSocket = accept(listenSocket, reinterpret_cast<sockaddr*>(&clientAddress), &addressLen);

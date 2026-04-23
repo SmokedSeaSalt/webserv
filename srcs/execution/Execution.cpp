@@ -11,16 +11,16 @@ auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
     ResponseStatusCode status = checkRequestConfigCompliance(request);
 
     if (status != ResponseStatusCode::kOK)
-        response = buildErrorResponse(request, status);
-    else
-    {
-        auto validRequestResult = processValidRequest(request);
-        if (!validRequestResult.has_value())
-            return buildErrorResponse(request, validRequestResult.error()); // todo check this error handling
-        response = validRequestResult.value();
-    }
+        return buildErrorResponse(request, status);
+    // if (cgi)
+    //      executeCGI
+    // else non cgi below
+    auto validRequestResult = processValidRequest(request);
+    if (!validRequestResult.has_value())
+        return buildErrorResponse(request, validRequestResult.error()); // todo check this error handling
+    response = validRequestResult.value();
+    response.setReadyToSend();
 
-    // request.state = ;
     return response;
 }
 
