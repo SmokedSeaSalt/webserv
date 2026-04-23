@@ -2,6 +2,8 @@
 #include "logging.hpp"
 #include <netinet/in.h>
 #include <sys/epoll.h>
+#include <netdb.h> // for client logging
+#include <arpa/inet.h> // for client logging
 
 ConnectionManager::ConnectionManager(Config config, int epollfd) : execution_(config), epollfd_(epollfd), config_(config) {}
 
@@ -25,6 +27,9 @@ auto ConnectionManager::handleSendingEvent(int fd) -> std::expected<void, std::s
     Client client = clientMap_[fd];
     // std::string response = client.getResponse();
     // write client.Response to fd
+
+    LOG(LogLevel::kInfo, "Response sent to fd: {}.", fd);
+
     return {};
 }
 
@@ -37,7 +42,7 @@ auto ConnectionManager::handleEvent(int fd) -> std::expected<int, std::string>
         handleReceivingEvent(fd);
         if (clientMap_[fd].request.getState() != RequestState::KDone)
             break;
-        // LOG(LogLevel::kDebug, "{}", clientMap_[fd].request.getMessage().body);
+        LOG(LogLevel::kInfo, "Packet received from fd: {}.", fd);
         execution_.execute(clientMap_[fd].request.getMessage());
         clientMap_[fd].state = ClientState::Processing;
     case ClientState::Processing:
@@ -53,12 +58,32 @@ auto ConnectionManager::handleEvent(int fd) -> std::expected<int, std::string>
     return 0; // todo: what to return here?
 }
 
+auto ConnectionManager::logNewConnection(int connectionSocket, sockaddr_storage clientAddress, socklen_t addressLen) -> void
+{
+    char host[NI_MAXHOST];
+    char service[NI_MAXSERV];
+
+    int rc = getnameinfo(reinterpret_cast<sockaddr*>(&clientAddress), addressLen,
+                         host, sizeof(host), service, sizeof(service),
+                         NI_NUMERICHOST | NI_NUMERICSERV);
+    if (rc == 0)
+    {
+        LOG(LogLevel::kInfo, "Client connected: ip={} port={} fd={}", host, service, connectionSocket);
+    }
+    else
+    {
+        LOG(LogLevel::kInfo, "Client connected: fd={}", connectionSocket);
+    }
+}
+
 auto ConnectionManager::createConnection(int listenSocket) -> std::expected<void, std::string>
 {
-    int connectionSocket;
+    int              connectionSocket;
+    sockaddr_storage clientAddress{};
+    socklen_t        addressLen = sizeof(clientAddress);
 
     // todo: can provide more args to log info on clients
-    connectionSocket = accept(listenSocket, nullptr, nullptr);
+    connectionSocket = accept(listenSocket, reinterpret_cast<sockaddr*>(&clientAddress), &addressLen);
     if (connectionSocket == -1)
     {
         perror("accept");
@@ -81,5 +106,6 @@ auto ConnectionManager::createConnection(int listenSocket) -> std::expected<void
                                                 .request  = HTTPRequest{},
                                                 .response = HTTPResponse{},
                                                 .error    = ErrorType::None});
+    logNewConnection(connectionSocket, clientAddress, addressLen);
     return {};
 }

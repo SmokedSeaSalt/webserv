@@ -138,15 +138,12 @@ auto Server::connection_loop() -> std::expected<void, std::string>
 
         for (int n = 0; n < nfds; ++n)
         {
-            LOG(LogLevel::kDebug, "{}", "mewo");
             if (listenSockets_.contains(events_[n].data.fd))
             {
-                LOG(LogLevel::kDebug, "{}", "listnesock");
                 connectionManager_->createConnection(events_[n].data.fd);
             }
             else
             {
-                LOG(LogLevel::kDebug, "{}", "else");
                 connectionManager_->handleEvent(events_[n].data.fd);
             }
         }
