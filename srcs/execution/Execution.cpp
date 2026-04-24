@@ -20,6 +20,7 @@ auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
         return buildErrorResponse(request, validRequestResult.error()); // todo check this error handling
     response = validRequestResult.value();
     response.setSendState(SendState::kReady);
+    response.setHeader("content-length", std::to_string(response.getBodyLen()));
 
     return response;
 }

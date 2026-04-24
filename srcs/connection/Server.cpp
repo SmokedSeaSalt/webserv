@@ -98,7 +98,7 @@ auto Server::setupListenSockets() -> std::expected<void, std::string>
             return std::unexpected(fd.error());
         }
         listenSockets_.insert(fd.value());
-        listenSocketFdToPort[fd.value()] = serverBlock.port;
+        listenSocketFdToPort_[fd.value()] = serverBlock.port;
 
         ev_.events  = EPOLLIN;
         ev_.data.fd = fd.value();

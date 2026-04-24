@@ -153,3 +153,8 @@ auto HTTPResponse::setSendState(SendState state) -> void
 {
     sendState_ = state;
 }
+
+auto HTTPResponse::getBodyLen() const -> size_t
+{
+    return createBody().length();
+}

@@ -42,6 +42,8 @@ class HTTPResponse : public HTTPRules
         auto getSendState() const -> SendState;
         auto setSendState(SendState state) -> void;
 
+        auto getBodyLen() const -> size_t;
+
     private:
         HTTPMessage        message_;
         ResponseStatusCode statusCode_ = ResponseStatusCode::kOK;
