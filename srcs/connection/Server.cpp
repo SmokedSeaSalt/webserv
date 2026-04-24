@@ -98,6 +98,7 @@ auto Server::setupListenSockets() -> std::expected<void, std::string>
             return std::unexpected(fd.error());
         }
         listenSockets_.insert(fd.value());
+        listenSocketFdToPort[fd.value()] = serverBlock.port;
 
         ev_.events  = EPOLLIN;
         ev_.data.fd = fd.value();
@@ -144,7 +145,7 @@ auto Server::connection_loop() -> std::expected<void, std::string>
         {
             if (listenSockets_.contains(events_[n].data.fd))
             {
-                connectionManager_->createConnection(events_[n]); // tddo also pass whole epoll_event struct
+                connectionManager_->createConnection(events_[n], listenSocketFdToPort_[events_[n].data.fd]); // tddo also pass whole epoll_event struct
             }
             else
             {

@@ -27,7 +27,11 @@ enum class ErrorType
 
 struct Client
 {
-        int          socketfd;
+        int         socketfd;
+        int         listenSocketPort;
+        std::string service;
+        std::string host;
+
         ClientState  state;
         HTTPRequest  request;
         HTTPResponse response;

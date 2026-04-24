@@ -31,6 +31,7 @@ class Server
         struct Config                      config_;
         std::unique_ptr<ConnectionManager> connectionManager_;
         std::set<int>                      listenSockets_;
+        std::map<int, int>                 listenSocketFdToPort_;
         int                                epollfd_;
 
         // setup() helpers

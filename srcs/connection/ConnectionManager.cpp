@@ -6,12 +6,10 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-
-
 ConnectionManager::ConnectionManager(Config config, int epollfd) : execution_(config), epollfd_(epollfd), config_(config) {}
 
 /// @brief receives data from the fd
-/// @param fd 
+/// @param fd
 /// @return void or error string if recv() fails or client has closed the connection.
 auto ConnectionManager::handleReceivingEvent(int fd) -> std::expected<void, std::string>
 {
@@ -42,12 +40,14 @@ auto ConnectionManager::handleSendingEvent(int fd) -> std::expected<void, std::s
     auto it = clientMap_.find(fd);
     if (it == clientMap_.end())
         return std::unexpected("unknown client fd: " + std::to_string(fd));
-    Client&      client   = it->second;
+    Client&       client   = it->second;
     HTTPResponse& response = client.response;
 
     if (response.getSendState() == SendState::kReady) // first send, needs to init the packet
     {
         std::string packet = response.createPacket();
+        LOG(LogLevel::kDebug, "Sending packet to fd:{} with content:{}", fd, packet);
+
         response.setPacket(packet);
         response.setSendState(SendState::kSending);
     }
@@ -55,8 +55,7 @@ auto ConnectionManager::handleSendingEvent(int fd) -> std::expected<void, std::s
     if (response.getSendState() == SendState::kSending)
     {
         std::string buf = response.getRemainingPacket();
-        
-        
+
         ssize_t bytesSent = send(fd, buf.c_str(), response.getRemainingPacketLen(), 0);
         if (bytesSent < 0)
         {
@@ -154,25 +153,18 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
     return HandleEventResult::kSuccess; // todo: what to return here?
 }
 
-auto ConnectionManager::logNewConnection(int connectionSocket, sockaddr_storage clientAddress, socklen_t addressLen) -> void
-{
-    char host[NI_MAXHOST];
-    char service[NI_MAXSERV];
+// auto ConnectionManager::logNewConnection(int connectionSocket, sockaddr_storage clientAddress, socklen_t addressLen) -> void
+// {
+//     char host[NI_MAXHOST];
+//     char service[NI_MAXSERV];
 
-    int rc = getnameinfo(reinterpret_cast<sockaddr*>(&clientAddress), addressLen,
-                         host, sizeof(host), service, sizeof(service),
-                         NI_NUMERICHOST | NI_NUMERICSERV);
-    if (rc == 0)
-    {
-        LOG(LogLevel::kInfo, "Client connected: ip={} port={} fd={}", host, service, connectionSocket);
-    }
-    else
-    {
-        LOG(LogLevel::kInfo, "Client connected: fd={}", connectionSocket);
-    }
-}
+//     int rc = getnameinfo(reinterpret_cast<sockaddr*>(&clientAddress), addressLen,
+//                          host, sizeof(host), service, sizeof(service),
+//                          NI_NUMERICHOST | NI_NUMERICSERV);
 
-auto ConnectionManager::createConnection(const epoll_event& epollEvent) -> std::expected<void, std::string>
+// }
+
+auto ConnectionManager::createConnection(const epoll_event& epollEvent, int listenSocketPort) -> std::expected<void, std::string>
 {
     int              connectionSocket;
     sockaddr_storage clientAddress{};
@@ -204,11 +196,25 @@ auto ConnectionManager::createConnection(const epoll_event& epollEvent) -> std::
         perror("epoll_ctl: connectionSocket");
         return std::unexpected("epoll_ctl failed");
     }
+
+    char host[NI_MAXHOST];
+    char service[NI_MAXSERV];
+    int  rc = getnameinfo(reinterpret_cast<sockaddr*>(&clientAddress), addressLen,
+                          host, sizeof(host), service, sizeof(service),
+                          NI_NUMERICHOST | NI_NUMERICSERV);
+    if (rc == 0)
+        LOG(LogLevel::kInfo, "Client connected: ip={} port={} fd={}", host, service, connectionSocket);
+    else
+        LOG(LogLevel::kInfo, "Client connected: fd={}", connectionSocket);
+
     clientMap_.emplace(connectionSocket, Client{.socketfd = connectionSocket,
+                                                .listenSocketPort = listenSocketPort,
+                                                .service = std::string(service),
+                                                .host = std::string(host),
                                                 .state    = ClientState::Receiving,
                                                 .request  = HTTPRequest{},
                                                 .response = HTTPResponse{},
                                                 .error    = ErrorType::None});
-    logNewConnection(connectionSocket, clientAddress, addressLen);
+
     return {};
 }
