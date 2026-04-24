@@ -5,7 +5,7 @@
 #include "HTTPResponse.hpp"
 #include "parsing.hpp"
 #define MAX_EVENTS 10
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 100000
 
 enum class ClientState
 {

@@ -77,7 +77,15 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
         httpResponse = processDeleteResult.value();
     }
     if (request.headers.contains("connection") && request.headers.at("connection")[0] == "close")
+    {
+        httpResponse.addHeaderValue("connection", "close");
         httpResponse.setKeepAlive(false);
+    }
+    else
+    {
+        httpResponse.addHeaderValue("connection", "keep-alive");
+        httpResponse.setKeepAlive(true);
+    }
 
     return httpResponse;
 }

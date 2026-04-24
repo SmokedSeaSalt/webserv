@@ -155,6 +155,11 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
                 clientMap_.erase(fd);
             }
         }
+        else
+        {
+            client.response.setSendState(SendState::kDone);
+            client.state = ClientState::Receiving;
+        }
         break;
     }
     case ClientState::Closed:
