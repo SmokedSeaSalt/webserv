@@ -5,13 +5,14 @@
 #include "HTTPResponse.hpp"
 #include "parsing.hpp"
 #define MAX_EVENTS 10
-#define BUFFER_SIZE 10
+#define BUFFER_SIZE 100
 
 enum class ClientState
 {
     Receiving,
     Processing,
     Sending,
+    Sent,
     Closed,
     Error,
 };

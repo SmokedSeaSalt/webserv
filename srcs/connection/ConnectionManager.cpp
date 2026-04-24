@@ -4,9 +4,15 @@
 #include <netdb.h>     // for client logging
 #include <netinet/in.h>
 #include <sys/epoll.h>
+#include <unistd.h>
+
+
 
 ConnectionManager::ConnectionManager(Config config, int epollfd) : execution_(config), epollfd_(epollfd), config_(config) {}
 
+/// @brief receives data from the fd
+/// @param fd 
+/// @return void or error string if recv() fails or client has closed the connection.
 auto ConnectionManager::handleReceivingEvent(int fd) -> std::expected<void, std::string>
 {
     std::string buf;
@@ -37,55 +43,64 @@ auto ConnectionManager::handleSendingEvent(int fd) -> std::expected<void, std::s
     if (it == clientMap_.end())
         return std::unexpected("unknown client fd: " + std::to_string(fd));
     Client&      client   = it->second;
-    HTTPResponse response = client.response;
+    HTTPResponse& response = client.response;
 
-    SendState sendState = response.getSendState();
-
-    if (sendState == SendState::kReady) // first send, needs to init the packet
+    if (response.getSendState() == SendState::kReady) // first send, needs to init the packet
     {
         std::string packet = response.createPacket();
         response.setPacket(packet);
-    }
-
-    if (sendState == SendState::kReady || sendState == SendState::kSending)
-    {
-        std::string buf = response.getRemainingPacket();
-
-        ssize_t bytesSent = send(fd, buf.c_str(), response.getRemainingPacketLen(), 0);
-        if (bytesSent < 0)
-        {
-            response.setSendState(SendState::kSending);
-            return std::unexpected("send failed");
-            // todo handle error
-        }
-        if (bytesSent == 0)
-        {
-            response.setSendState(SendState::kSending);
-        }
-
-        response.incrementTotalBytesSent(bytesSent);
         response.setSendState(SendState::kSending);
     }
 
-    LOG(LogLevel::kInfo, "Response sent to fd: {}.", fd);
+    if (response.getSendState() == SendState::kSending)
+    {
+        std::string buf = response.getRemainingPacket();
+        
+        
+        ssize_t bytesSent = send(fd, buf.c_str(), response.getRemainingPacketLen(), 0);
+        if (bytesSent < 0)
+        {
+            response.setSendState(SendState::kFailed);
+            return std::unexpected("send failed");
+            // todo handle error
+        }
+        response.incrementTotalBytesSent(bytesSent);
+        if (bytesSent == 0 || response.getRemainingPacketLen() == 0)
+        {
+            LOG(LogLevel::kInfo, "Request finished sending", fd);
+            response.setSendState(SendState::kDone);
+            return {};
+        }
+    }
+
+    // LOG(LogLevel::kInfo, "remaining packet len {}.", response.getRemainingPacketLen());
 
     return {};
 }
 
-auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> std::expected<int, std::string>
+auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
 {
     int      fd     = epollEvent.data.fd;
     uint32_t events = epollEvent.events;
 
     auto it = clientMap_.find(fd);
     if (it == clientMap_.end())
-        return std::unexpected("unknown client fd: " + std::to_string(fd));
+    {
+        LOG(LogLevel::kDebug, "unknown client fd: {}", std::to_string(fd));
+        return HandleEventResult::kError;
+    }
     Client& client = it->second;
 
     if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
     {
-        client.state = ClientState::Closed;
-        return std::unexpected(("Connection " + std::to_string(fd) + " has been closed"));
+        if (close(fd) == -1)
+            LOG(LogLevel::kDebug, "failed to close client fd: {}", std::to_string(fd));
+        else
+        {
+            LOG(LogLevel::kDebug, "Closed client fd: {}", std::to_string(fd));
+            client.state = ClientState::Closed;
+        }
+        return HandleEventResult::kError;
     }
 
     switch (client.state)
@@ -96,7 +111,14 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> std::expec
             break;
         auto handleReceivingEventResult = handleReceivingEvent(fd);
         if (!handleReceivingEventResult.has_value())
-            return std::unexpected(handleReceivingEventResult.error());
+        {
+            LOG(LogLevel::kDebug, "recv() returned <= 0 at fd: {}, closing connection.", std::to_string(fd));
+            if (close(fd) == -1)
+                LOG(LogLevel::kDebug, "failed to close client fd: {}", std::to_string(fd));
+            else
+                client.state = ClientState::Closed;
+            return HandleEventResult::kError;
+        }
         if (client.request.getState() != RequestState::KDone)
             break;
         LOG(LogLevel::kInfo, "Packet received from fd: {}.", fd);
@@ -118,14 +140,18 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> std::expec
         if (!(events & EPOLLOUT))
             break;
         handleSendingEvent(fd);
+        if (client.response.getSendState() == SendState::kDone)
+            client.state = ClientState::Sent;
+        break;
     }
-    break;
+    case ClientState::Sent:
+        break;
     case ClientState::Closed:
         break;
     case ClientState::Error:
         break;
     }
-    return 0; // todo: what to return here?
+    return HandleEventResult::kSuccess; // todo: what to return here?
 }
 
 auto ConnectionManager::logNewConnection(int connectionSocket, sockaddr_storage clientAddress, socklen_t addressLen) -> void
@@ -171,7 +197,7 @@ auto ConnectionManager::createConnection(const epoll_event& epollEvent) -> std::
     if (!setNonBlockingRes.has_value())
         return std::unexpected(setNonBlockingRes.error());
 
-    ev_.events  = EPOLLIN | EPOLLRDHUP;
+    ev_.events  = EPOLLIN | EPOLLRDHUP | EPOLLOUT;
     ev_.data.fd = connectionSocket;
     if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, connectionSocket, &ev_) == -1)
     {

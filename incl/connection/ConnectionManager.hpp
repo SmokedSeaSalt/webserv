@@ -6,12 +6,19 @@
 #include <netinet/in.h>
 #include <sys/epoll.h>
 
+enum class HandleEventResult
+{
+    kSuccess,
+    kError,
+};
+
+
 class ConnectionManager
 {
     public:
         ConnectionManager(Config config, int epollfd);
 
-        auto handleEvent(const epoll_event& epollEvent) -> std::expected<int, std::string>;
+        auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
 
         auto createConnection(const epoll_event& epollEvent) -> std::expected<void, std::string>;
 
