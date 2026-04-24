@@ -1,8 +1,10 @@
 #include "Cgi.hpp"
+#include "logging.hpp"
 #include "parsing.hpp"
-#include <sys/socket.h>
+#include <sys/socket.h> //for socketpair
+#include <unistd.h>     //for dup2, close
 
-std::set<std::string> Cgi::CgiTypes_ = {".php", ".sh"};
+std::map<std::string, std::string> Cgi::CgiTypes_ = {{".php", "/usr/bin/php"}, {".sh", "/usr/bin/sh"}};
 
 auto Cgi::isRequestTargetCgi(const std::string target) -> bool
 {
@@ -17,12 +19,22 @@ auto Cgi::isRequestTargetCgi(const std::string target) -> bool
 
 auto Cgi::endsInCgi(const std::string& segment) -> bool
 {
-    for (std::string CgiType : Cgi::CgiTypes_)
+    for (auto& [CgiType, CgiPath] : Cgi::CgiTypes_)
     {
         if (segment.ends_with(CgiType))
             return true;
     }
     return false;
+}
+
+auto Cgi::getInterpreterPath(std::string path) -> std::string
+{
+    for (auto& [CgiType, CgiPath] : Cgi::CgiTypes_)
+    {
+        if (path.ends_with(CgiType))
+            return CgiPath;
+    }
+    return "";
 }
 
 auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
@@ -85,22 +97,82 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     }
 
     env_strings.push_back("SCRIPT_NAME=" + scriptName);
+    this->scriptPath_ = scriptName;
     env_strings.push_back("PATH_INFO=" + pathInfo);
 
     // TODO ROOT + pathInfo
     // std::string pathTranslated = (getLocation().root + pathInfo);
     // env_strings.push_back("PATH_TRANSLATED=" + pathTranslated);
 
-    // TODO: all headers except content-type and content-length should be converted to HTTP_HEADER
+    for (auto& [key, value] : request.getMessage().headers)
+    {
+        if (key == "content-type" || key == "content-length")
+            continue;
+        env_strings.push_back(headerToEnvVar(key, value));
+    }
 
     return env_strings;
 }
 
-
-
-
-auto execute() -> void
+static auto headerToEnvVar(std::string header, std::vector<std::string> value) -> std::string
 {
+    std::string envVar;
+    for (auto& c : header)
+    {
+        c = std::toupper(static_cast<unsigned char>(c));
+        if (c == '-')
+            c = '_';
+    }
+    envVar.append("HTTP_" + header + "=");
+    for (std::string entry : value)
+    {
+        envVar.append(entry);
+    }
+    return envVar;
+}
+
+auto Cgi::execute() -> void
+{
+    std::vector<std::string> envStrings = createEnv(request); // TODO get this acess to client request
+    this->interpreterPath_              = getInterpreterPath(this->scriptPath_);
+    if (this->interpreterPath_ == "")
+        return; // TODO handle error; maybe place this within child if errors can be dealt with?
+
     int fd[2];
-    socketpair(AF_UNIX, SOCK_STREAM, 0, fd);
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
+        return; // TODO Handle Error;
+    pid_t pid = fork();
+
+    if (pid == 0)
+    {
+        // Child.
+        if (dup2(fd[1], STDIN_FILENO) == -1 || dup2(fd[1], STDOUT_FILENO) == -1)
+            std::exit(1); // error check? What will epoll do?
+
+        close(fd[0]); // Close parent side.
+        close(fd[1]); // dupped, so can close child side.
+
+        // create char** envp
+        std::vector<char*> envp;
+        for (auto& s : envStrings)
+            envp.push_back(s.data());
+        envp.push_back(nullptr);
+
+        // get interpeter and script
+        std::vector<char*> argv;
+        argv.push_back(interpreterPath_.data());
+        argv.push_back(scriptPath_.data());
+        argv.push_back(nullptr);
+
+        execve(argv[0], argv.data(), envp.data());
+        LOG(LogLevel::kErrors, "Execve failed!");
+        std::exit(1); // error check? What will epoll do?
+    }
+    else
+    {
+        // Parent
+        close(fd[1]); // Close child side.
+        this->fd_ = fd[0];
+        // add this fd to epoll
+    }
 }

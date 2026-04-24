@@ -21,6 +21,8 @@
 
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
+#include <map>
+#include <string>
 
 enum class CgiState
 {
@@ -42,12 +44,17 @@ class Cgi
     private:
         CgiState     state_;
         HTTPResponse response_;
+        int          fd_;
+        std::string  scriptPath_;
+        std::string  interpreterPath_;
 
         static auto endsInCgi(const std::string& segment) -> bool;
-
-        static std::set<std::string> CgiTypes_;
-
         static auto isRequestTargetCgi(const std::string target) -> bool;
+
+        static auto headerToEnvVar(std::string header, std::vector<std::string> value) -> std::string;
+
+        static std::map<std::string, std::string> CgiTypes_;
+        static auto getInterpreterPath(std::string) -> std::string;
 };
 
 #endif // CGI_HPP
