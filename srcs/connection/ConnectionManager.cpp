@@ -144,7 +144,19 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
         break;
     }
     case ClientState::Sent:
+    {
+        if (client.response.getKeepAlive() == false)
+        {
+            if (close(fd) == -1)
+                LOG(LogLevel::kDebug, "failed to close client fd: {}", std::to_string(fd));
+            else
+            {
+                LOG(LogLevel::kDebug, "Closed client fd: {}. Erasing from clientMap_", std::to_string(fd));
+                clientMap_.erase(fd);
+            }
+        }
         break;
+    }
     case ClientState::Closed:
         break;
     case ClientState::Error:

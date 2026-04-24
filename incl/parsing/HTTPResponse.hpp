@@ -44,12 +44,16 @@ class HTTPResponse : public HTTPRules
 
         auto getBodyLen() const -> size_t;
 
+        auto getKeepAlive() const -> bool;
+        auto setKeepAlive(bool value) -> void;
+
     private:
         HTTPMessage        message_;
         ResponseStatusCode statusCode_ = ResponseStatusCode::kOK;
         std::string        packet_;
         size_t             totalBytesSent_ = 0;
         SendState          sendState_      = SendState::kIdle;
+        bool               keepAlive       = true;
 
         auto createFirstLine(ResponseStatusCode errorCode) const -> std::string;
         auto createHeaders() const -> std::string;

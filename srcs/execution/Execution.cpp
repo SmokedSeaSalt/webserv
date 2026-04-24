@@ -76,6 +76,9 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
             return std::unexpected(processDeleteResult.error());
         httpResponse = processDeleteResult.value();
     }
+    if (request.headers.contains("connection") && request.headers.at("connection")[0] == "close")
+        httpResponse.setKeepAlive(false);
+        
     return httpResponse;
 }
 

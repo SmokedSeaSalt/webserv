@@ -158,3 +158,11 @@ auto HTTPResponse::getBodyLen() const -> size_t
 {
     return createBody().length();
 }
+
+auto HTTPResponse::getKeepAlive() const -> bool {
+    return keepAlive;
+}
+
+auto HTTPResponse::setKeepAlive(bool value) -> void {
+    keepAlive = value;
+}
