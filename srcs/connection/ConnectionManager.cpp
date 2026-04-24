@@ -219,14 +219,14 @@ auto ConnectionManager::createConnection(const epoll_event& epollEvent, int list
     else
         LOG(LogLevel::kInfo, "Client connected: fd={}", connectionSocket);
 
-    clientMap_.emplace(connectionSocket, Client{.socketfd = connectionSocket,
+    clientMap_.emplace(connectionSocket, Client{.socketfd         = connectionSocket,
                                                 .listenSocketPort = listenSocketPort,
-                                                .service = std::string(service),
-                                                .host = std::string(host),
-                                                .state    = ClientState::Receiving,
-                                                .request  = HTTPRequest{},
-                                                .response = HTTPResponse{},
-                                                .error    = ErrorType::None});
+                                                .service          = std::string(service),
+                                                .host             = std::string(host),
+                                                .state            = ClientState::Receiving,
+                                                .request          = HTTPRequest{},
+                                                .response         = HTTPResponse{},
+                                                .error            = ErrorType::None});
 
     return {};
 }

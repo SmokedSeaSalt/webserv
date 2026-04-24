@@ -12,7 +12,6 @@ enum class HandleEventResult
     kError,
 };
 
-
 class ConnectionManager
 {
     public:

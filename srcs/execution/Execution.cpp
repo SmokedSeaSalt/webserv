@@ -78,7 +78,7 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
     }
     if (request.headers.contains("connection") && request.headers.at("connection")[0] == "close")
         httpResponse.setKeepAlive(false);
-        
+
     return httpResponse;
 }
 
