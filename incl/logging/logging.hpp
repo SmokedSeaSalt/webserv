@@ -60,3 +60,7 @@ auto log_impl(LogLevel level, std::source_location locaction, std::format_string
     Logging::log_impl(level, std::source_location::current(), format __VA_OPT__(, ) __VA_ARGS__)
 
 #endif // LOGGING_HPP
+
+
+// helpers
+std::string getHTTPMessageString(const HTTPMessage& msg);

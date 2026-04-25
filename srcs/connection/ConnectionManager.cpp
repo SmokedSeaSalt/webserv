@@ -46,7 +46,7 @@ auto ConnectionManager::handleSendingEvent(int fd) -> std::expected<void, std::s
     if (response.getSendState() == SendState::kReady) // first send, needs to init the packet
     {
         std::string packet = response.createPacket();
-        LOG(LogLevel::kDebug, "Sending packet to fd:{} with content:{}", fd, packet);
+        LOG(LogLevel::kDebug, "Sending packet to fd:{} with content:\n{}\n", fd, packet);
 
         response.setPacket(packet);
         response.setSendState(SendState::kSending);
@@ -98,6 +98,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
         {
             LOG(LogLevel::kDebug, "Closed client fd: {}", std::to_string(fd));
             client.state = ClientState::Closed;
+            clientMap_.erase(fd);
         }
         return HandleEventResult::kError;
     }
@@ -120,7 +121,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
         }
         if (client.request.getState() != RequestState::KDone)
             break;
-        LOG(LogLevel::kInfo, "Packet received from fd: {}.", fd);
+        LOG(LogLevel::kInfo, "Packet received from fd:{} with content:\n{}\n", fd, getHTTPMessageString(client.request.getMessage()));
         client.response = execution_.execute(client.request.getMessage());
         [[fallthrough]];
     }
@@ -157,8 +158,11 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
         }
         else
         {
-            client.response.setSendState(SendState::kDone);
+            client.request = {};
+            client.response = {};
             client.state = ClientState::Receiving;
+            LOG(LogLevel::kDebug, "Client socket at fd: {} being kept alive", std::to_string(fd));
+
         }
         break;
     }

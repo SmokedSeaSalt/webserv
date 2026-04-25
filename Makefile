@@ -34,7 +34,8 @@ SRC =	main.cpp \
 		ConnectionManager.cpp \
 		connectionHelpers.cpp \
 		InputArgs.cpp \
-		logging.cpp
+		logging.cpp \
+		loggingHelpers.cpp
 
 INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/connection  -I$(ROOT_DIR)/incl/logging#TODO
 
