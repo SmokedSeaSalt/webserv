@@ -54,8 +54,7 @@ run_end_to_end() {
 
     FREE_PORT=$(python3 -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()")
 
-    sed -i "s/listen 127.0.0.1:8080\+;/listen 127.0.0.1:${FREE_PORT};/" $CONF
-
+    sed -i "s/listen 127.0.0.1:[0-9]\+;/listen 127.0.0.1:${FREE_PORT};/" $CONF
     printf "\n%b\n" "${BLUE}=== Running main webserv in background on port ${FREE_PORT} ===${NC}"
     ./webserv -d 4 -p $ROOT_DIR $CONF &
     WEBSERV_PID=$!
