@@ -106,6 +106,11 @@ test:
 test_multithread:
 	@./test/test.sh -m
 
+test_end_to_end:
+	@./test/test.sh -e
+
+
+
 .PHONY += test
 
 ################################################################################

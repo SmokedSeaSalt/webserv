@@ -45,6 +45,39 @@ run_single() {
     printf "%b\n" "${GREEN}All tests complete!${NC}"
 }
 
+run_end_to_end() {
+    CONF="$ROOT_DIR/test/endToEnd/endToEnd.conf"
+
+    printf "\n%b\n" "${BLUE}=== Building main webserv ===${NC}"
+    cd "$ROOT_DIR" || return 1
+    make || return 1
+
+    FREE_PORT=$(python3 -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()")
+
+    sed -i "s/listen 127.0.0.1:8080\+;/listen 127.0.0.1:${FREE_PORT};/" $CONF
+
+    printf "\n%b\n" "${BLUE}=== Running main webserv in background on port ${FREE_PORT} ===${NC}"
+    ./webserv -d 4 -p $ROOT_DIR $CONF &
+    WEBSERV_PID=$!
+
+    for i in {1..20}; do
+        if nc -z 127.0.0.1 "$FREE_PORT"; then
+            break
+        fi
+        sleep 0.5
+    done
+
+    printf "\n%b\n" "${BLUE}=== Running end-to-end tests ===${NC}"
+    cd "$ROOT_DIR/test/endToEnd" || return 1
+    pwd
+    FREE_PORT=$FREE_PORT go test main_test.go || { kill $WEBSERV_PID; return 1; }
+
+    kill $WEBSERV_PID
+    
+    sed -i "s/listen 127.0.0.1:${FREE_PORT};/listen 127.0.0.1:8080;/" $CONF
+    printf "${GREEN}End to end go tests passed!${NC}\n"
+}
+
 run_one() {
     local dir="$1"
     cd "$ROOT_DIR/$dir" || return 1
@@ -115,8 +148,12 @@ case "${1:-}" in
     -m)
         run_multi
         ;;
+    -e)
+        run_end_to_end
+        ;;
     *)
         printf "%b\n" "${YELLOW}Usage: bash test/test.sh [-m]${NC}"
         exit 2
         ;;
 esac
+
