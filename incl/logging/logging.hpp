@@ -1,6 +1,7 @@
 #ifndef LOGGING_HPP
 #define LOGGING_HPP
 
+#include "HTTPRules.hpp"
 #include <chrono>
 #include <format>
 #include <iostream>
