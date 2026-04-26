@@ -180,8 +180,11 @@ auto deleteFile(std::string pathString) -> std::expected<void, ResponseStatusCod
 
 auto getAbsFilePath(std::string file) -> std::string
 {
-    if (InputArgs::args.relativePath != "")
-        return InputArgs::args.relativePath + "/" + file;
+    if (!InputArgs::args.relativePath.empty()) {
+        if (!file.empty() && file[0] == '/')
+            file = file.substr(1);
+        return (std::filesystem::path(InputArgs::args.relativePath) / file).string();
+    }
     return file;
 }
 
