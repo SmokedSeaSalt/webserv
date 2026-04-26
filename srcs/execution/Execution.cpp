@@ -22,7 +22,6 @@ auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
         response = validRequestResult.value();
 
     response.setSendState(SendState::kReady);
-    response.setHeader("content-length", std::to_string(response.getBodyLen()));
 
     return response;
 }
@@ -43,6 +42,8 @@ auto Execution::buildErrorResponse(const HTTPMessage& request, ResponseStatusCod
 
     response.setStatusCode(statusCode);
     // error code, defailt error page
+    response.setHeader("content-length", std::to_string(response.getBodyLen()));
+
     return response;
 }
 
@@ -114,6 +115,7 @@ auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResp
 {
     std::string     path = getAbsFilePath(request.requestTarget);
     std::error_code ec;
+    HTTPResponse    response;
 
     bool fileExists = std::filesystem::exists(path, ec);
     if (!fileExists)
@@ -149,7 +151,9 @@ auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResp
             // todo log
             return std::unexpected(processGetFileResult.error());
         }
-        return processGetFileResult.value();
+        response = processGetFileResult.value();
+        response.setHeader("content-length", std::to_string(response.getBodyLen()));
+        return response;
     }
 }
 
@@ -175,6 +179,7 @@ auto Execution::processPost(const HTTPMessage& request) -> std::expected<HTTPRes
         return std::unexpected(postFileResult.error());
     // todo: any headers need to be set here?
     response.setStatusCode(ResponseStatusCode::kCreated);
+    response.setHeader("content-length", std::to_string(response.getBodyLen()));
     return response;
 }
 
@@ -189,5 +194,6 @@ auto Execution::processDelete(const HTTPMessage& request) -> std::expected<HTTPR
         return std::unexpected(deleteFileResult.error());
     // todo: any headers need to be set here?
     response.setStatusCode(ResponseStatusCode::kNoContent);
+    response.setHeader("content-length", std::to_string(response.getBodyLen()));
     return response;
 }
