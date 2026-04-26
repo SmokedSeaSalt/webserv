@@ -36,9 +36,6 @@ class HTTPResponse : public HTTPRules
         auto incrementTotalBytesSent(size_t bytesSent) -> SendState;
         auto getTotalBytesSent() -> size_t;
 
-        auto isReadyToSend() -> bool;
-        auto setReadyToSend() -> void;
-
         auto getSendState() const -> SendState;
         auto setSendState(SendState state) -> void;
 
