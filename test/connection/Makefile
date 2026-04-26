@@ -32,7 +32,9 @@ SRC =	main.cpp \
 		contentType.cpp \
 		ConnectionManager.cpp \
 		connectionHelpers.cpp \
-		logging.cpp
+		logging.cpp \
+		loggingHelpers.cpp
+
 
 INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/connection -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/srcs/connection -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/logging
 
