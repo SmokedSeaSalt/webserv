@@ -1,4 +1,6 @@
 #include "HTTPRules.hpp"
+#include "InputArgs.hpp"
+
 #include <expected>
 #include <filesystem>
 #include <fstream>
@@ -178,8 +180,9 @@ auto deleteFile(std::string pathString) -> std::expected<void, ResponseStatusCod
 
 auto getAbsFilePath(std::string file) -> std::string
 {
-    // todo create actual abs file path using root provided as cli arg
-    return (/*megaglobal.root + */ file);
+    if (InputArgs::args.relativePath != "")
+        return InputArgs::args.relativePath + "/" + file;
+    return file;
 }
 
 // is_a_directory
