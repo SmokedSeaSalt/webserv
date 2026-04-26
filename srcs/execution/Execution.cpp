@@ -17,8 +17,10 @@ auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
     // else non cgi below
     auto validRequestResult = processValidRequest(request);
     if (!validRequestResult.has_value())
-        return buildErrorResponse(request, validRequestResult.error()); // todo check this error handling
-    response = validRequestResult.value();
+        response = buildErrorResponse(request, validRequestResult.error()); // todo check this error handling
+    else
+        response = validRequestResult.value();
+
     response.setSendState(SendState::kReady);
     response.setHeader("content-length", std::to_string(response.getBodyLen()));
 
@@ -40,7 +42,6 @@ auto Execution::buildErrorResponse(const HTTPMessage& request, ResponseStatusCod
     HTTPResponse response;
 
     response.setStatusCode(statusCode);
-
     // error code, defailt error page
     return response;
 }
