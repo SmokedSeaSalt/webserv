@@ -29,7 +29,8 @@ SRC =	main.cpp \
 		stringTrim.cpp \
 		split.cpp \
 		contentType.cpp \
-		logging.cpp
+		logging.cpp \
+		loggingHelpers.cpp
 
 
 

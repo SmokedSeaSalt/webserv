@@ -20,7 +20,8 @@ DOCTEST=$(ROOT_DIR)/test/incl/doctest.h
 SRC =	main.cpp \
 		logging.cpp
 
-INCLUDE_FLAGS += -I$(ROOT_DIR)/incl/logging
+
+INCLUDE_FLAGS += -I$(ROOT_DIR)/incl/logging -I$(ROOT_DIR)/incl/parsing
 
 OBJ = $(addprefix $(BUILD_DIR)/,$(patsubst %.cpp,%.o,$(SRC)))
 DEP = $(OBJ:.o=.d)

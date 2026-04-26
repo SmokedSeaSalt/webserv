@@ -6,13 +6,20 @@
 #include <netinet/in.h>
 #include <sys/epoll.h>
 
+enum class HandleEventResult
+{
+    kSuccess,
+    kError,
+};
+
 class ConnectionManager
 {
     public:
         ConnectionManager(Config config, int epollfd);
 
-        auto handleEvent(int fd) -> std::expected<int, std::string>;
-        auto createConnection(int listenSocket) -> std::expected<void, std::string>;
+        auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
+
+        auto createConnection(const epoll_event& epollEvent, int listenSocketPort) -> std::expected<void, std::string>;
 
     private:
         std::map<int, Client> clientMap_;

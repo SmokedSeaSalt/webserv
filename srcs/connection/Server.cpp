@@ -52,6 +52,15 @@ auto Server::setupListenSocket(std::string ip, int port) -> std::expected<int, s
     if (!listenServerAddress.has_value())
         return std::unexpected(listenServerAddress.error());
 
+    // to ensure you can reuse sockets after restarting the server
+    int opt = 1;
+    if (setsockopt(listenSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+    {
+        perror("setsockopt(SO_REUSEADDR)");
+        close(listenSocket);
+        return std::unexpected("setsockopt() failed");
+    }
+
     if (bind(listenSocket, reinterpret_cast<struct sockaddr*>(&listenServerAddress.value()), sizeof(listenServerAddress)) == -1)
     {
         perror("bind");
@@ -89,6 +98,7 @@ auto Server::setupListenSockets() -> std::expected<void, std::string>
             return std::unexpected(fd.error());
         }
         listenSockets_.insert(fd.value());
+        listenSocketFdToPort_[fd.value()] = serverBlock.port;
 
         ev_.events  = EPOLLIN;
         ev_.data.fd = fd.value();
@@ -135,11 +145,11 @@ auto Server::connection_loop() -> std::expected<void, std::string>
         {
             if (listenSockets_.contains(events_[n].data.fd))
             {
-                connectionManager_->createConnection(events_[n].data.fd);
+                connectionManager_->createConnection(events_[n], listenSocketFdToPort_[events_[n].data.fd]); // tddo also pass whole epoll_event struct
             }
             else
             {
-                connectionManager_->handleEvent(events_[n].data.fd);
+                connectionManager_->handleEvent(events_[n]);
             }
         }
     }
