@@ -21,12 +21,14 @@ jobs:
       # - name: Build
       #   run: make
 
+      - name: Install netcat-openbsd
+        run: sudo apt-get install -y netcat-openbsd
+
       - name: Run unit tests
         run: make CPPFLAGS="-MMD --std=c++23 -stdlib=libc++" LDFLAGS="-stdlib=libc++" CPP=clang++-18 test
 
       - name: Run end to end tests
         run: |
           go version
-          nc --version
           make CPPFLAGS="-MMD --std=c++23 -stdlib=libc++" LDFLAGS="-stdlib=libc++" CPP=clang++-18 test_end_to_end
 
