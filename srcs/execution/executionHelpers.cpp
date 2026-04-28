@@ -1,6 +1,5 @@
 #include "HTTPRules.hpp"
 #include "InputArgs.hpp"
-
 #include <expected>
 #include <filesystem>
 #include <fstream>
@@ -180,7 +179,8 @@ auto deleteFile(std::string pathString) -> std::expected<void, ResponseStatusCod
 
 auto getAbsFilePath(std::string file) -> std::string
 {
-    if (!InputArgs::args.relativePath.empty()) {
+    if (!InputArgs::args.relativePath.empty())
+    {
         if (!file.empty() && file[0] == '/')
             file = file.substr(1);
         return (std::filesystem::path(InputArgs::args.relativePath) / file).string();

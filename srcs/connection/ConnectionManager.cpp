@@ -6,7 +6,7 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-ConnectionManager::ConnectionManager(Config config, int epollfd) : execution_(config), epollfd_(epollfd), config_(config) {}
+ConnectionManager::ConnectionManager(int epollfd) : execution_(), epollfd_(epollfd) {}
 
 /// @brief receives data from the fd
 /// @param fd

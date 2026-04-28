@@ -15,7 +15,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-Server::Server(Config config) : config_(config) {}
+Server::Server() {}
 
 Server::~Server() {}
 
@@ -89,7 +89,7 @@ auto Server::closeListenSockets() -> void
 auto Server::setupListenSockets() -> std::expected<void, std::string>
 {
 
-    for (ServerBlock serverBlock : config_.serverBlocks)
+    for (Config::ServerBlock serverBlock : Config::config.serverBlocks)
     {
         auto fd = setupListenSocket(serverBlock.ip, serverBlock.port);
         if (!fd.has_value())
@@ -120,7 +120,7 @@ auto Server::setup() -> std::expected<void, std::string>
         return std::unexpected("epoll_create() failed");
     }
 
-    connectionManager_ = std::make_unique<ConnectionManager>(config_, epollfd_);
+    connectionManager_ = std::make_unique<ConnectionManager>(epollfd_);
     auto ret           = setupListenSockets();
     if (!ret.has_value())
         return std::unexpected(ret.error());

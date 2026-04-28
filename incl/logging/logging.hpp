@@ -62,6 +62,5 @@ auto log_impl(LogLevel level, std::source_location locaction, std::format_string
 
 #endif // LOGGING_HPP
 
-
 // helpers
 std::string getHTTPMessageString(const HTTPMessage& msg);

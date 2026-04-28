@@ -5,6 +5,9 @@
 #include <fstream>
 #include <string>
 
+namespace Config
+{
+
 static auto parseErrorPage(ServerBlock& serverBlock, std::string buf)
     -> std::expected<void, std::string>
 {
@@ -170,3 +173,5 @@ auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
 // {
 
 // }
+
+} // namespace Config
