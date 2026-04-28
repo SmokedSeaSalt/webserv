@@ -5,13 +5,14 @@
 #include "HTTPResponse.hpp"
 #include "parsing.hpp"
 #define MAX_EVENTS 10
-#define BUFFER_SIZE 10
+#define BUFFER_SIZE 100000
 
 enum class ClientState
 {
     Receiving,
     Processing,
     Sending,
+    Sent,
     Closed,
     Error,
 };
@@ -26,11 +27,17 @@ enum class ErrorType
 
 struct Client
 {
-        int          socketfd;
+        int         socketfd;
+        int         listenSocketPort;
+        std::string service;
+        std::string host;
+
         ClientState  state;
         HTTPRequest  request;
         HTTPResponse response;
         ErrorType    error;
 };
+
+auto setNonBlocking(int socketfd) -> std::expected<void, std::string>;
 
 #endif // CONNECTION_HPP

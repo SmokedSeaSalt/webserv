@@ -3,7 +3,7 @@
 #include <filesystem>
 
 // Public Functions
-Execution::Execution(Config config) : config_(config) {}
+Execution::Execution() {}
 
 auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
 {
@@ -11,16 +11,18 @@ auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
     ResponseStatusCode status = checkRequestConfigCompliance(request);
 
     if (status != ResponseStatusCode::kOK)
-        response = buildErrorResponse(request, status);
+        return buildErrorResponse(request, status);
+    // if (cgi)
+    //      executeCGI
+    // else non cgi below
+    auto validRequestResult = processValidRequest(request);
+    if (!validRequestResult.has_value())
+        response = buildErrorResponse(request, validRequestResult.error()); // todo check this error handling
     else
-    {
-        auto validRequestResult = processValidRequest(request);
-        if (!validRequestResult.has_value())
-            return buildErrorResponse(request, validRequestResult.error()); // todo check this error handling
         response = validRequestResult.value();
-    }
 
-    // request.state = ;
+    response.setSendState(SendState::kReady);
+
     return response;
 }
 
@@ -39,8 +41,9 @@ auto Execution::buildErrorResponse(const HTTPMessage& request, ResponseStatusCod
     HTTPResponse response;
 
     response.setStatusCode(statusCode);
-
     // error code, defailt error page
+    response.setHeader("content-length", std::to_string(response.getBodyLen()));
+
     return response;
 }
 
@@ -75,6 +78,17 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
             return std::unexpected(processDeleteResult.error());
         httpResponse = processDeleteResult.value();
     }
+    if (request.headers.contains("connection") && request.headers.at("connection")[0] == "close")
+    {
+        httpResponse.addHeaderValue("connection", "close");
+        httpResponse.setKeepAlive(false);
+    }
+    else
+    {
+        httpResponse.addHeaderValue("connection", "keep-alive");
+        httpResponse.setKeepAlive(true);
+    }
+
     return httpResponse;
 }
 
@@ -101,6 +115,7 @@ auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResp
 {
     std::string     path = getAbsFilePath(request.requestTarget);
     std::error_code ec;
+    HTTPResponse    response;
 
     bool fileExists = std::filesystem::exists(path, ec);
     if (!fileExists)
@@ -136,7 +151,9 @@ auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResp
             // todo log
             return std::unexpected(processGetFileResult.error());
         }
-        return processGetFileResult.value();
+        response = processGetFileResult.value();
+        response.setHeader("content-length", std::to_string(response.getBodyLen()));
+        return response;
     }
 }
 
@@ -162,6 +179,7 @@ auto Execution::processPost(const HTTPMessage& request) -> std::expected<HTTPRes
         return std::unexpected(postFileResult.error());
     // todo: any headers need to be set here?
     response.setStatusCode(ResponseStatusCode::kCreated);
+    response.setHeader("content-length", std::to_string(response.getBodyLen()));
     return response;
 }
 
@@ -176,5 +194,6 @@ auto Execution::processDelete(const HTTPMessage& request) -> std::expected<HTTPR
         return std::unexpected(deleteFileResult.error());
     // todo: any headers need to be set here?
     response.setStatusCode(ResponseStatusCode::kNoContent);
+    response.setHeader("content-length", std::to_string(response.getBodyLen()));
     return response;
 }

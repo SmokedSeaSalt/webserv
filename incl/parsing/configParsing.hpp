@@ -7,6 +7,9 @@
 #include <string>
 #include <vector>
 
+namespace Config
+{
+
 struct AcceptedMethods
 {
         bool getAllowed    = false;
@@ -44,9 +47,13 @@ struct Config
         std::vector<ServerBlock> serverBlocks; // interface:port pairs
 };
 
-auto parseConfigFile(std::string configFile) -> std::expected<Config, std::string>;
+inline Config config;
+
+auto parseConfigFile(std::string configFile) -> std::expected<void, std::string>;
 auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::string>;
-auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
-    -> std::expected<Location, std::string>;
+auto parseLocation(std::ifstream& inFile, std::string pathPrefix) -> std::expected<Location, std::string>;
 auto trimTrailingSemicolon(std::string& str) -> std::expected<void, std::string>;
+
+} // namespace Config
+
 #endif // CONFIGPARSING_HPP

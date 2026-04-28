@@ -124,10 +124,10 @@ TEST_CASE("Test readFile non existent file (404)")
 
 TEST_CASE("Test full path get html file")
 {
-    auto configResult = parseConfigFile("config.conf");
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Config      config = configResult.value();
-    Execution   execution(config);
+    Execution   execution{};
     std::string path = std::filesystem::current_path() / "assets/helloWorld.html";
 
     HTTPMessage httpMessage;
@@ -149,10 +149,10 @@ TEST_CASE("Test full path get html file")
 
 TEST_CASE("Test full path get png file test")
 {
-    auto configResult = parseConfigFile("config.conf");
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Config      config = configResult.value();
-    Execution   execution(config);
+    Execution   execution{};
     std::string path         = std::filesystem::current_path() / "assets/example.png";
     std::string expectedBody = loadBinaryFile(path);
 
@@ -188,10 +188,10 @@ TEST_CASE("Test full path get png file test")
 
 TEST_CASE("Test HEAD")
 {
-    auto configResult = parseConfigFile("config.conf");
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Config      config = configResult.value();
-    Execution   execution(config);
+    Execution   execution{};
     std::string path = std::filesystem::current_path() / "assets/helloWorld.html";
 
     HTTPMessage httpMessage;
@@ -213,10 +213,10 @@ TEST_CASE("Test HEAD")
 
 TEST_CASE("Test POST and then GET the file with manual file delete")
 {
-    auto configResult = parseConfigFile("config.conf");
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Config      config = configResult.value();
-    Execution   execution(config);
+    Execution   execution{};
     std::string path         = std::filesystem::current_path() / "assets/newFile.html";
     std::string fileContents = "<h>This file has been posted</h>";
 
@@ -256,10 +256,10 @@ TEST_CASE("Test POST and then GET the file with manual file delete")
 
 TEST_CASE("Test POST and then GET and then DELETE")
 {
-    auto configResult = parseConfigFile("config.conf");
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Config      config = configResult.value();
-    Execution   execution(config);
+    Execution   execution{};
     std::string path         = std::filesystem::current_path() / "assets/newFile.html";
     std::string fileContents = "<h>This file has been posted</h>";
 

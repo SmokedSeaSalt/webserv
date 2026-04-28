@@ -29,9 +29,14 @@ SRC =	main.cpp \
 		HTTPRules.cpp \
 		parsing.cpp \
 		executionHelpers.cpp \
-		contentType.cpp
+		contentType.cpp \
+		ConnectionManager.cpp \
+		connectionHelpers.cpp \
+		logging.cpp \
+		loggingHelpers.cpp
 
-INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/connection -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/srcs/connection -I$(ROOT_DIR)/incl/execution
+
+INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/connection -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/srcs/connection -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/logging
 
 OBJ = $(addprefix $(BUILD_DIR)/,$(patsubst %.cpp,%.o,$(SRC)))
 DEP = $(OBJ:.o=.d)
@@ -39,6 +44,8 @@ DEP = $(OBJ:.o=.d)
 vpath %.cpp .:$(ROOT_DIR)/srcs/connection
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing
 vpath %.cpp .:$(ROOT_DIR)/srcs/execution
+vpath %.cpp .:$(ROOT_DIR)/srcs/logging
+
 
 
 ################################################################################
