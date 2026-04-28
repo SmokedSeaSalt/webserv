@@ -38,7 +38,7 @@ class Cgi
     public:
         auto createEnv(const HTTPRequest& request) -> std::vector<std::string>;
         auto newData(std::string data) -> void;
-        auto execute() -> void;
+        auto execute(Client& client) -> void;
         auto createPacket() -> std::string;
 
     private:

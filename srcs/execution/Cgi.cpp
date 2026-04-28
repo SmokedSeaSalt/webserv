@@ -1,6 +1,7 @@
 #include "Cgi.hpp"
 #include "logging.hpp"
 #include "parsing.hpp"
+#include "connection.hpp"
 #include <sys/socket.h> //for socketpair
 #include <unistd.h>     //for dup2, close
 
@@ -131,9 +132,9 @@ static auto headerToEnvVar(std::string header, std::vector<std::string> value) -
     return envVar;
 }
 
-auto Cgi::execute() -> void
+auto Cgi::execute(Client& client) -> void
 {
-    std::vector<std::string> envStrings = createEnv(request); // TODO get this acess to client request
+    std::vector<std::string> envStrings = createEnv(client.request); // TODO get this acess to client request
     this->interpreterPath_              = getInterpreterPath(this->scriptPath_);
     if (this->interpreterPath_ == "")
         return; // TODO handle error; maybe place this within child if errors can be dealt with?
