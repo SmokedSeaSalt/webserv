@@ -1,31 +1,31 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "../incl/doctest.h"
 #include "Server.hpp"
+#include "configParsing.hpp"
 #include <arpa/inet.h>
 #include <cstdlib>
 #include <iostream>
 #include <thread>
 
-Config mockParseConfig(std::string ip, int port)
+void mockParseConfig(std::string ip, int port)
 {
-    ServerBlock sb{};
+    Config::config = {};
+    Config::ServerBlock sb{};
     sb.ip                = ip;
     sb.port              = port;
     sb.defaultErrorPages = {{404, "/errors/404.html"}, {500, "/errors/500.html"}};
     sb.maxBodySize       = 10000;
     sb.locations         = {}; // leave empty for connection tests
 
-    Config config{};
-    config.serverBlocks.push_back(sb);
-    return config;
+    Config::config.serverBlocks.push_back(sb);
 }
 
 TEST_CASE("Server receives and prints request")
 {
     const char* portEnv = std::getenv("PORT");
     int         port    = std::stoi(portEnv ? portEnv : "4242");
-    Config      config  = mockParseConfig("", port);
-    Server      server(config);
+    mockParseConfig("", port);
+    Server server{};
 
     // Setup server
     auto setupRes = server.setup();

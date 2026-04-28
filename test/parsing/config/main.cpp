@@ -6,13 +6,13 @@
 
 TEST_CASE("Test single ServerBlock (test1.conf)")
 {
-    auto configResult = parseConfigFile("test_files/test1.conf");
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("test_files/test1.conf");
     REQUIRE(configResult.has_value());
 
-    const Config& config = configResult.value();
-    REQUIRE(config.serverBlocks.size() == 1);
+    REQUIRE(Config::config.serverBlocks.size() == 1);
 
-    const ServerBlock& serverBlock = config.serverBlocks[0];
+    const Config::ServerBlock& serverBlock = Config::config.serverBlocks[0];
 
     SUBCASE("listen directive")
     {
@@ -40,7 +40,7 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
 
         SUBCASE("location0 root slash")
         {
-            const Location& loc = serverBlock.locations[0];
+            const Config::Location& loc = serverBlock.locations[0];
             CHECK(loc.pathPrefix == "/");
             CHECK(loc.acceptedMethods.getAllowed == true);
             CHECK(loc.acceptedMethods.headAllowed == true);
@@ -60,7 +60,7 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
 
         SUBCASE("location1 images")
         {
-            const Location& loc = serverBlock.locations[1];
+            const Config::Location& loc = serverBlock.locations[1];
             CHECK(loc.pathPrefix == "/images");
             CHECK(loc.acceptedMethods.getAllowed == true);
             CHECK(loc.acceptedMethods.headAllowed == false);
@@ -80,7 +80,7 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
 
         SUBCASE("location2 upload")
         {
-            const Location& loc = serverBlock.locations[2];
+            const Config::Location& loc = serverBlock.locations[2];
             CHECK(loc.pathPrefix == "/upload");
             CHECK(loc.acceptedMethods.getAllowed == false);
             CHECK(loc.acceptedMethods.headAllowed == false);
@@ -100,7 +100,7 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
 
         SUBCASE("location3 redirect")
         {
-            const Location& loc = serverBlock.locations[3];
+            const Config::Location& loc = serverBlock.locations[3];
             CHECK(loc.pathPrefix == "/old-page");
             CHECK(loc.redirectCode == 301);
             CHECK(loc.redirectLocation == "/new-page");
@@ -120,7 +120,7 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
 
         SUBCASE("location4 scripts cgi")
         {
-            const Location& loc = serverBlock.locations[4];
+            const Config::Location& loc = serverBlock.locations[4];
             CHECK(loc.pathPrefix == "/scripts");
             CHECK(loc.acceptedMethods.getAllowed == true);
             CHECK(loc.acceptedMethods.headAllowed == false);
@@ -146,16 +146,16 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
 
 TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 {
-    auto configResult = parseConfigFile("test_files/test2.conf");
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("test_files/test2.conf");
     REQUIRE_MESSAGE(configResult.has_value(),
                     "parseConfigFile(\"test2.conf\") failed: " << configResult.error());
 
-    const Config& config = configResult.value();
-    REQUIRE(config.serverBlocks.size() == 2);
+    REQUIRE(Config::config.serverBlocks.size() == 2);
 
     SUBCASE("server block 0")
     {
-        const ServerBlock& serverBlock = config.serverBlocks[0];
+        const Config::ServerBlock& serverBlock = Config::config.serverBlocks[0];
 
         SUBCASE("listen directive")
         {
@@ -182,7 +182,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 
             SUBCASE("location0 root slash")
             {
-                const Location& loc = serverBlock.locations[0];
+                const Config::Location& loc = serverBlock.locations[0];
                 CHECK(loc.pathPrefix == "/");
                 CHECK(loc.acceptedMethods.getAllowed == true);
                 CHECK(loc.acceptedMethods.headAllowed == true);
@@ -202,7 +202,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 
             SUBCASE("location1 images")
             {
-                const Location& loc = serverBlock.locations[1];
+                const Config::Location& loc = serverBlock.locations[1];
                 CHECK(loc.pathPrefix == "/images");
                 CHECK(loc.acceptedMethods.getAllowed == true);
                 CHECK(loc.acceptedMethods.headAllowed == false);
@@ -224,7 +224,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 
             SUBCASE("location2 upload")
             {
-                const Location& loc = serverBlock.locations[2];
+                const Config::Location& loc = serverBlock.locations[2];
                 CHECK(loc.pathPrefix == "/upload");
                 CHECK(loc.acceptedMethods.getAllowed == false);
                 CHECK(loc.acceptedMethods.headAllowed == false);
@@ -244,7 +244,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 
             SUBCASE("location3 redirect")
             {
-                const Location& loc = serverBlock.locations[3];
+                const Config::Location& loc = serverBlock.locations[3];
                 CHECK(loc.pathPrefix == "/old-page");
                 CHECK(loc.redirectCode == 301);
                 CHECK(loc.redirectLocation == "/new-page");
@@ -264,7 +264,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 
             SUBCASE("location4 scripts cgi")
             {
-                const Location& loc = serverBlock.locations[4];
+                const Config::Location& loc = serverBlock.locations[4];
                 CHECK(loc.pathPrefix == "/scripts");
                 CHECK(loc.acceptedMethods.getAllowed == true);
                 CHECK(loc.acceptedMethods.headAllowed == false);
@@ -290,7 +290,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 
     SUBCASE("server block 1")
     {
-        const ServerBlock& serverBlock = config.serverBlocks[1];
+        const Config::ServerBlock& serverBlock = Config::config.serverBlocks[1];
 
         SUBCASE("listen directive")
         {
@@ -316,7 +316,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 
             SUBCASE("location0 root slash")
             {
-                const Location& loc = serverBlock.locations[0];
+                const Config::Location& loc = serverBlock.locations[0];
                 CHECK(loc.pathPrefix == "/");
                 CHECK(loc.acceptedMethods.getAllowed == true);
                 CHECK(loc.acceptedMethods.headAllowed == false);
@@ -336,7 +336,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 
             SUBCASE("location1 api")
             {
-                const Location& loc = serverBlock.locations[1];
+                const Config::Location& loc = serverBlock.locations[1];
                 CHECK(loc.pathPrefix == "/api");
                 CHECK(loc.acceptedMethods.getAllowed == true);
                 CHECK(loc.acceptedMethods.headAllowed == false);
@@ -358,7 +358,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 
             SUBCASE("location2 files")
             {
-                const Location& loc = serverBlock.locations[2];
+                const Config::Location& loc = serverBlock.locations[2];
                 CHECK(loc.pathPrefix == "/files");
                 CHECK(loc.acceptedMethods.getAllowed == true);
                 CHECK(loc.acceptedMethods.headAllowed == false);
@@ -378,7 +378,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 
             SUBCASE("location3 incoming upload")
             {
-                const Location& loc = serverBlock.locations[3];
+                const Config::Location& loc = serverBlock.locations[3];
                 CHECK(loc.pathPrefix == "/incoming");
                 CHECK(loc.acceptedMethods.getAllowed == false);
                 CHECK(loc.acceptedMethods.headAllowed == false);
@@ -401,6 +401,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
 
 TEST_CASE("Test parsing errors")
 {
+    Config::config                                = {};
     const std::vector<std::string> invalidConfigs = {
         "test_files/invalidMaxBodySize.conf",
         "test_files/invalidMaxBodySizeCount.conf",
@@ -420,7 +421,7 @@ TEST_CASE("Test parsing errors")
 
         SUBCASE(path.c_str())
         {
-            auto configResult = parseConfigFile(path);
+            auto configResult = Config::parseConfigFile(path);
             CHECK(configResult.has_value() == false);
             CHECK(configResult.error().empty() == false);
             CHECK_MESSAGE(
@@ -432,9 +433,10 @@ TEST_CASE("Test parsing errors")
 
 TEST_CASE("Test file opening errors")
 {
+    Config::config = {};
     SUBCASE("Non-existent file")
     {
-        auto configResult = parseConfigFile("blahblah123.conf");
+        auto configResult = Config::parseConfigFile("blahblah123.conf");
         CHECK(configResult.has_value() == false);
         CHECK(configResult.error() == "Config file could not be opened");
     }

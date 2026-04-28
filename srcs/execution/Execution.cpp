@@ -3,7 +3,7 @@
 #include <filesystem>
 
 // Public Functions
-Execution::Execution(Config config) : config_(config) {}
+Execution::Execution() {}
 
 auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
 {

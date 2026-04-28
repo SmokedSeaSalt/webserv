@@ -16,7 +16,7 @@
 class Server
 {
     public:
-        Server(Config config);
+        Server();
         ~Server();
 
         auto setup() -> std::expected<void, std::string>;
@@ -28,7 +28,6 @@ class Server
     private:
         struct epoll_event                 ev_;
         struct epoll_event                 events_[MAX_EVENTS];
-        struct Config                      config_;
         std::unique_ptr<ConnectionManager> connectionManager_;
         std::set<int>                      listenSockets_;
         std::map<int, int>                 listenSocketFdToPort_;

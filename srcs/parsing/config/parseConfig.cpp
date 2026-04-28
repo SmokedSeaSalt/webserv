@@ -4,6 +4,9 @@
 #include <fstream>
 #include <string>
 
+namespace Config
+{
+
 auto trimTrailingSemicolon(std::string& str) -> std::expected<void, std::string>
 {
     if (str.empty() || str.back() != ';')
@@ -12,9 +15,8 @@ auto trimTrailingSemicolon(std::string& str) -> std::expected<void, std::string>
     return {};
 }
 
-auto parseConfigFile(std::string configFile) -> std::expected<Config, std::string>
+auto parseConfigFile(std::string configFile) -> std::expected<void, std::string>
 {
-    Config        config;
     std::ifstream inFile;
     std::string   buf;
 
@@ -38,5 +40,7 @@ auto parseConfigFile(std::string configFile) -> std::expected<Config, std::strin
             return std::unexpected("Error at: " + buf);
         }
     }
-    return config;
+    return {};
 }
+
+} // namespace Config

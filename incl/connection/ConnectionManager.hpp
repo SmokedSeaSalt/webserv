@@ -15,7 +15,7 @@ enum class HandleEventResult
 class ConnectionManager
 {
     public:
-        ConnectionManager(Config config, int epollfd);
+        ConnectionManager(int epollfd);
 
         auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
 
@@ -26,7 +26,6 @@ class ConnectionManager
         Execution             execution_;
         struct epoll_event    ev_;
         int                   epollfd_;
-        Config                config_;
 
         auto handleReceivingEvent(int fd) -> std::expected<void, std::string>;
         auto handleSendingEvent(int fd) -> std::expected<void, std::string>;
