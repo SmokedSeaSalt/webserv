@@ -19,7 +19,7 @@ class ConnectionManager
 
         auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
 
-        auto createConnection(const epoll_event& epollEvent, int listenSocketPort) -> std::expected<void, std::string>;
+        auto createConnection(const epoll_event& epollEvent, std::tuple<std::string, int>) -> std::expected<void, std::string>;
 
     private:
         std::map<int, Client> clientMap_;

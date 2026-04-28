@@ -27,10 +27,10 @@ enum class ErrorType
 
 struct Client
 {
-        int         socketfd;
-        int         listenSocketPort;
-        std::string service;
-        std::string host;
+        int                          socketfd;
+        std::tuple<std::string, int> listenSocketIpPortPair;
+        std::string                  service;
+        std::string                  host;
 
         ClientState  state;
         HTTPRequest  request;

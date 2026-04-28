@@ -158,11 +158,10 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
         }
         else
         {
-            client.request = {};
+            client.request  = {};
             client.response = {};
-            client.state = ClientState::Receiving;
+            client.state    = ClientState::Receiving;
             LOG(LogLevel::kDebug, "Client socket at fd: {} being kept alive", std::to_string(fd));
-
         }
         break;
     }
@@ -185,7 +184,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
 
 // }
 
-auto ConnectionManager::createConnection(const epoll_event& epollEvent, int listenSocketPort) -> std::expected<void, std::string>
+auto ConnectionManager::createConnection(const epoll_event& epollEvent, std::tuple<std::string, int> ipPortPair) -> std::expected<void, std::string>
 {
     int              connectionSocket;
     sockaddr_storage clientAddress{};
@@ -228,14 +227,14 @@ auto ConnectionManager::createConnection(const epoll_event& epollEvent, int list
     else
         LOG(LogLevel::kInfo, "Client connected: fd={}", connectionSocket);
 
-    clientMap_.emplace(connectionSocket, Client{.socketfd         = connectionSocket,
-                                                .listenSocketPort = listenSocketPort,
-                                                .service          = std::string(service),
-                                                .host             = std::string(host),
-                                                .state            = ClientState::Receiving,
-                                                .request          = HTTPRequest{},
-                                                .response         = HTTPResponse{},
-                                                .error            = ErrorType::None});
+    clientMap_.emplace(connectionSocket, Client{.socketfd               = connectionSocket,
+                                                .listenSocketIpPortPair = ipPortPair,
+                                                .service                = std::string(service),
+                                                .host                   = std::string(host),
+                                                .state                  = ClientState::Receiving,
+                                                .request                = HTTPRequest{},
+                                                .response               = HTTPResponse{},
+                                                .error                  = ErrorType::None});
 
     return {};
 }

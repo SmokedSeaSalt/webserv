@@ -26,13 +26,13 @@ class Server
         auto getListenSockets() -> std::set<int>;
 
     private:
-        struct epoll_event                 ev_;
-        struct epoll_event                 events_[MAX_EVENTS];
-        struct Config                      config_;
-        std::unique_ptr<ConnectionManager> connectionManager_;
-        std::set<int>                      listenSockets_;
-        std::map<int, int>                 listenSocketFdToPort_;
-        int                                epollfd_;
+        struct epoll_event                          ev_;
+        struct epoll_event                          events_[MAX_EVENTS];
+        struct Config                               config_;
+        std::unique_ptr<ConnectionManager>          connectionManager_;
+        std::set<int>                               listenSockets_;
+        std::map<int, std::tuple<std::string, int>> listenSocketFdToIpPortPair_;
+        int                                         epollfd_;
 
         // setup() helpers
         auto setupListenSocket(std::string ip, int port) -> std::expected<int, std::string>;
