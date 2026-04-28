@@ -6,7 +6,7 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-ConnectionManager::ConnectionManager(Config config, int epollfd) : execution_(config), epollfd_(epollfd), config_(config) {}
+ConnectionManager::ConnectionManager(int epollfd) : execution_(), epollfd_(epollfd) {}
 
 /// @brief receives data from the fd
 /// @param fd
@@ -158,11 +158,10 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
         }
         else
         {
-            client.request = {};
+            client.request  = {};
             client.response = {};
-            client.state = ClientState::Receiving;
+            client.state    = ClientState::Receiving;
             LOG(LogLevel::kDebug, "Client socket at fd: {} being kept alive", std::to_string(fd));
-
         }
         break;
     }

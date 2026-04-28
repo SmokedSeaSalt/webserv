@@ -5,6 +5,9 @@
 #include <functional>
 #include <string>
 
+namespace Config
+{
+
 static auto parseMethods(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
@@ -164,45 +167,4 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
     return std::unexpected("Location block closing bracket not found");
 }
 
-// if (buf.find("methods") == 0)
-// {
-//     auto result = parseMethods(location, buf);
-//     if (!result.has_value())
-//         return std::unexpected(result.error());
-// }
-// else if (buf.find("return") == 0)
-// {
-//     auto result = parseRedirect(location, buf);
-//     if (!result.has_value())
-//         return std::unexpected(result.error());
-// }
-// else if (buf.find("root") == 0)
-// {
-//     auto result = parseRoot(location, buf);
-//     if (!result.has_value())
-//         return std::unexpected(result.error());
-// }
-// else if (buf.find("autoindex") == 0)
-// {
-//     auto result = parseAutoIndex(location, buf);
-//     if (!result.has_value())
-//         return std::unexpected(result.error());
-// }
-// else if (buf.find("index") == 0)
-// {
-//     auto result = parseIndex(location, buf);
-//     if (!result.has_value())
-//         return std::unexpected(result.error());
-// }
-// else if (buf.find("upload_store") == 0)
-// {
-//     auto result = parseUploadStore(location, buf);
-//     if (!result.has_value())
-//         return std::unexpected(result.error());
-// }
-// else if (buf.find("cgi") == 0)
-// {
-//     auto result = parseCGI(location, buf);
-//     if (!result.has_value())
-//         return std::unexpected(result.error());
-// }
+} // namespace Config

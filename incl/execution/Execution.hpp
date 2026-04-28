@@ -8,13 +8,11 @@
 class Execution
 {
     public:
-        Execution(Config config);
+        Execution();
 
         auto execute(const HTTPMessage& request) -> HTTPResponse;
 
     private:
-        Config config_;
-
         auto checkRequestConfigCompliance(const HTTPMessage& request) -> ResponseStatusCode;
         auto buildErrorResponse(const HTTPMessage& request, ResponseStatusCode statusCode) -> HTTPResponse;
         auto processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
