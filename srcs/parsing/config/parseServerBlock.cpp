@@ -1,5 +1,6 @@
 #include "configParsing.hpp"
 #include "parsing.hpp"
+#include "connection.hpp"
 #include <expected>
 #include <fstream>
 #include <string>
@@ -164,3 +165,8 @@ auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
     }
     return std::unexpected("Server block closing bracket not found");
 }
+
+// auto getLocation(ServerBlock& serverBlock, Client& client) -> std::expected<ServerBlock, std::string>
+// {
+
+// }

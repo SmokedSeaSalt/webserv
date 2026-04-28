@@ -25,7 +25,7 @@ SRC =	main.cpp \
 		split.cpp
 
 
-INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing
+INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/connection
 
 OBJ = $(addprefix $(BUILD_DIR)/,$(patsubst %.cpp,%.o,$(SRC)))
 DEP = $(OBJ:.o=.d)

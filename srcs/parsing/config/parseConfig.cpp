@@ -1,6 +1,6 @@
 #include "configParsing.hpp"
 #include "parsing.hpp"
-// #include "connection.hpp"
+#include "connection.hpp"
 #include <expected>
 #include <fstream>
 #include <string>
@@ -42,10 +42,12 @@ auto parseConfigFile(std::string configFile) -> std::expected<Config, std::strin
     return config;
 }
 
-// auto getServerBlock(Config config, Client client) -> std::expected<ServerBlock, std::string>
-// {
-//     for (ServerBlock serverBlock : config.serverBlocks)
-//     {
-//         if (serverBlock.port == client.listenSocketPort)
-//     } 
-// }
+auto getServerBlock(Config& config, Client& client) -> std::expected<ServerBlock, std::string>
+{
+    for (ServerBlock& serverBlock : config.serverBlocks)
+    {
+        if (serverBlock.ip == get<0>(client.listenSocketIpPortPair) && serverBlock.port == get<1>(client.listenSocketIpPortPair))
+            return serverBlock;
+    }
+    return std::unexpected("Serverblock not found");
+}
