@@ -1,12 +1,13 @@
 // #include "connection.hpp"
 #include "configParsing.hpp"
+#include "HTTPRequest.hpp"
 #include "logging.hpp"
 #include <expected>
 
 namespace Config
 {
 
-auto getServerBlock(Config& config, std::tuple<std::string, int>& listenSocketIpPortPair) -> std::expected<ServerBlock, std::string>
+auto getServerBlock(Config& config, const std::tuple<std::string, int>& listenSocketIpPortPair) -> std::expected<ServerBlock, std::string>
 {
     for (ServerBlock& serverBlock : config.serverBlocks)
     {
@@ -40,6 +41,44 @@ auto getLocation(ServerBlock& serverBlock, std::string target) -> std::expected<
         return matchedLocation;
     LOG(LogLevel::kInfo, "Client with target: {}. No matching location found.\n", target);
     return std::unexpected("Location not found");
+}
+
+auto checkContentLength(HTTPRequest request) -> ResponseStatusCode
+{
+    size_t contentLength = 0;
+    try
+    {
+        if (request.getMessage().headers.contains("content-length"))
+        {
+            int tmp = std::stoi(request.getMessage().headers["content-length"][0]);
+            if (tmp < 0)
+                return ResponseStatusCode::kBadRequest;
+            contentLength = static_cast<size_t>(tmp);
+        }
+    }
+    catch (std::exception& e)
+    {
+        LOG(LogLevel::kDebug, "content length stoi failed with e: {}", e.what());
+        return ResponseStatusCode::kBadRequest;
+    }
+    const ServerBlock& serverBlock = request.getServerBlock();
+    if (contentLength > serverBlock.maxBodySize)
+    {
+        return ResponseStatusCode::kContentTooLarge;
+    }
+    return ResponseStatusCode::kOK;
+}
+
+auto checkLocationCompliance(HTTPRequest request) -> ResponseStatusCode
+{
+    Location location = request.getLocation();
+    if (!location.acceptedMethods.isAllowed(request.getMessage().method))
+    {
+        LOG(LogLevel::kDebug, "Method {} not allowed", request.getMessage().method);
+        return ResponseStatusCode::kMethodNotAllowed;
+    }
+    // todo are there other checks?
+    return ResponseStatusCode::kOK;
 }
 
 // auto getServerBlock(Config& config, Client& client) -> std::expected<ServerBlock, std::string>

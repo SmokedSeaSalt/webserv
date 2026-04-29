@@ -36,7 +36,8 @@ SRC =	main.cpp \
 		InputArgs.cpp \
 		logging.cpp \
 		loggingHelpers.cpp \
-		configUtils.cpp
+		configUtils.cpp \
+		Client.cpp
 
 INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/connection  -I$(ROOT_DIR)/incl/logging#TODO
 
@@ -45,7 +46,7 @@ DEP = ${OBJ:.o=.d}
 
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing #TODO
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing/config
-vpath %.cpp .:$(ROOT_DIR)/srcs/logging 
+vpath %.cpp .:$(ROOT_DIR)/srcs/logging
 vpath %.cpp .:$(ROOT_DIR)/srcs/connection
 vpath %.cpp .:$(ROOT_DIR)/srcs/execution
 vpath %.cpp .:$(ROOT_DIR)/srcs

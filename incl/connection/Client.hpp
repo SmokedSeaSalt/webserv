@@ -21,7 +21,7 @@ enum class ClientState
 class Client
 {
     public:
-        Client(int socketfd, int listendSocketPort, std::string service, std::string host);
+        Client(int socketfd, int listendSocketPort, std::tuple<std::string, int>& listenSocketIpPortPair, std::string service, std::string host);
         auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
 
         // get/set
@@ -38,13 +38,23 @@ class Client
         auto getHost() -> std::string;
 
         auto setState(ClientState) -> void;
-        auto getState() -> ClientState;
+        auto getState() -> ClientState&;
+
+        auto setRequest(HTTPRequest) -> void;
+        auto getRequest() -> HTTPRequest&;
+
+        auto setResponse(HTTPResponse) -> void;
+        auto getResponse() -> HTTPResponse&;
+
+        auto setListenSocketIpPortPair(std::tuple<std::string, int>) -> void;
+        auto getListenSocketIpPortPair() -> std::tuple<std::string, int>;
 
     private:
-        int         socketfd_;
-        int         listenSocketPort_;
-        std::string service_;
-        std::string host_;
+        int                          socketfd_;
+        int                          listenSocketPort_;
+        std::tuple<std::string, int> listenSocketIpPortPair_;
+        std::string                  service_;
+        std::string                  host_;
 
         ClientState  state_;
         HTTPRequest  request_;

@@ -32,10 +32,10 @@ SRC =	main.cpp \
 		contentType.cpp \
 		logging.cpp \
 		loggingHelpers.cpp \
-		configUtils.cpp
-
-
-
+		configUtils.cpp \
+		Client.cpp \
+		ConnectionManager.cpp \
+		connectionHelpers.cpp
 
 
 INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/logging -I$(ROOT_DIR)/incl/connection
@@ -47,6 +47,7 @@ vpath %.cpp .:$(ROOT_DIR)/srcs/parsing/config
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing
 vpath %.cpp .:$(ROOT_DIR)/srcs/execution
 vpath %.cpp .:$(ROOT_DIR)/srcs/logging
+vpath %.cpp .:$(ROOT_DIR)/srcs/connection
 
 
 

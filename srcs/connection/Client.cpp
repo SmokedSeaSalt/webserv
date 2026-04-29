@@ -4,7 +4,7 @@
 #include "logging.hpp"
 #include <string>
 
-Client::Client(int socketfd, int listenSocketPort, std::string service, std::string host) : socketfd_(socketfd), listenSocketPort_(listenSocketPort), service_(service), host_(host), request_(), response_()
+Client::Client(int socketfd, int listenSocketPort, std::tuple<std::string, int>& listenSocketIpPortPair, std::string service, std::string host) : socketfd_(socketfd), listenSocketPort_(listenSocketPort), listenSocketIpPortPair_(listenSocketIpPortPair), service_(service), host_(host), request_(), response_()
 {
     this->state_ = ClientState::Receiving;
     this->error_ = ErrorType::None;
@@ -33,7 +33,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         if (this->request_.getState() != RequestState::KDone)
             break;
         LOG(LogLevel::kInfo, "Packet received from fd:{} with content:\n{}\n", fd, getHTTPMessageString(this->request_.getMessage()));
-        this->response_ = Execution::execute(this->request_.getMessage());
+        this->response_ = Execution::execute(*this);
         [[fallthrough]];
     }
     case ClientState::Processing:
@@ -69,7 +69,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
     case ClientState::Error:
         break;
     }
-	return HandleEventResult::kSuccess;
+    return HandleEventResult::kSuccess;
 }
 
 auto Client::setSocketfd(int arg) -> void
@@ -112,7 +112,34 @@ auto Client::setState(ClientState arg) -> void
 {
     this->state_ = arg;
 }
-auto Client::getState() -> ClientState
+auto Client::getState() -> ClientState&
 {
     return this->state_;
+}
+
+auto Client::setRequest(HTTPRequest arg) -> void
+{
+    this->request_ = arg;
+}
+auto Client::getRequest() -> HTTPRequest&
+{
+    return this->request_;
+}
+
+auto Client::setResponse(HTTPResponse arg) -> void
+{
+    this->response_ = arg;
+}
+auto Client::getResponse() -> HTTPResponse&
+{
+    return this->response_;
+}
+
+auto Client::setListenSocketIpPortPair(std::tuple<std::string, int> arg) -> void
+{
+    this->listenSocketIpPortPair_ = arg;
+}
+auto Client::getListenSocketIpPortPair() -> std::tuple<std::string, int>
+{
+    return this->listenSocketIpPortPair_;
 }

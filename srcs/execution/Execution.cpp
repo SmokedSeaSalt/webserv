@@ -14,23 +14,23 @@ auto execute(Client& client) -> HTTPResponse
 {
     HTTPResponse response;
 
-    client.request.setAbsoluteTarget(getAbsFilePath(client.request.getMessage().requestTarget));
+    client.getRequest().setAbsoluteTarget(getAbsFilePath(client.getRequest().getMessage().requestTarget));
 
-    auto serverBlock = getServerBlock(Config::config, client.listenSocketIpPortPair);
+    auto serverBlock = Config::getServerBlock(Config::config, client.getListenSocketIpPortPair());
     if (!serverBlock.has_value())
     {
         // todo log
         return buildErrorResponse(client, ResponseStatusCode::kInternalServerError);
     }
-    client.request.setServerBlock(serverBlock.value());
+    client.getRequest().setServerBlock(serverBlock.value());
 
-    auto location = getLocation(serverBlock.value(), client.request.getMessage().requestTarget);
+    auto location = getLocation(serverBlock.value(), client.getRequest().getMessage().requestTarget);
     if (!location.has_value())
     {
         // todo log
         return buildErrorResponse(client, ResponseStatusCode::kInternalServerError);
     }
-    client.request.setLocation(location.value());
+    client.getRequest().setLocation(location.value());
 
     ResponseStatusCode status = checkRequestConfigCompliance(client);
 
@@ -54,15 +54,15 @@ auto execute(Client& client) -> HTTPResponse
 // validate if request complies with config
 auto checkRequestConfigCompliance(Client& client) -> ResponseStatusCode
 {
-    HTTPMessage requestMessage = client.request.getMessage();
+    HTTPMessage requestMessage = client.getRequest().getMessage();
     // Server block checks
-    ResponseStatusCode tmpStatus = checkContentLength(client.request);
+    ResponseStatusCode tmpStatus = Config::checkContentLength(client.getRequest());
     if (tmpStatus != ResponseStatusCode::kOK)
     {
-        LOG(LogLevel::kInfo, "Client at fd={}, content length check failed.", client.socketfd);
+        LOG(LogLevel::kInfo, "Client at fd={}, content length check failed.", client.getSocketfd());
         return tmpStatus;
     }
-    tmpStatus = checkLocationCompliance(client.request);
+    tmpStatus = Config::checkLocationCompliance(client.getRequest());
     if (tmpStatus != ResponseStatusCode::kOK)
         return tmpStatus;
 
@@ -84,7 +84,7 @@ auto buildErrorResponse(Client& client, ResponseStatusCode statusCode) -> HTTPRe
 auto processValidRequest(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse httpResponse;
-    HTTPMessage  request = client.request.getMessage();
+    HTTPMessage  request = client.getRequest().getMessage();
 
     if (request.method == "GET")
     {
@@ -149,7 +149,7 @@ auto processGetFile(const std::string path) -> std::expected<HTTPResponse, Respo
 
 auto processGet(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
-    std::string     path = client.request.getMessage().absoluteRequestTarget;
+    std::string     path = client.getRequest().getMessage().absoluteRequestTarget;
     std::error_code ec;
     HTTPResponse    response;
 
@@ -208,9 +208,9 @@ auto processHead(Client& client) -> std::expected<HTTPResponse, ResponseStatusCo
 auto processPost(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse response;
-    std::string  path = client.request.getMessage().absoluteRequestTarget;
+    std::string  path = client.getRequest().getMessage().absoluteRequestTarget;
 
-    auto postFileResult = createFileWithContent(path, client.request.getMessage().body);
+    auto postFileResult = createFileWithContent(path, client.getRequest().getMessage().body);
     if (!postFileResult.has_value())
         return std::unexpected(postFileResult.error());
     // todo: any headers need to be set here?
@@ -222,7 +222,7 @@ auto processPost(Client& client) -> std::expected<HTTPResponse, ResponseStatusCo
 auto processDelete(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse    response;
-    std::string     path = client.request.getMessage().absoluteRequestTarget;
+    std::string     path = client.getRequest().getMessage().absoluteRequestTarget;
     std::error_code ec;
 
     auto deleteFileResult = deleteFile(path);

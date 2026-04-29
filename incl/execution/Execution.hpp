@@ -5,6 +5,7 @@
 #include "HTTPResponse.hpp"
 #include "configParsing.hpp"
 #include "connection.hpp"
+#include "Client.hpp"
 
 namespace Execution
 {
