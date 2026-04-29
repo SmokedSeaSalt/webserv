@@ -16,6 +16,19 @@ struct AcceptedMethods
         bool headAllowed   = false;
         bool postAllowed   = false;
         bool deleteAllowed = false;
+
+        bool isAllowed(const std::string& method) const
+        {
+            if (method == "GET")
+                return getAllowed;
+            if (method == "HEAD")
+                return headAllowed;
+            if (method == "POST")
+                return postAllowed;
+            if (method == "DELETE")
+                return deleteAllowed;
+            return false;
+        }
 };
 
 struct Location

@@ -237,11 +237,12 @@ TEST_CASE("Test POST and then GET the file with manual file delete")
     std::system(("rm -rf " + path).c_str());
 
     HTTPMessage httpPostMessage;
-    httpPostMessage.method          = "POST";
-    httpPostMessage.requestTarget   = path;
-    httpPostMessage.protocol        = "HTTP/1.1";
-    httpPostMessage.headers["host"] = {"localhost:8080"};
-    httpPostMessage.body            = fileContents;
+    httpPostMessage.method                    = "POST";
+    httpPostMessage.requestTarget             = path;
+    httpPostMessage.protocol                  = "HTTP/1.1";
+    httpPostMessage.headers["host"]           = {"localhost:8080"};
+    httpPostMessage.headers["content-length"] = {std::to_string(fileContents.length())};
+    httpPostMessage.body                      = fileContents;
 
     CHECK(httpPostMessage.method == "POST");
     CHECK(httpPostMessage.requestTarget == path);
@@ -288,11 +289,12 @@ TEST_CASE("Test POST and then GET and then DELETE")
 
     // POST the file
     HTTPMessage httpPostMessage;
-    httpPostMessage.method          = "POST";
-    httpPostMessage.requestTarget   = path;
-    httpPostMessage.protocol        = "HTTP/1.1";
-    httpPostMessage.headers["host"] = {"localhost:8080"};
-    httpPostMessage.body            = fileContents;
+    httpPostMessage.method                    = "POST";
+    httpPostMessage.requestTarget             = path;
+    httpPostMessage.protocol                  = "HTTP/1.1";
+    httpPostMessage.headers["host"]           = {"localhost:8080"};
+    httpPostMessage.headers["content-length"] = {std::to_string(fileContents.length())};
+    httpPostMessage.body                      = fileContents;
 
     std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
     Client                       client1{0, dummyPair, "", "", ClientState::Receiving, HTTPRequest(), HTTPResponse(), ErrorType::None};

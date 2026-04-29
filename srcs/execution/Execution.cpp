@@ -2,7 +2,9 @@
 #include "configParsing.hpp"
 #include "configUtils.hpp"
 #include "executionHelpers.hpp"
+#include "logging.hpp"
 #include <filesystem>
+#include <string>
 
 // Public Functions
 Execution::Execution() {}
@@ -47,12 +49,60 @@ auto Execution::execute(Client& client) -> HTTPResponse
     return response;
 }
 
+auto checkContentLength(HTTPRequest request) -> ResponseStatusCode
+{
+    size_t contentLength = 0;
+    try
+    {
+        if (request.getMessage().headers.contains("content-length"))
+        {
+            int tmp = std::stoi(request.getMessage().headers["content-length"][0]);
+            if (tmp < 0)
+                return ResponseStatusCode::kBadRequest;
+            contentLength = static_cast<size_t>(tmp);
+        }
+    }
+    catch (std::exception& e)
+    {
+        LOG(LogLevel::kDebug, "content length stoi failed with e: {}", e.what());
+        return ResponseStatusCode::kBadRequest;
+    }
+    const Config::ServerBlock& serverBlock = request.getServerBlock();
+    if (contentLength > serverBlock.maxBodySize)
+    {
+        return ResponseStatusCode::kContentTooLarge;
+    }
+    return ResponseStatusCode::kOK;
+}
+
+auto checkLocationCompliance(HTTPRequest request) -> ResponseStatusCode
+{
+    Config::Location location = request.getLocation();
+    if (!location.acceptedMethods.isAllowed(request.getMessage().method))
+    {
+        LOG(LogLevel::kDebug, "Method {} not allowed", request.getMessage().method);
+        return ResponseStatusCode::kMethodNotAllowed;
+    }
+    // todo are there other checks?
+    return ResponseStatusCode::kOK;
+}
+
 // Private Functions
 // validate if request complies with config
 auto Execution::checkRequestConfigCompliance(Client& client) -> ResponseStatusCode
 {
-    // todo: validate request
-    (void)client;
+    HTTPMessage requestMessage = client.request.getMessage();
+    // Server block checks
+    ResponseStatusCode tmpStatus = checkContentLength(client.request);
+    if (tmpStatus != ResponseStatusCode::kOK)
+    {
+        LOG(LogLevel::kInfo, "Client at fd={}, content length check failed.", client.socketfd);
+        return tmpStatus;
+    }
+    tmpStatus = checkLocationCompliance(client.request);
+    if (tmpStatus != ResponseStatusCode::kOK)
+        return tmpStatus;
+
     return ResponseStatusCode::kOK;
 }
 
