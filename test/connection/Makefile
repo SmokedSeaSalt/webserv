@@ -34,16 +34,18 @@ SRC =	main.cpp \
 		connectionHelpers.cpp \
 		logging.cpp \
 		loggingHelpers.cpp \
-		Client.cpp
+		Client.cpp \
+		configUtils.cpp
 
 
-INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/connection -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/srcs/connection -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/logging
+INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/connection -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/srcs/connection -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/logging -I$(ROOT_DIR)/incl/parsing/config
 
 OBJ = $(addprefix $(BUILD_DIR)/,$(patsubst %.cpp,%.o,$(SRC)))
 DEP = $(OBJ:.o=.d)
 
 vpath %.cpp .:$(ROOT_DIR)/srcs/connection
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing
+vpath %.cpp .:$(ROOT_DIR)/srcs/parsing/config
 vpath %.cpp .:$(ROOT_DIR)/srcs/execution
 vpath %.cpp .:$(ROOT_DIR)/srcs/logging
 

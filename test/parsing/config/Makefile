@@ -22,16 +22,19 @@ SRC =	main.cpp \
 		parseServerBlock.cpp \
 		parseLocation.cpp \
 		stringTrim.cpp \
-		split.cpp
+		split.cpp \
+		logging.cpp
 
 
-INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing
+INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/connection -I$(ROOT_DIR)/incl/logging
 
 OBJ = $(addprefix $(BUILD_DIR)/,$(patsubst %.cpp,%.o,$(SRC)))
 DEP = $(OBJ:.o=.d)
 
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing/config
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing
+vpath %.cpp .:$(ROOT_DIR)/srcs/logging
+
 
 
 ################################################################################

@@ -121,7 +121,18 @@ auto ConnectionManager::eraseClient(int fd) -> void
     }
 }
 
-auto ConnectionManager::createConnection(const epoll_event& epollEvent, int listenSocketPort) -> std::expected<void, std::string>
+auto ConnectionManager::eraseClient(int fd) -> void
+{
+    if (close(fd) == -1)
+        LOG(LogLevel::kDebug, "failed to close client fd: {}", fd);
+    else
+    {
+        LOG(LogLevel::kDebug, "Closed client fd: {}. Erasing from clientMap_", fd);
+        clientMap_.erase(fd);
+    }
+}
+
+auto ConnectionManager::createConnection(const epoll_event& epollEvent, std::tuple<std::string, int> ipPortPair) -> std::expected<void, std::string>
 {
     int              connectionSocket;
     sockaddr_storage clientAddress{};
@@ -168,7 +179,7 @@ auto ConnectionManager::createConnection(const epoll_event& epollEvent, int list
         return std::unexpected("getnameinfo could not get all paramaters");
     }
 
-    clientMap_.emplace(connectionSocket, Client(connectionSocket, listenSocketPort, std::string(service), std::string(host)));
+    clientMap_.emplace(connectionSocket, Client(connectionSocket, ipPortPair, std::string(service), std::string(host)));
 
     return {};
 }

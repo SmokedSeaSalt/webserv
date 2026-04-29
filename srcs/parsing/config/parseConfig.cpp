@@ -1,4 +1,5 @@
 #include "configParsing.hpp"
+#include "connection.hpp"
 #include "parsing.hpp"
 #include <expected>
 #include <fstream>

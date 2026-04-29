@@ -23,6 +23,7 @@ SRC =	main.cpp \
 		parseServerBlock.cpp \
 		Execution.cpp \
 		HTTPResponse.cpp \
+		HTTPRequest.cpp \
 		executionHelpers.cpp \
 		HTTPRules.cpp \
 		parsing.cpp \
@@ -30,13 +31,14 @@ SRC =	main.cpp \
 		split.cpp \
 		contentType.cpp \
 		logging.cpp \
-		loggingHelpers.cpp
+		loggingHelpers.cpp \
+		configUtils.cpp
 
 
 
 
 
-INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/logging
+INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/logging -I$(ROOT_DIR)/incl/connection
 
 OBJ = $(addprefix $(BUILD_DIR)/,$(patsubst %.cpp,%.o,$(SRC)))
 DEP = $(OBJ:.o=.d)

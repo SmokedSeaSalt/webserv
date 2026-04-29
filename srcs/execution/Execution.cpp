@@ -1,23 +1,47 @@
 #include "Execution.hpp"
+#include "Client.hpp"
+#include "configParsing.hpp"
+#include "configUtils.hpp"
 #include "executionHelpers.hpp"
+#include "logging.hpp"
 #include <filesystem>
+#include <string>
 
 namespace Execution
 {
 
-auto execute(const HTTPMessage& request) -> HTTPResponse
+auto execute(Client& client) -> HTTPResponse
 {
-    HTTPResponse       response;
-    ResponseStatusCode status = checkRequestConfigCompliance(request);
+    HTTPResponse response;
+
+    client.request.setAbsoluteTarget(getAbsFilePath(client.request.getMessage().requestTarget));
+
+    auto serverBlock = getServerBlock(Config::config, client.listenSocketIpPortPair);
+    if (!serverBlock.has_value())
+    {
+        // todo log
+        return buildErrorResponse(client, ResponseStatusCode::kInternalServerError);
+    }
+    client.request.setServerBlock(serverBlock.value());
+
+    auto location = getLocation(serverBlock.value(), client.request.getMessage().requestTarget);
+    if (!location.has_value())
+    {
+        // todo log
+        return buildErrorResponse(client, ResponseStatusCode::kInternalServerError);
+    }
+    client.request.setLocation(location.value());
+
+    ResponseStatusCode status = checkRequestConfigCompliance(client);
 
     if (status != ResponseStatusCode::kOK)
-        return buildErrorResponse(request, status);
+        return buildErrorResponse(client, status);
     // if (cgi)
     //      executeCGI
     // else non cgi below
-    auto validRequestResult = processValidRequest(request);
+    auto validRequestResult = processValidRequest(client);
     if (!validRequestResult.has_value())
-        response = buildErrorResponse(request, validRequestResult.error()); // todo check this error handling
+        response = buildErrorResponse(client, validRequestResult.error()); // todo check this error handling
     else
         response = validRequestResult.value();
 
@@ -26,17 +50,28 @@ auto execute(const HTTPMessage& request) -> HTTPResponse
     return response;
 }
 
+// Private Functions
 // validate if request complies with config
-auto checkRequestConfigCompliance(const HTTPMessage& request) -> ResponseStatusCode
+auto checkRequestConfigCompliance(Client& client) -> ResponseStatusCode
 {
-    (void)request;
-    // todo: validate request
+    HTTPMessage requestMessage = client.request.getMessage();
+    // Server block checks
+    ResponseStatusCode tmpStatus = checkContentLength(client.request);
+    if (tmpStatus != ResponseStatusCode::kOK)
+    {
+        LOG(LogLevel::kInfo, "Client at fd={}, content length check failed.", client.socketfd);
+        return tmpStatus;
+    }
+    tmpStatus = checkLocationCompliance(client.request);
+    if (tmpStatus != ResponseStatusCode::kOK)
+        return tmpStatus;
+
     return ResponseStatusCode::kOK;
 }
 
-auto buildErrorResponse(const HTTPMessage& request, ResponseStatusCode statusCode) -> HTTPResponse
+auto buildErrorResponse(Client& client, ResponseStatusCode statusCode) -> HTTPResponse
 {
-    (void)request;
+    (void)client;
     HTTPResponse response;
 
     response.setStatusCode(statusCode);
@@ -46,33 +81,35 @@ auto buildErrorResponse(const HTTPMessage& request, ResponseStatusCode statusCod
     return response;
 }
 
-auto processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+auto processValidRequest(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse httpResponse;
+    HTTPMessage  request = client.request.getMessage();
+
     if (request.method == "GET")
     {
-        auto processGetResult = processGet(request);
+        auto processGetResult = processGet(client);
         if (!processGetResult.has_value())
             return std::unexpected(processGetResult.error());
         httpResponse = processGetResult.value();
     }
     else if (request.method == "HEAD")
     {
-        auto processHeadResult = processHead(request);
+        auto processHeadResult = processHead(client);
         if (!processHeadResult.has_value())
             return std::unexpected(processHeadResult.error());
         httpResponse = processHeadResult.value();
     }
     else if (request.method == "POST")
     {
-        auto processPostResult = processPost(request);
+        auto processPostResult = processPost(client);
         if (!processPostResult.has_value())
             return std::unexpected(processPostResult.error());
         httpResponse = processPostResult.value();
     }
     else if (request.method == "DELETE")
     {
-        auto processDeleteResult = processDelete(request);
+        auto processDeleteResult = processDelete(client);
         if (!processDeleteResult.has_value())
             return std::unexpected(processDeleteResult.error());
         httpResponse = processDeleteResult.value();
@@ -110,9 +147,9 @@ auto processGetFile(const std::string path) -> std::expected<HTTPResponse, Respo
     return response;
 }
 
-auto processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+auto processGet(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
-    std::string     path = getAbsFilePath(request.requestTarget);
+    std::string     path = client.request.getMessage().absoluteRequestTarget;
     std::error_code ec;
     HTTPResponse    response;
 
@@ -156,11 +193,11 @@ auto processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, Respo
     }
 }
 
-auto processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+auto processHead(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse response;
 
-    auto processGetResult = processGet(request);
+    auto processGetResult = processGet(client);
     if (!processGetResult.has_value())
         return std::unexpected(processGetResult.error());
     response = processGetResult.value();
@@ -168,12 +205,12 @@ auto processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, Resp
     return response;
 }
 
-auto processPost(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+auto processPost(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse response;
-    std::string  path = getAbsFilePath(request.requestTarget);
+    std::string  path = client.request.getMessage().absoluteRequestTarget;
 
-    auto postFileResult = createFileWithContent(path, request.body);
+    auto postFileResult = createFileWithContent(path, client.request.getMessage().body);
     if (!postFileResult.has_value())
         return std::unexpected(postFileResult.error());
     // todo: any headers need to be set here?
@@ -182,10 +219,10 @@ auto processPost(const HTTPMessage& request) -> std::expected<HTTPResponse, Resp
     return response;
 }
 
-auto processDelete(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+auto processDelete(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse    response;
-    std::string     path = getAbsFilePath(request.requestTarget);
+    std::string     path = client.request.getMessage().absoluteRequestTarget;
     std::error_code ec;
 
     auto deleteFileResult = deleteFile(path);

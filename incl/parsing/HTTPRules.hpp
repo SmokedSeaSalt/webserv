@@ -11,6 +11,7 @@ struct HTTPMessage
 {
         std::string                                               method;
         std::string                                               requestTarget;
+        std::string                                               absoluteRequestTarget;
         std::string                                               protocol = "HTTP/1.1";
         std::unordered_map<std::string, std::vector<std::string>> headers;
         std::string                                               body;

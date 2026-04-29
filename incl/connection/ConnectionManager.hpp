@@ -21,7 +21,7 @@ class ConnectionManager
         static auto setEpollfd(int epollfd) -> void;
 
         static auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
-        static auto createConnection(const epoll_event& epollEvent, int listenSocketPort) -> std::expected<void, std::string>;
+        static auto createConnection(const epoll_event& epollEvent, std::tuple<std::string, int>) -> std::expected<void, std::string>;
 
         static auto eraseClient(int fd) -> void;
         static auto handleReceivingEvent(int fd) -> std::expected<std::string, std::string>;
