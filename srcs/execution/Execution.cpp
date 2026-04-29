@@ -208,8 +208,8 @@ auto Execution::processPost(Client& client) -> std::expected<HTTPResponse, Respo
 
 auto Execution::processDelete(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
-    HTTPResponse response;
-    std::string  path = client.request.getMessage().absoluteRequestTarget;
+    HTTPResponse    response;
+    std::string     path = client.request.getMessage().absoluteRequestTarget;
     std::error_code ec;
 
     auto deleteFileResult = deleteFile(path);

@@ -1,7 +1,7 @@
 #include "configParsing.hpp"
 #include "connection.hpp"
-#include "parsing.hpp"
 #include "logging.hpp"
+#include "parsing.hpp"
 #include <expected>
 #include <fstream>
 #include <string>
@@ -169,7 +169,5 @@ auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
     }
     return std::unexpected("Server block closing bracket not found");
 }
-
-
 
 } // namespace Config

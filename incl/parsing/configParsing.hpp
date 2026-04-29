@@ -54,8 +54,6 @@ auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
 auto parseLocation(std::ifstream& inFile, std::string pathPrefix) -> std::expected<Location, std::string>;
 auto trimTrailingSemicolon(std::string& str) -> std::expected<void, std::string>;
 
-
-
 } // namespace Config
 
 #endif // CONFIGPARSING_HPP

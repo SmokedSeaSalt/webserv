@@ -19,10 +19,10 @@ auto getServerBlock(Config& config, std::tuple<std::string, int>& listenSocketIp
 auto getLocation(ServerBlock& serverBlock, std::string target) -> std::expected<Location, std::string>
 {
     // std::string target          = client.request.getMessage().requestTarget;
-    int         maxMatchedLen   = 0;
-    int         curPathLen      = 0;
-    Location    matchedLocation = {};
-    bool        foundMatch      = false;
+    int      maxMatchedLen   = 0;
+    int      curPathLen      = 0;
+    Location matchedLocation = {};
+    bool     foundMatch      = false;
 
     for (Location curLocation : serverBlock.locations)
     {
@@ -41,11 +41,6 @@ auto getLocation(ServerBlock& serverBlock, std::string target) -> std::expected<
     LOG(LogLevel::kInfo, "Client with target: {}. No matching location found.\n", target);
     return std::unexpected("Location not found");
 }
-
-
-
-
-
 
 // auto getServerBlock(Config& config, Client& client) -> std::expected<ServerBlock, std::string>
 // {
@@ -84,4 +79,4 @@ auto getLocation(ServerBlock& serverBlock, std::string target) -> std::expected<
 // }
 // targets [/, /images, /images/pngs] for target /images/pngs/cat.png
 
-}
+} // namespace Config

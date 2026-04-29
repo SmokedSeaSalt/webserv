@@ -1,6 +1,6 @@
 #include "configParsing.hpp"
-#include "parsing.hpp"
 #include "connection.hpp"
+#include "parsing.hpp"
 #include <expected>
 #include <fstream>
 #include <string>
@@ -43,7 +43,5 @@ auto parseConfigFile(std::string configFile) -> std::expected<void, std::string>
     }
     return {};
 }
-
-
 
 } // namespace Config

@@ -11,7 +11,6 @@ auto HTTPRequest::setMessage(HTTPMessage message) -> void
     this->message_ = message;
 }
 
-
 auto HTTPRequest::getExpectedBodyLength() const -> size_t
 {
     return this->expectedBodyLength_;
