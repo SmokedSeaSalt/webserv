@@ -54,7 +54,7 @@ class Cgi
         static auto headerToEnvVar(std::string header, std::vector<std::string> value) -> std::string;
 
         static std::map<std::string, std::string> CgiTypes_;
-        static auto getInterpreterPath(std::string) -> std::string;
+        static auto                               getInterpreterPath(std::string) -> std::string;
 };
 
 #endif // CGI_HPP

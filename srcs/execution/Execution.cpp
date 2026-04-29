@@ -2,10 +2,10 @@
 #include "executionHelpers.hpp"
 #include <filesystem>
 
-// Public Functions
-Execution::Execution() {}
+namespace Execution
+{
 
-auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
+auto execute(const HTTPMessage& request) -> HTTPResponse
 {
     HTTPResponse       response;
     ResponseStatusCode status = checkRequestConfigCompliance(request);
@@ -26,16 +26,15 @@ auto Execution::execute(const HTTPMessage& request) -> HTTPResponse
     return response;
 }
 
-// Private Functions
 // validate if request complies with config
-auto Execution::checkRequestConfigCompliance(const HTTPMessage& request) -> ResponseStatusCode
+auto checkRequestConfigCompliance(const HTTPMessage& request) -> ResponseStatusCode
 {
     (void)request;
     // todo: validate request
     return ResponseStatusCode::kOK;
 }
 
-auto Execution::buildErrorResponse(const HTTPMessage& request, ResponseStatusCode statusCode) -> HTTPResponse
+auto buildErrorResponse(const HTTPMessage& request, ResponseStatusCode statusCode) -> HTTPResponse
 {
     (void)request;
     HTTPResponse response;
@@ -47,7 +46,7 @@ auto Execution::buildErrorResponse(const HTTPMessage& request, ResponseStatusCod
     return response;
 }
 
-auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+auto processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse httpResponse;
     if (request.method == "GET")
@@ -92,13 +91,13 @@ auto Execution::processValidRequest(const HTTPMessage& request) -> std::expected
     return httpResponse;
 }
 
-auto Execution::processGetDir(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>
+auto processGetDir(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     (void)path;
     return std::unexpected(ResponseStatusCode::kNotImplemented);
 }
 
-auto Execution::processGetFile(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>
+auto processGetFile(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse response;
 
@@ -111,7 +110,7 @@ auto Execution::processGetFile(const std::string path) -> std::expected<HTTPResp
     return response;
 }
 
-auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+auto processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     std::string     path = getAbsFilePath(request.requestTarget);
     std::error_code ec;
@@ -157,7 +156,7 @@ auto Execution::processGet(const HTTPMessage& request) -> std::expected<HTTPResp
     }
 }
 
-auto Execution::processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+auto processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse response;
 
@@ -169,7 +168,7 @@ auto Execution::processHead(const HTTPMessage& request) -> std::expected<HTTPRes
     return response;
 }
 
-auto Execution::processPost(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+auto processPost(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse response;
     std::string  path = getAbsFilePath(request.requestTarget);
@@ -183,7 +182,7 @@ auto Execution::processPost(const HTTPMessage& request) -> std::expected<HTTPRes
     return response;
 }
 
-auto Execution::processDelete(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
+auto processDelete(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
     HTTPResponse    response;
     std::string     path = getAbsFilePath(request.requestTarget);
@@ -197,3 +196,5 @@ auto Execution::processDelete(const HTTPMessage& request) -> std::expected<HTTPR
     response.setHeader("content-length", std::to_string(response.getBodyLen()));
     return response;
 }
+
+} // namespace Execution

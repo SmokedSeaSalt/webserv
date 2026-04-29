@@ -5,28 +5,23 @@
 #include "HTTPResponse.hpp"
 #include "configParsing.hpp"
 
-class Execution
+namespace Execution
 {
-    public:
-        Execution();
 
-        auto execute(const HTTPMessage& request) -> HTTPResponse;
+auto execute(const HTTPMessage& request) -> HTTPResponse;
 
-    private:
-        auto checkRequestConfigCompliance(const HTTPMessage& request) -> ResponseStatusCode;
-        auto buildErrorResponse(const HTTPMessage& request, ResponseStatusCode statusCode) -> HTTPResponse;
-        auto processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
-        auto validateContentType(const HTTPMessage& request);
+auto checkRequestConfigCompliance(const HTTPMessage& request) -> ResponseStatusCode;
+auto buildErrorResponse(const HTTPMessage& request, ResponseStatusCode statusCode) -> HTTPResponse;
+auto processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
 
-        auto processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
-        auto processGetDir(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>;
-        auto processGetFile(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>;
+auto processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
+auto processGetDir(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>;
+auto processGetFile(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>;
 
-        auto processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
+auto processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
+auto processPost(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
+auto processDelete(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
 
-        auto processPost(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
-
-        auto processDelete(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
-};
+}; // namespace Execution
 
 #endif // EXECUTION_HPP

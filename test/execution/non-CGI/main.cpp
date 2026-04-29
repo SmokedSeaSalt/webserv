@@ -127,7 +127,6 @@ TEST_CASE("Test full path get html file")
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Execution   execution{};
     std::string path = std::filesystem::current_path() / "assets/helloWorld.html";
 
     HTTPMessage httpMessage;
@@ -142,7 +141,7 @@ TEST_CASE("Test full path get html file")
     CHECK(httpMessage.requestTarget == path);
     CHECK(httpMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse response = execution.execute(httpMessage);
+    HTTPResponse response = Execution::execute(httpMessage);
     checkPacket(response.createPacket(), "text/html; charset=utf-8", "<p>Hello world</p>");
     // CHECK(repsonse. == "");
 }
@@ -152,7 +151,6 @@ TEST_CASE("Test full path get png file test")
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Execution   execution{};
     std::string path         = std::filesystem::current_path() / "assets/example.png";
     std::string expectedBody = loadBinaryFile(path);
 
@@ -168,7 +166,7 @@ TEST_CASE("Test full path get png file test")
     CHECK(httpMessage.requestTarget == path);
     CHECK(httpMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse response = execution.execute(httpMessage);
+    HTTPResponse response = Execution::execute(httpMessage);
     std::string  packet   = response.createPacket();
 
     CHECK(packet.rfind("HTTP/1.1 200 OK\r\n", 0) == 0);
@@ -191,7 +189,6 @@ TEST_CASE("Test HEAD")
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Execution   execution{};
     std::string path = std::filesystem::current_path() / "assets/helloWorld.html";
 
     HTTPMessage httpMessage;
@@ -206,7 +203,7 @@ TEST_CASE("Test HEAD")
     CHECK(httpMessage.requestTarget == path);
     CHECK(httpMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse response = execution.execute(httpMessage);
+    HTTPResponse response = Execution::execute(httpMessage);
     checkPacket(response.createPacket(), "text/html; charset=utf-8", "");
     // CHECK(repsonse. == "");
 }
@@ -216,7 +213,6 @@ TEST_CASE("Test POST and then GET the file with manual file delete")
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Execution   execution{};
     std::string path         = std::filesystem::current_path() / "assets/newFile.html";
     std::string fileContents = "<h>This file has been posted</h>";
 
@@ -233,10 +229,10 @@ TEST_CASE("Test POST and then GET the file with manual file delete")
     CHECK(httpPostMessage.requestTarget == path);
     CHECK(httpPostMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse postResponse1 = execution.execute(httpPostMessage);
+    HTTPResponse postResponse1 = Execution::execute(httpPostMessage);
     CHECK(postResponse1.createPacket().find("201") != std::string::npos);
 
-    HTTPResponse postResponse2 = execution.execute(httpPostMessage);
+    HTTPResponse postResponse2 = Execution::execute(httpPostMessage);
     CHECK(postResponse2.createPacket().find("409") != std::string::npos);
 
     HTTPMessage httpGetMessage;
@@ -247,7 +243,7 @@ TEST_CASE("Test POST and then GET the file with manual file delete")
     httpGetMessage.headers["accept"] = {"text/html"};
     httpGetMessage.body              = "";
 
-    HTTPResponse getResponse = execution.execute(httpGetMessage);
+    HTTPResponse getResponse = Execution::execute(httpGetMessage);
     checkPacket(getResponse.createPacket(), "text/html; charset=utf-8", fileContents);
 
     // CHECK(repsonse. == "");
@@ -259,7 +255,6 @@ TEST_CASE("Test POST and then GET and then DELETE")
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Execution   execution{};
     std::string path         = std::filesystem::current_path() / "assets/newFile.html";
     std::string fileContents = "<h>This file has been posted</h>";
 
@@ -272,7 +267,7 @@ TEST_CASE("Test POST and then GET and then DELETE")
     httpPostMessage.protocol        = "HTTP/1.1";
     httpPostMessage.headers["host"] = {"localhost:8080"};
     httpPostMessage.body            = fileContents;
-    HTTPResponse postResponse       = execution.execute(httpPostMessage);
+    HTTPResponse postResponse       = Execution::execute(httpPostMessage);
     CHECK(postResponse.createPacket().find("201") != std::string::npos);
 
     // GET the file
@@ -283,7 +278,7 @@ TEST_CASE("Test POST and then GET and then DELETE")
     httpGetMessage.headers["host"]   = {"localhost:8080"};
     httpGetMessage.headers["accept"] = {"text/html"};
     httpGetMessage.body              = "";
-    HTTPResponse getResponse1        = execution.execute(httpGetMessage);
+    HTTPResponse getResponse1        = Execution::execute(httpGetMessage);
     checkPacket(getResponse1.createPacket(), "text/html; charset=utf-8", fileContents);
 
     // DELETE the file
@@ -293,10 +288,10 @@ TEST_CASE("Test POST and then GET and then DELETE")
     httpDeleteMessage.protocol        = "HTTP/1.1";
     httpDeleteMessage.headers["host"] = {"localhost:8080"};
     httpDeleteMessage.body            = "";
-    HTTPResponse deleteResponse       = execution.execute(httpDeleteMessage);
+    HTTPResponse deleteResponse       = Execution::execute(httpDeleteMessage);
     CHECK(deleteResponse.createPacket().find("204") != std::string::npos);
 
     // GET the already deleted file (should fail)
-    HTTPResponse getResponse2 = execution.execute(httpGetMessage);
+    HTTPResponse getResponse2 = Execution::execute(httpGetMessage);
     CHECK(getResponse2.createPacket().find("404") != std::string::npos);
 }

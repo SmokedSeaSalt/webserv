@@ -121,8 +121,8 @@ auto Server::setup() -> std::expected<void, std::string>
         return std::unexpected("epoll_create() failed");
     }
 
-    connectionManager_ = std::make_unique<ConnectionManager>(epollfd_);
-    auto ret           = setupListenSockets();
+    ConnectionManager::setEpollfd(epollfd_);
+    auto ret = setupListenSockets();
     if (!ret.has_value())
         return std::unexpected(ret.error());
     return {};
@@ -145,11 +145,11 @@ auto Server::connection_loop() -> std::expected<void, std::string>
         {
             if (listenSockets_.contains(events_[n].data.fd))
             {
-                connectionManager_->createConnection(events_[n], listenSocketFdToPort_[events_[n].data.fd]); // tddo also pass whole epoll_event struct
+                ConnectionManager::createConnection(events_[n], listenSocketFdToPort_[events_[n].data.fd]); // todo also pass whole epoll_event struct
             }
             else
             {
-                connectionManager_->handleEvent(events_[n]);
+                ConnectionManager::handleEvent(events_[n]);
             }
         }
     }

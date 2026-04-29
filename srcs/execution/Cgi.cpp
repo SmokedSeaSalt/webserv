@@ -1,7 +1,7 @@
 #include "Cgi.hpp"
+#include "connection.hpp"
 #include "logging.hpp"
 #include "parsing.hpp"
-#include "connection.hpp"
 #include <sys/socket.h> //for socketpair
 #include <unistd.h>     //for dup2, close
 
