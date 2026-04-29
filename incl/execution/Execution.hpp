@@ -4,29 +4,30 @@
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include "configParsing.hpp"
+#include "connection.hpp"
 
 class Execution
 {
     public:
         Execution();
 
-        auto execute(const HTTPMessage& request) -> HTTPResponse;
+        auto execute(Client& client) -> HTTPResponse;
 
     private:
-        auto checkRequestConfigCompliance(const HTTPMessage& request) -> ResponseStatusCode;
-        auto buildErrorResponse(const HTTPMessage& request, ResponseStatusCode statusCode) -> HTTPResponse;
-        auto processValidRequest(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
-        auto validateContentType(const HTTPMessage& request);
+        auto checkRequestConfigCompliance(Client& client) -> ResponseStatusCode;
+        auto buildErrorResponse(Client& client, ResponseStatusCode statusCode) -> HTTPResponse;
+        auto processValidRequest(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>;
+        auto validateContentType(Client& client);
 
-        auto processGet(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
+        auto processGet(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>;
         auto processGetDir(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>;
         auto processGetFile(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>;
 
-        auto processHead(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
+        auto processHead(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>;
 
-        auto processPost(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
+        auto processPost(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>;
 
-        auto processDelete(const HTTPMessage& request) -> std::expected<HTTPResponse, ResponseStatusCode>;
+        auto processDelete(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>;
 };
 
 #endif // EXECUTION_HPP

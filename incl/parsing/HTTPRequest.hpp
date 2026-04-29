@@ -2,7 +2,7 @@
 #define HTTPREQUEST
 
 #include "HTTPRules.hpp"
-#include "parsing.hpp"
+#include "configParsing.hpp"
 #include <expected>
 #include <set>
 #include <string>
@@ -32,12 +32,22 @@ class HTTPRequest : public HTTPRules
         auto newData(std::string data) -> std::expected<RequestState, ResponseStatusCode>;
         auto getState() const -> RequestState;
 
+        auto setAbsoluteTarget(std::string) -> void;
+
+        auto getServerBlock() const -> const Config::ServerBlock&;
+        auto setServerBlock(const Config::ServerBlock&) -> void;
+
+        auto getLocation() const -> const Config::Location&;
+        auto setLocation(Config::Location&) -> void;
+
     private:
-        RequestState state_ = RequestState::kStartLine;
-        std::string  buffer_;
-        HTTPMessage  message_;
-        BodyType     bodyType_;
-        size_t       expectedBodyLength_;
+        RequestState        state_ = RequestState::kStartLine;
+        std::string         buffer_;
+        HTTPMessage         message_;
+        BodyType            bodyType_;
+        size_t              expectedBodyLength_;
+        Config::ServerBlock serverBlock_;
+        Config::Location    location_;
 
         auto processStartLine() -> std::expected<bool, ResponseStatusCode>;
         auto processHeaders() -> std::expected<bool, ResponseStatusCode>;

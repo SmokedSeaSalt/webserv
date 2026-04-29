@@ -44,14 +44,6 @@ auto parseConfigFile(std::string configFile) -> std::expected<void, std::string>
     return {};
 }
 
-auto getServerBlock(Config& config, Client& client) -> std::expected<ServerBlock, std::string>
-{
-    for (ServerBlock& serverBlock : config.serverBlocks)
-    {
-        if (serverBlock.ip == get<0>(client.listenSocketIpPortPair) && serverBlock.port == get<1>(client.listenSocketIpPortPair))
-            return serverBlock;
-    }
-    return std::unexpected("Serverblock not found");
-}
+
 
 } // namespace Config

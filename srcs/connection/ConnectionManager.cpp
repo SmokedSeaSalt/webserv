@@ -122,7 +122,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
         if (client.request.getState() != RequestState::KDone)
             break;
         LOG(LogLevel::kInfo, "Packet received from fd:{} with content:\n{}\n", fd, getHTTPMessageString(client.request.getMessage()));
-        client.response = execution_.execute(client.request.getMessage());
+        client.response = execution_.execute(client);
         [[fallthrough]];
     }
     case ClientState::Processing:
