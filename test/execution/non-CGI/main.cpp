@@ -1,8 +1,10 @@
 #include "Execution.hpp"
 #include "HTTPResponse.hpp"
+#include "HTTPRequest.hpp"
 #include "HTTPRules.hpp"
 #include "configParsing.hpp"
 #include "executionHelpers.hpp"
+#include "connection.hpp"
 #include <filesystem>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "../../incl/doctest.h"
@@ -142,7 +144,11 @@ TEST_CASE("Test full path get html file")
     CHECK(httpMessage.requestTarget == path);
     CHECK(httpMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse response = execution.execute(httpMessage);
+    std::tuple<std::string, int> dummyPair("127.0.0.1",8080);
+    Client client{0, dummyPair, "", "", ClientState::Receiving, HTTPRequest(), HTTPResponse(), ErrorType::None};
+    client.request.setMessage(httpMessage);
+
+    HTTPResponse response = execution.execute(client);
     checkPacket(response.createPacket(), "text/html; charset=utf-8", "<p>Hello world</p>");
     // CHECK(repsonse. == "");
 }
@@ -168,7 +174,11 @@ TEST_CASE("Test full path get png file test")
     CHECK(httpMessage.requestTarget == path);
     CHECK(httpMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse response = execution.execute(httpMessage);
+    std::tuple<std::string, int> dummyPair("127.0.0.1",8080);
+    Client client{0, dummyPair, "", "", ClientState::Receiving, HTTPRequest(), HTTPResponse(), ErrorType::None};
+    client.request.setMessage(httpMessage);
+
+    HTTPResponse response = execution.execute(client);
     std::string  packet   = response.createPacket();
 
     CHECK(packet.rfind("HTTP/1.1 200 OK\r\n", 0) == 0);
@@ -206,7 +216,11 @@ TEST_CASE("Test HEAD")
     CHECK(httpMessage.requestTarget == path);
     CHECK(httpMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse response = execution.execute(httpMessage);
+    std::tuple<std::string, int> dummyPair("127.0.0.1",8080);
+    Client client{0, dummyPair, "", "", ClientState::Receiving, HTTPRequest(), HTTPResponse(), ErrorType::None};
+    client.request.setMessage(httpMessage);
+
+    HTTPResponse response = execution.execute(client);
     checkPacket(response.createPacket(), "text/html; charset=utf-8", "");
     // CHECK(repsonse. == "");
 }
@@ -233,10 +247,14 @@ TEST_CASE("Test POST and then GET the file with manual file delete")
     CHECK(httpPostMessage.requestTarget == path);
     CHECK(httpPostMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse postResponse1 = execution.execute(httpPostMessage);
+    std::tuple<std::string, int> dummyPair("127.0.0.1",8080);
+    Client client1{0, dummyPair, "", "", ClientState::Receiving, HTTPRequest(), HTTPResponse(), ErrorType::None};
+    client1.request.setMessage(httpPostMessage);
+
+    HTTPResponse postResponse1 = execution.execute(client1);
     CHECK(postResponse1.createPacket().find("201") != std::string::npos);
 
-    HTTPResponse postResponse2 = execution.execute(httpPostMessage);
+    HTTPResponse postResponse2 = execution.execute(client1);
     CHECK(postResponse2.createPacket().find("409") != std::string::npos);
 
     HTTPMessage httpGetMessage;
@@ -247,7 +265,10 @@ TEST_CASE("Test POST and then GET the file with manual file delete")
     httpGetMessage.headers["accept"] = {"text/html"};
     httpGetMessage.body              = "";
 
-    HTTPResponse getResponse = execution.execute(httpGetMessage);
+    Client client2{0, dummyPair, "", "", ClientState::Receiving, HTTPRequest(), HTTPResponse(), ErrorType::None};
+    client2.request.setMessage(httpGetMessage);
+
+    HTTPResponse getResponse = execution.execute(client2);
     checkPacket(getResponse.createPacket(), "text/html; charset=utf-8", fileContents);
 
     // CHECK(repsonse. == "");
@@ -272,7 +293,12 @@ TEST_CASE("Test POST and then GET and then DELETE")
     httpPostMessage.protocol        = "HTTP/1.1";
     httpPostMessage.headers["host"] = {"localhost:8080"};
     httpPostMessage.body            = fileContents;
-    HTTPResponse postResponse       = execution.execute(httpPostMessage);
+
+    std::tuple<std::string, int> dummyPair("127.0.0.1",8080);
+    Client client1{0, dummyPair, "", "", ClientState::Receiving, HTTPRequest(), HTTPResponse(), ErrorType::None};
+    client1.request.setMessage(httpPostMessage);
+
+    HTTPResponse postResponse       = execution.execute(client1);
     CHECK(postResponse.createPacket().find("201") != std::string::npos);
 
     // GET the file
@@ -283,7 +309,11 @@ TEST_CASE("Test POST and then GET and then DELETE")
     httpGetMessage.headers["host"]   = {"localhost:8080"};
     httpGetMessage.headers["accept"] = {"text/html"};
     httpGetMessage.body              = "";
-    HTTPResponse getResponse1        = execution.execute(httpGetMessage);
+
+    Client client2{0, dummyPair, "", "", ClientState::Receiving, HTTPRequest(), HTTPResponse(), ErrorType::None};
+    client2.request.setMessage(httpGetMessage);
+
+    HTTPResponse getResponse1        = execution.execute(client2);
     checkPacket(getResponse1.createPacket(), "text/html; charset=utf-8", fileContents);
 
     // DELETE the file
@@ -293,10 +323,14 @@ TEST_CASE("Test POST and then GET and then DELETE")
     httpDeleteMessage.protocol        = "HTTP/1.1";
     httpDeleteMessage.headers["host"] = {"localhost:8080"};
     httpDeleteMessage.body            = "";
-    HTTPResponse deleteResponse       = execution.execute(httpDeleteMessage);
+
+    Client client3{0, dummyPair, "", "", ClientState::Receiving, HTTPRequest(), HTTPResponse(), ErrorType::None};
+    client3.request.setMessage(httpDeleteMessage);
+
+    HTTPResponse deleteResponse       = execution.execute(client3);
     CHECK(deleteResponse.createPacket().find("204") != std::string::npos);
 
     // GET the already deleted file (should fail)
-    HTTPResponse getResponse2 = execution.execute(httpGetMessage);
+    HTTPResponse getResponse2 = execution.execute(client3);
     CHECK(getResponse2.createPacket().find("404") != std::string::npos);
 }

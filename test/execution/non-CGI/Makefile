@@ -23,6 +23,7 @@ SRC =	main.cpp \
 		parseServerBlock.cpp \
 		Execution.cpp \
 		HTTPResponse.cpp \
+		HTTPRequest.cpp \
 		executionHelpers.cpp \
 		HTTPRules.cpp \
 		parsing.cpp \
@@ -30,7 +31,8 @@ SRC =	main.cpp \
 		split.cpp \
 		contentType.cpp \
 		logging.cpp \
-		loggingHelpers.cpp
+		loggingHelpers.cpp \
+		configUtils.cpp
 
 
 

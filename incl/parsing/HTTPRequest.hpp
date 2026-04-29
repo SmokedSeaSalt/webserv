@@ -26,6 +26,8 @@ class HTTPRequest : public HTTPRules
 {
     public:
         auto getMessage() const -> HTTPMessage;
+        auto setMessage(HTTPMessage message) -> void;
+
         auto getExpectedBodyLength() const -> size_t;
         auto resetMessage() -> void;
 
