@@ -1,11 +1,11 @@
 #ifndef EXECUTION_HPP
 #define EXECUTION_HPP
 
+#include "Client.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include "configParsing.hpp"
 #include "connection.hpp"
-#include "Client.hpp"
 
 namespace Execution
 {
