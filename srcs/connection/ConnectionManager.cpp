@@ -121,6 +121,24 @@ auto ConnectionManager::eraseClient(int fd) -> void
     }
 }
 
+auto ConnectionManager::addCGIConnection(int cgiFd, Client& client) -> std::expected<void, std::string>
+{
+    auto setNonBlockingRes = setNonBlocking(cgiFd);
+    if (!setNonBlockingRes.has_value())
+        return std::unexpected(setNonBlockingRes.error());
+
+    struct epoll_event ev_;
+    ev_.events  = EPOLLIN | EPOLLRDHUP | EPOLLOUT;
+    ev_.data.fd = cgiFd;
+    if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, cgiFd, &ev_) == -1)
+    {
+        perror("epoll_ctl: connectionSocket");
+        return std::unexpected("epoll_ctl failed");
+    }
+    clientMap_.emplace(cgiFd, client);
+    return {};
+}
+
 auto ConnectionManager::createConnection(const epoll_event& epollEvent, std::tuple<std::string, int> ipPortPair) -> std::expected<void, std::string>
 {
     int              connectionSocket;

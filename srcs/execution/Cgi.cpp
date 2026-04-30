@@ -2,12 +2,41 @@
 #include "connection.hpp"
 #include "logging.hpp"
 #include "parsing.hpp"
+#include "ConnectionManager.hpp"
 #include <sys/socket.h> //for socketpair
 #include <unistd.h>     //for dup2, close
 
 std::map<std::string, std::string> Cgi::CgiTypes_ = {{".php", "/usr/bin/php"}, {".sh", "/usr/bin/sh"}};
 
-auto Cgi::isRequestTargetCgi(const std::string target) -> bool
+Cgi::Cgi(Client& client) : client_(client), state_(CgiState::kInit) {}
+
+auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
+{
+    int      fd     = epollEvent.data.fd;
+    uint32_t events = epollEvent.events;
+
+    switch (this->state_)
+    {
+    case CgiState::kInit:
+    {
+        //should not get here.
+    }
+    case CgiState::kSendingBody:
+    {
+        
+    }
+    case CgiState::kReceiveCGIResponse:
+    {
+
+    }
+    case CgiState::KDone:
+    {
+
+    }
+    }
+}
+
+    auto Cgi::isRequestTargetCgi(const std::string target) -> bool
 {
     auto targetSegments = split(target, '/');
     for (std::string& segment : targetSegments.value())
@@ -132,9 +161,11 @@ static auto headerToEnvVar(std::string header, std::vector<std::string> value) -
     return envVar;
 }
 
-auto Cgi::execute(Client& client) -> void
+auto Cgi::init() -> std::expected<int, HTTPResponse>
 {
-    std::vector<std::string> envStrings = createEnv(client.request); // TODO get this acess to client request
+    // Todo do some more standard execution checking.
+    this->bodyToCgi_                    = client_.getRequest().getMessage().body;
+    std::vector<std::string> envStrings = createEnv(client_.getRequest()); // TODO get this acess to client request
     this->interpreterPath_              = getInterpreterPath(this->scriptPath_);
     if (this->interpreterPath_ == "")
         return; // TODO handle error; maybe place this within child if errors can be dealt with?
@@ -174,6 +205,7 @@ auto Cgi::execute(Client& client) -> void
         // Parent
         close(fd[1]); // Close child side.
         this->fd_ = fd[0];
-        // add this fd to epoll
+        ConnectionManager::addCGIConnection(this->fd_, this->client_); //Todo Error handling
+        return this->fd_;
     }
 }

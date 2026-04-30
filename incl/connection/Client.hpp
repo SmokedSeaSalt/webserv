@@ -1,6 +1,7 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include "Cgi.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include "connection.hpp"
@@ -51,11 +52,14 @@ class Client
 
     private:
         int                          socketfd_;
+        int                          cgifd_;
         int                          listenSocketPort_;
         std::tuple<std::string, int> listenSocketIpPortPair_;
         std::string                  service_;
         std::string                  host_;
+        bool                         requestIsCgi_;
 
+        Cgi          CgiHandler_;
         ClientState  state_;
         HTTPRequest  request_;
         HTTPResponse response_;

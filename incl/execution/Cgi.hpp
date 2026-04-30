@@ -19,6 +19,7 @@
 #ifndef CGI_HPP
 #define CGI_HPP
 
+#include "Client.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include <map>
@@ -26,8 +27,8 @@
 
 enum class CgiState
 {
-    kCreateEnv,
-    kExecute,
+    kInit,
+    kSendingBody,
     kReceiveCGIResponse,
     kBuildHTTPResponse,
     KDone,
@@ -36,21 +37,26 @@ enum class CgiState
 class Cgi
 {
     public:
-        auto createEnv(const HTTPRequest& request) -> std::vector<std::string>;
-        auto newData(std::string data) -> void;
-        auto execute(Client& client) -> void;
-        auto createPacket() -> std::string;
+        Cgi(Client& client);
+        auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
+        auto init() -> std::expected<int, HTTPResponse>;
+        auto createResponse() -> std::string;
 
-    private:
-        CgiState     state_;
-        HTTPResponse response_;
-        int          fd_;
-        std::string  scriptPath_;
-        std::string  interpreterPath_;
-
-        static auto endsInCgi(const std::string& segment) -> bool;
         static auto isRequestTargetCgi(const std::string target) -> bool;
 
+    private:
+        Client&     client_;
+        std::string bodyToCgi_;
+        std::string cgiResponse_;
+        CgiState    state_;
+        int         fd_;
+        std::string scriptPath_;
+        std::string interpreterPath_;
+
+        auto newData(std::string data) -> void;
+        auto createEnv(const HTTPRequest& request) -> std::vector<std::string>;
+
+        static auto endsInCgi(const std::string& segment) -> bool;
         static auto headerToEnvVar(std::string header, std::vector<std::string> value) -> std::string;
 
         static std::map<std::string, std::string> CgiTypes_;
