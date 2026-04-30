@@ -12,9 +12,9 @@ namespace Execution
 
 auto getPathAfterLocation(Client& client) -> std::string
 {
-    std::string locationPath = client.getRequest().getLocation().pathPrefix;
-    const std::string& target = client.getRequest().getMessage().requestTarget;
-    int startIndex = target.find(locationPath);
+    std::string        locationPath = client.getRequest().getLocation().pathPrefix;
+    const std::string& target       = client.getRequest().getMessage().requestTarget;
+    int                startIndex   = target.find(locationPath);
     if (startIndex != 0)
     {
         LOG(LogLevel::kInfo, "Can't get path after location client fd: {}", client.getSocketfd());
@@ -55,7 +55,6 @@ auto execute(Client& client) -> HTTPResponse
     auto setupResult = setupRequestForExecution(client);
     if (!setupResult.has_value())
         return setupResult.error();
-
 
     ResponseStatusCode status = checkRequestConfigCompliance(client);
 
@@ -155,8 +154,8 @@ auto processValidRequest(Client& client) -> std::expected<HTTPResponse, Response
 
 auto processDirectoryListing(Client client) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
-    HTTPResponse response;
-    std::string  path = client.getRequest().getMessage().absoluteRequestTarget;
+    HTTPResponse    response;
+    std::string     path = client.getRequest().getMessage().absoluteRequestTarget;
     std::error_code ec;
 
     if (!std::filesystem::exists(path, ec) || !std::filesystem::is_directory(path, ec))
@@ -181,21 +180,21 @@ auto processDirectoryListing(Client client) -> std::expected<HTTPResponse, Respo
             name += "/";
         }
 
-        std::filesystem::file_time_type lastWriteTime = it->last_write_time();
+        std::filesystem::file_time_type       lastWriteTime = it->last_write_time();
         std::chrono::system_clock::time_point lastWriteTimeSystemClock =
             std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-                lastWriteTime - std::filesystem::file_time_type::clock::now()
-                + std::chrono::system_clock::now());
+                lastWriteTime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
         std::time_t lastWriteTimeTimeT = std::chrono::system_clock::to_time_t(lastWriteTimeSystemClock);
         std::string formattedTimeStr   = std::asctime(std::localtime(&lastWriteTimeTimeT));
         formattedTimeStr.pop_back(); // remove trailing newline
 
         std::string sizeStr = it->is_regular_file()
-            ? std::to_string(it->file_size()) + " bytes"
-            : "-";
+                                  ? std::to_string(it->file_size()) + " bytes"
+                                  : "-";
 
         html += "<li><a href=\"" + href + "\">" + name + "</a>"
-                " &nbsp; " + sizeStr +
+                                                         " &nbsp; " +
+                sizeStr +
                 " &nbsp; " + formattedTimeStr + "</li>";
     }
     html += "</ul></body></html>";

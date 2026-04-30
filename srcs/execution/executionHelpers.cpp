@@ -1,6 +1,6 @@
+#include "Client.hpp"
 #include "HTTPRules.hpp"
 #include "InputArgs.hpp"
-#include "Client.hpp"
 #include <expected>
 #include <filesystem>
 #include <fstream>
@@ -179,11 +179,11 @@ auto deleteFile(std::string pathString) -> std::expected<void, ResponseStatusCod
 }
 
 /// @brief request.pathAfterLocation should be set already
-/// @param request 
-/// @return 
+/// @param request
+/// @return
 auto getAbsFilePath(HTTPRequest& request) -> std::string
 {
-    std::string root = request.getLocation().root;
+    std::string root              = request.getLocation().root;
     std::string pathAfterLocation = request.getMessage().pathAfterLocation;
 
     // -p "/home/egrisel/webserv", root ""

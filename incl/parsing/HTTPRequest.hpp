@@ -37,7 +37,6 @@ class HTTPRequest : public HTTPRules
         auto setAbsoluteTarget(std::string) -> void;
         auto setpathAfterLocation(std::string) -> void;
 
-
         auto getServerBlock() const -> const Config::ServerBlock&;
         auto setServerBlock(const Config::ServerBlock&) -> void;
 

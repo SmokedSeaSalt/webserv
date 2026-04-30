@@ -306,7 +306,6 @@ auto HTTPRequest::setpathAfterLocation(std::string pathAfterLocation) -> void
     this->message_.pathAfterLocation = pathAfterLocation;
 }
 
-
 auto HTTPRequest::getServerBlock() const -> const Config::ServerBlock&
 {
     return this->serverBlock_;
