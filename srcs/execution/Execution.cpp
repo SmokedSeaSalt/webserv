@@ -216,7 +216,8 @@ auto processGetDir(Client client, const std::string path) -> std::expected<HTTPR
 
     if (location.defaultFile != "")
     {
-        auto processGetFileResult = processGetFile(location.defaultFile);
+        client.getRequest().setpathAfterLocation(location.defaultFile);
+        auto processGetFileResult = processGetFile(getAbsFilePath(client.getRequest()));
         if (!processGetFileResult.has_value())
         {
             // todo log
