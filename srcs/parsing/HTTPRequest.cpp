@@ -301,6 +301,12 @@ auto HTTPRequest::setAbsoluteTarget(std::string absolutePath) -> void
     this->message_.absoluteRequestTarget = absolutePath;
 }
 
+auto HTTPRequest::setpathAfterLocation(std::string pathAfterLocation) -> void
+{
+    this->message_.pathAfterLocation = pathAfterLocation;
+}
+
+
 auto HTTPRequest::getServerBlock() const -> const Config::ServerBlock&
 {
     return this->serverBlock_;

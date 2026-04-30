@@ -1,5 +1,6 @@
 #include "HTTPRules.hpp"
 #include "InputArgs.hpp"
+#include "Client.hpp"
 #include <expected>
 #include <filesystem>
 #include <fstream>
@@ -177,15 +178,28 @@ auto deleteFile(std::string pathString) -> std::expected<void, ResponseStatusCod
     return {};
 }
 
-auto getAbsFilePath(std::string file) -> std::string
+/// @brief request.pathAfterLocation should be set already
+/// @param request 
+/// @return 
+auto getAbsFilePath(HTTPRequest& request) -> std::string
 {
+    std::string root = request.getLocation().root;
+    std::string pathAfterLocation = request.getMessage().pathAfterLocation;
+
+    // -p "/home/egrisel/webserv", root ""
     if (!InputArgs::args.relativePath.empty())
     {
-        if (!file.empty() && file[0] == '/')
-            file = file.substr(1);
-        return (std::filesystem::path(InputArgs::args.relativePath) / file).string();
+        if (!pathAfterLocation.empty() && pathAfterLocation[0] == '/')
+            pathAfterLocation = pathAfterLocation.substr(1);
+        if (!root.empty() && root[0] == '/')
+            root = root.substr(1);
+        return (std::filesystem::path(InputArgs::args.relativePath) / root / pathAfterLocation).string();
     }
-    return file;
+    else
+    {
+        // todo check if this works
+        return (std::filesystem::path(root) / pathAfterLocation).string();
+    }
 }
 
 // is_a_directory
