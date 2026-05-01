@@ -3,8 +3,8 @@
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include "HTTPRules.hpp"
-#include "configParsing.hpp"
 #include "InputArgs.hpp"
+#include "configParsing.hpp"
 #include "connection.hpp"
 #include "executionHelpers.hpp"
 #include <filesystem>
@@ -131,10 +131,11 @@ TEST_CASE("Test full path get html file")
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    std::string path = std::filesystem::current_path() / "assets/helloWorld.html";
+    std::string path    = std::filesystem::current_path() / "assets/helloWorld.html";
     const char* rootDir = std::getenv("ROOT_DIR");
-    if (rootDir) {
-        InputArgs::args.relativePath =  rootDir;
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
     } // handle missing env variable
     REQUIRE(InputArgs::args.relativePath != "");
 
