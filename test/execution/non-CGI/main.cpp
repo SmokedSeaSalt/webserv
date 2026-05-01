@@ -4,6 +4,7 @@
 #include "HTTPResponse.hpp"
 #include "HTTPRules.hpp"
 #include "configParsing.hpp"
+#include "InputArgs.hpp"
 #include "connection.hpp"
 #include "executionHelpers.hpp"
 #include <filesystem>
@@ -131,6 +132,11 @@ TEST_CASE("Test full path get html file")
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
     std::string path = std::filesystem::current_path() / "assets/helloWorld.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir) {
+        InputArgs::args.relativePath =  rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
 
     HTTPMessage httpMessage;
     httpMessage.method            = "GET";

@@ -50,7 +50,7 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
             CHECK(loc.defaultFile == "index.html");
             CHECK(loc.directoryListing == false);
 
-            CHECK(loc.root.empty());
+            CHECK(loc.root == "/");
             CHECK(loc.redirectCode == 0);
             CHECK(loc.redirectLocation.empty());
             CHECK(loc.uploadsAllowed == false);
@@ -90,7 +90,7 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
             CHECK(loc.uploadsAllowed == true);
             CHECK(loc.uploadLocation == "/tmp/uploads");
 
-            CHECK(loc.root.empty());
+            CHECK(loc.root == "/");
             CHECK(loc.defaultFile.empty());
             CHECK(loc.directoryListing == false);
             CHECK(loc.redirectCode == 0);
@@ -110,7 +110,7 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
             CHECK(loc.acceptedMethods.postAllowed == false);
             CHECK(loc.acceptedMethods.deleteAllowed == false);
 
-            CHECK(loc.root.empty());
+            CHECK(loc.root == "/");
             CHECK(loc.defaultFile.empty());
             CHECK(loc.directoryListing == false);
             CHECK(loc.uploadsAllowed == false);
@@ -192,7 +192,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.defaultFile == "index.html");
                 CHECK(loc.directoryListing == false);
 
-                CHECK(loc.root.empty());
+                CHECK(loc.root == "/");
                 CHECK(loc.redirectCode == 0);
                 CHECK(loc.redirectLocation.empty());
                 CHECK(loc.uploadsAllowed == false);
@@ -234,7 +234,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.uploadsAllowed == true);
                 CHECK(loc.uploadLocation == "/tmp/uploads");
 
-                CHECK(loc.root.empty());
+                CHECK(loc.root == "/");
                 CHECK(loc.defaultFile.empty());
                 CHECK(loc.directoryListing == false);
                 CHECK(loc.redirectCode == 0);
@@ -254,7 +254,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.acceptedMethods.postAllowed == false);
                 CHECK(loc.acceptedMethods.deleteAllowed == false);
 
-                CHECK(loc.root.empty());
+                CHECK(loc.root == "/");
                 CHECK(loc.defaultFile.empty());
                 CHECK(loc.directoryListing == false);
                 CHECK(loc.uploadsAllowed == false);
@@ -326,7 +326,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.defaultFile == "index.html");
                 CHECK(loc.directoryListing == false);
 
-                CHECK(loc.root.empty());
+                CHECK(loc.root == "/");
                 CHECK(loc.redirectCode == 0);
                 CHECK(loc.redirectLocation.empty());
                 CHECK(loc.uploadsAllowed == false);
@@ -388,7 +388,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.uploadsAllowed == true);
                 CHECK(loc.uploadLocation == "/tmp/incoming");
 
-                CHECK(loc.root.empty());
+                CHECK(loc.root == "/");
                 CHECK(loc.defaultFile.empty());
                 CHECK(loc.directoryListing == false);
                 CHECK(loc.redirectCode == 0);
