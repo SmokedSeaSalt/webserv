@@ -9,6 +9,7 @@ Client::Client(int socketfd, int listenSocketPort, std::tuple<std::string, int>&
 {
     this->state_ = ClientState::Receiving;
     this->error_ = ErrorType::None;
+    this->requestIsCgi_ = false;
 };
 
 auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
