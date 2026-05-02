@@ -54,6 +54,12 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
     }
     case ClientState::Processing:
     { // only handle cgi events here
+        if (fd == this->cgifd_ && this->requestIsCgi_)
+        {
+            CgiHandler_.handleEvent(const epoll_event& epollEvent); // TODO: error handling
+
+
+        }
         if (this->response_.getSendState() == SendState::kReady)
             this->state_ = ClientState::Sending;
         break;
