@@ -126,12 +126,12 @@ TEST_CASE("Test readFile non existent file (404)")
 // execute tests/
 /////////////////
 
-TEST_CASE("Test full path get html file")
+TEST_CASE("Test get html file with -p")
 {
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    std::string path    = std::filesystem::current_path() / "assets/helloWorld.html";
+    std::string path    = "/helloWorld.html";
     const char* rootDir = std::getenv("ROOT_DIR");
     if (rootDir)
     {
@@ -160,13 +160,20 @@ TEST_CASE("Test full path get html file")
     // CHECK(repsonse. == "");
 }
 
-TEST_CASE("Test full path get png file test")
+TEST_CASE("Test get png file with -p")
 {
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    std::string path         = std::filesystem::current_path() / "assets/example.png";
-    std::string expectedBody = loadBinaryFile(path);
+    std::string path         = "/example.png";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
+
+    std::string expectedBody = loadBinaryFile(std::filesystem::current_path() / "assets/example.png");
 
     HTTPMessage httpMessage;
     httpMessage.method            = "GET";
@@ -202,12 +209,18 @@ TEST_CASE("Test full path get png file test")
     CHECK(body == expectedBody);
 }
 
-TEST_CASE("Test HEAD")
+TEST_CASE("Test HEAD with -p")
 {
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    std::string path = std::filesystem::current_path() / "assets/helloWorld.html";
+    std::string path = "/helloWorld.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
 
     HTTPMessage httpMessage;
     httpMessage.method            = "HEAD";
@@ -230,12 +243,19 @@ TEST_CASE("Test HEAD")
     // CHECK(repsonse. == "");
 }
 
-TEST_CASE("Test POST and then GET the file with manual file delete")
+TEST_CASE("Test POST and then GET the file with manual file delete with -p")
 {
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    std::string path         = std::filesystem::current_path() / "assets/newFile.html";
+    std::string path         = "/newFile.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
+
     std::string fileContents = "<h>This file has been posted</h>";
 
     std::system(("rm -rf " + path).c_str());
@@ -280,15 +300,21 @@ TEST_CASE("Test POST and then GET the file with manual file delete")
     std::system(("rm -rf " + path).c_str());
 }
 
-TEST_CASE("Test POST and then GET and then DELETE")
+TEST_CASE("Test POST and then GET and then DELETE with -p")
 {
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    std::string path         = std::filesystem::current_path() / "assets/newFile.html";
+    std::string path         = "/newFile.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
     std::string fileContents = "<h>This file has been posted</h>";
 
-    std::system(("rm -rf " + path).c_str());
+    std::system(("rm -rf " + (std::filesystem::current_path() / "assets/newFile.html").string()).c_str());
 
     // POST the file
     HTTPMessage httpPostMessage;
