@@ -46,6 +46,8 @@ class Cgi
 
     private:
         Client&     client_;
+
+        ssize_t     bodyToCgiBytesSend_;
         std::string bodyToCgi_;
         std::string cgiResponse_;
         CgiState    state_;

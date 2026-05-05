@@ -24,9 +24,9 @@ class ConnectionManager
         static auto createConnection(const epoll_event& epollEvent, std::tuple<std::string, int>) -> std::expected<void, std::string>;
         static auto addCGIConnection(int cgiFd, Client& client)  -> std::expected<void, std::string>;
 
-        static auto eraseClient(int fd) -> void;
-        static auto handleReceivingEvent(int fd) -> std::expected<std::string, std::string>;
-        static auto handleSendingEvent(int fd, HTTPResponse& response) -> std::expected<void, std::string>;
+        static auto closeConnection(int fd) -> void;
+        static auto handleReceivingEvent(int fd) -> std::tuple<std::string, ssize_t>;
+        static auto handleSendingEvent(int fd, std::string data) -> ssize_t;
 
     private:
         static std::map<int, Client> clientMap_;

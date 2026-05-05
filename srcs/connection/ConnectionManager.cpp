@@ -19,55 +19,26 @@ auto ConnectionManager::setEpollfd(int epollfd) -> void
 /// @brief receives data from the fd
 /// @param fd
 /// @return void or error string if recv() fails or client has closed the connection.
-auto ConnectionManager::handleReceivingEvent(int fd) -> std::expected<std::string, std::string>
+auto ConnectionManager::handleReceivingEvent(int fd) -> std::tuple<std::string, ssize_t>
 {
     std::string buf;
     buf.resize(BUFFER_SIZE);
     ssize_t numBytes = recv(fd, buf.data(), BUFFER_SIZE, 0);
-    if (numBytes < 0)
-        return std::unexpected("recv failed");
-    if (numBytes == 0)
-        return std::unexpected("Client " + std::to_string(fd) + " has disconnected. recv returned 0.");
+    //if (numBytes < 0)
+    //    return std::unexpected("recv failed");
+    //if (numBytes == 0)
+    //    return std::unexpected("Client " + std::to_string(fd) + " has disconnected. recv returned 0.");
 
     // todo error handling
-    return buf;
+    return {buf, numBytes};
 }
 
-auto ConnectionManager::handleSendingEvent(int fd, HTTPResponse& response) -> std::expected<void, std::string>
+auto ConnectionManager::handleSendingEvent(int fd, std::string data) -> ssize_t
 {
-
-    if (response.getSendState() == SendState::kReady) // first send, needs to init the packet
-    {
-        std::string packet = response.createPacket();
-        LOG(LogLevel::kDebug, "Sending packet to fd:{} with content:\n{}\n", fd, packet);
-
-        response.setPacket(packet);
-        response.setSendState(SendState::kSending);
-    }
-
-    if (response.getSendState() == SendState::kSending)
-    {
-        std::string buf = response.getRemainingPacket();
-
-        ssize_t bytesSent = send(fd, buf.c_str(), response.getRemainingPacketLen(), 0);
-        if (bytesSent < 0)
-        {
-            response.setSendState(SendState::kFailed);
-            return std::unexpected("send failed");
-            // todo handle error
-        }
-        response.incrementTotalBytesSent(bytesSent);
-        if (bytesSent == 0 || response.getRemainingPacketLen() == 0)
-        {
-            LOG(LogLevel::kInfo, "Request finished sending", fd);
-            response.setSendState(SendState::kDone);
-            return {};
-        }
-    }
-
+    ssize_t bytesSent = send(fd, data.c_str(), data.size(), 0);
     // LOG(LogLevel::kInfo, "remaining packet len {}.", response.getRemainingPacketLen());
 
-    return {};
+    return bytesSent;
 }
 
 auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
@@ -110,7 +81,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
 
 // }
 
-auto ConnectionManager::eraseClient(int fd) -> void
+auto ConnectionManager::closeConnection(int fd) -> void
 {
     if (close(fd) == -1)
         LOG(LogLevel::kDebug, "failed to close client fd: {}", fd);

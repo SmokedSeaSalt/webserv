@@ -1,14 +1,18 @@
 #include "Cgi.hpp"
+#include "ConnectionManager.hpp"
 #include "connection.hpp"
 #include "logging.hpp"
 #include "parsing.hpp"
-#include "ConnectionManager.hpp"
 #include <sys/socket.h> //for socketpair
 #include <unistd.h>     //for dup2, close
 
+// this should be grabbed from config
 std::map<std::string, std::string> Cgi::CgiTypes_ = {{".php", "/usr/bin/php"}, {".sh", "/usr/bin/sh"}};
 
-Cgi::Cgi(Client& client) : client_(client), state_(CgiState::kInit) {}
+Cgi::Cgi(Client& client) : client_(client), state_(CgiState::kInit)
+{
+    this->bodyToCgiBytesSend_ = 0;
+}
 
 auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
 {
@@ -19,24 +23,59 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
     {
     case CgiState::kInit:
     {
-        //should not get here.
+        // should not get here.
     }
     case CgiState::kSendingBody:
     {
-        
+        if (!(events & EPOLLOUT))
+            break;
+        ssize_t bytesSend = ConnectionManager::handleSendingEvent(fd, this->bodyToCgi_.substr(this->bodyToCgiBytesSend_));
+
+        if (bytesSend < 0)
+        {
+            LOG(LogLevel::kErrors, "Error during CGI send on fd:{}", fd);
+            return HandleEventResult::kError;
+        }
+        this->bodyToCgiBytesSend_ += bytesSend;
+        if (bytesSend == 0 || this->bodyToCgiBytesSend_ >= this->bodyToCgi_.size())
+        {
+            LOG(LogLevel::kInfo, "CGI finished sending on fd:{}", fd);
+            this->state_ = CgiState::kReceiveCGIResponse;
+            shutdown(fd, SHUT_WR);
+            break;
+        }
     }
     case CgiState::kReceiveCGIResponse:
     {
-
+        auto handleReceivingEventResult = ConnectionManager::handleReceivingEvent(fd);
+        if (std::get<ssize_t>(handleReceivingEventResult) < 0)
+        {
+            // error happened but it might be EAGAIN
+            LOG(LogLevel::kDebug, "recv() returned < 0 at fd: {}, closing connection.", fd);
+            ConnectionManager::closeConnection(this->fd_); // TODO: how to handle this error? generate internal server error
+            return HandleEventResult::kError;
+        }
+        if (std::get<ssize_t>(handleReceivingEventResult) == 0)
+        {
+            LOG(LogLevel::kInfo, "CGI finished receiving on fd:{}", fd);
+            // EOF happened
+            ConnectionManager::closeConnection(this->fd_);
+            //build actual http response for client
+            this->createResponse();
+            this->state_ == CgiState::KDone;
+        }
+        this->cgiResponse_ += std::get<std::string>(handleReceivingEventResult);
+        break;
     }
     case CgiState::KDone:
     {
-
     }
+
+    return HandleEventResult::kSuccess;
     }
 }
 
-    auto Cgi::isRequestTargetCgi(const std::string target) -> bool
+auto Cgi::isRequestTargetCgi(const std::string target) -> bool
 {
     auto targetSegments = split(target, '/');
     for (std::string& segment : targetSegments.value())
@@ -95,11 +134,12 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     }
     else
     {
-        // TODO: get host from client connection data
+        env_strings.push_back("SERVER_NAME=" + get<std::string>(this->client_.getListenSocketIpPortPair()));
     }
+    env_strings.push_back("SERVER_PORT=" + get<int>(this->client_.getListenSocketIpPortPair()));
 
-    // TODO: REMOTE_ADDR -> get host from client data
-    // TODO: SERVER_PORT -> get port from client data
+    env_strings.push_back("REMOTE_ADDR=" + this->client_.getHost());
+    env_strings.push_back("REMOTE_HOST=" + this->client_.getHost());
 
     std::string target = request.getMessage().requestTarget;
     std::string query  = target.substr(target.find_first_of('?'));
@@ -205,7 +245,7 @@ auto Cgi::init() -> std::expected<int, HTTPResponse>
         // Parent
         close(fd[1]); // Close child side.
         this->fd_ = fd[0];
-        ConnectionManager::addCGIConnection(this->fd_, this->client_); //Todo Error handling
+        ConnectionManager::addCGIConnection(this->fd_, this->client_); // Todo Error handling
         return this->fd_;
     }
 }
