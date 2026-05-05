@@ -10,7 +10,10 @@ int main(int argc, char** argv)
     Logging::init(InputArgs::args.logFile.c_str(), InputArgs::args.logLevel);
     auto ret = Config::parseConfigFile(InputArgs::args.configFile);
     if (!ret.has_value())
+    {
+        std::cout << ret.error() << "Config parsing error. Shutting down webserv" << std::endl;
         return 1; // todo error handling
+    }
     Server server = Server();
     server.setup();
     server.connection_loop();
