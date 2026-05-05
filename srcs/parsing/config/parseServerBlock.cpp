@@ -9,6 +9,16 @@
 namespace Config
 {
 
+static auto isDuplicateLocationPathPrefix(const ServerBlock& serverBlock, const Location& location)
+{
+    for (const Location& existing : serverBlock.locations)
+    {
+        if (location.pathPrefix == existing.pathPrefix)
+            return true;
+    }
+    return false;
+}
+
 static auto parseErrorPage(ServerBlock& serverBlock, std::string buf)
     -> std::expected<void, std::string>
 {
@@ -162,7 +172,10 @@ auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
             auto result = parseLocation(inFile, splitResult.value()[1]);
             if (!result.has_value())
                 return std::unexpected(result.error());
-            serverBlock.locations.push_back(result.value());
+            if (!isDuplicateLocationPathPrefix(serverBlock, result.value()))
+                serverBlock.locations.push_back(result.value());
+            else
+                return std::unexpected("Duplicate location path prefix");
         }
         else if (buf == "}")
             return serverBlock;

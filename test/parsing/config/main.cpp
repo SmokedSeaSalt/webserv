@@ -462,7 +462,15 @@ TEST_CASE("Test duplicates in config")
     {
         auto ret = Config::parseConfigFile("test_files/duplicateServerBlock.conf");
         CHECK(!ret.has_value());
+        CHECK(ret.error() == "Duplicate ip port pair in location");
     }
 
+    SUBCASE("duplicate location path prefix")
+    {
+        auto ret = Config::parseConfigFile("test_files/duplicateLocationPathPrefix.conf");
+        CHECK(!ret.has_value());
+        CHECK(ret.error() == "Duplicate location path prefix");
+
+    }
 
 }
