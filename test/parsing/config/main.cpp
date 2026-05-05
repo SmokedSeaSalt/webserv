@@ -470,7 +470,27 @@ TEST_CASE("Test duplicates in config")
         auto ret = Config::parseConfigFile("test_files/duplicateLocationPathPrefix.conf");
         CHECK(!ret.has_value());
         CHECK(ret.error() == "Duplicate location path prefix");
+    }
 
+    SUBCASE("duplicate error_page directive")
+    {
+        auto ret = Config::parseConfigFile("test_files/duplicateErrorPage.conf");
+        CHECK(!ret.has_value());
+        CHECK(ret.error() == "Duplicate error page found for: 404");
+    }
+
+    SUBCASE("duplicate listen directive")
+    {
+        auto ret = Config::parseConfigFile("test_files/duplicateListen.conf");
+        CHECK(!ret.has_value());
+        CHECK(ret.error() == "duplicate listen found");
+    }
+
+    SUBCASE("duplicate client_max_body_size directive")
+    {
+        auto ret = Config::parseConfigFile("test_files/duplicateClientMaxBodySize.conf");
+        CHECK(!ret.has_value());
+        CHECK(ret.error() == "duplicate client_max_body_size found");
     }
 
 }
