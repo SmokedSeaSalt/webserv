@@ -454,3 +454,15 @@ TEST_CASE("Test file opening errors")
         // CHECK(configResult.error() == "Config file could not be opened");
     }
 }
+
+TEST_CASE("Test duplicates in config")
+{
+    Config::config = {};
+    SUBCASE("Non-existent file")
+    {
+        auto ret = Config::parseConfigFile("test_files/duplicateServerBlock.conf");
+        CHECK(!ret.has_value());
+    }
+
+
+}
