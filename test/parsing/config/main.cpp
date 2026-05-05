@@ -458,7 +458,7 @@ TEST_CASE("Test file opening errors")
 TEST_CASE("Test duplicates in config")
 {
     Config::config = {};
-    SUBCASE("Non-existent file")
+    SUBCASE("duplicate serverblock")
     {
         auto ret = Config::parseConfigFile("test_files/duplicateServerBlock.conf");
         CHECK(!ret.has_value());
