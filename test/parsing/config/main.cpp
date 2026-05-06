@@ -455,7 +455,7 @@ TEST_CASE("Test file opening errors")
     }
 }
 
-TEST_CASE("Test duplicates in config")
+TEST_CASE("Test duplicate server block directives")
 {
     Config::config = {};
     SUBCASE("duplicate serverblock")
@@ -493,4 +493,23 @@ TEST_CASE("Test duplicates in config")
         CHECK(ret.error() == "duplicate client_max_body_size found");
     }
 
+}
+
+TEST_CASE("Test duplicate location directives")
+{
+    // Each directive in visited map except cgi
+    std::vector<std::pair<std::string, std::string>> directives = {
+        {"methods", "duplicateMethods.conf"},
+        {"return", "duplicateReturn.conf"},
+        {"root", "duplicateRoot.conf"},
+        {"autoindex", "duplicateAutoindex.conf"},
+        {"index", "duplicateIndex.conf"},
+        {"upload_store", "duplicateUploadStore.conf"},
+    };
+    for (const auto& [directive, file] : directives) {
+        Config::config = {};
+        auto configResult = Config::parseConfigFile(std::string("test_files/") + file);
+        REQUIRE(!configResult.has_value());
+        CHECK(configResult.error() == ("Duplicate " + directive + " found"));
+    }
 }
