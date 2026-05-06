@@ -332,7 +332,6 @@ TEST_CASE("Test POST and then GET and then DELETE with -p")
     HTTPResponse postResponse = Execution::execute(client1);
     CHECK(postResponse.createPacket().find("201") != std::string::npos);
 
-
     // GET the file
     HTTPMessage httpGetMessage;
     httpGetMessage.method            = "GET";
@@ -366,7 +365,6 @@ TEST_CASE("Test POST and then GET and then DELETE with -p")
     HTTPResponse getResponse2 = Execution::execute(client3);
     CHECK(getResponse2.createPacket().find("404") != std::string::npos);
 }
-
 
 TEST_CASE("Test location header in POST")
 {

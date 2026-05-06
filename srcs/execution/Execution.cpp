@@ -326,7 +326,7 @@ auto processPost(Client& client) -> std::expected<HTTPResponse, ResponseStatusCo
     std::string pathAfterLocation = request.getMessage().pathAfterLocation;
     if (!pathAfterLocation.empty() && pathAfterLocation[0] == '/')
         pathAfterLocation = pathAfterLocation.substr(1);
-    std::string locationValue  = std::filesystem::path(request.getLocation().pathPrefix) / std::filesystem::path(pathAfterLocation).generic_string();
+    std::string locationValue = std::filesystem::path(request.getLocation().pathPrefix) / std::filesystem::path(pathAfterLocation).generic_string();
     if (!locationValue.empty() && locationValue[0] != '/')
         locationValue = '/' + locationValue;
     response.setHeader("location", locationValue);
