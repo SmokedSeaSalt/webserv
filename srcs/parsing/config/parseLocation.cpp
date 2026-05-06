@@ -1,10 +1,10 @@
 #include "configParsing.hpp"
 #include "parsing.hpp"
 #include <expected>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <string>
-#include <filesystem>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -146,15 +146,15 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
     std::vector<std::string> tokens;
     std::map<std::string, std::function<std::expected<void, std::string>(Location & location,
                                                                          std::vector<std::string>)>>
-                                functionMap{
-                                    {"methods", parseMethods},
-                                    {"return", parseRedirect},
-                                    {"root", parseRoot},
-                                    {"autoindex", parseAutoIndex},
-                                    {"index", parseIndex},
-                                    {"upload_store", parseUploadStore},
-                                    {"cgi", parseCGI},
-                                };
+        functionMap{
+            {"methods", parseMethods},
+            {"return", parseRedirect},
+            {"root", parseRoot},
+            {"autoindex", parseAutoIndex},
+            {"index", parseIndex},
+            {"upload_store", parseUploadStore},
+            {"cgi", parseCGI},
+        };
     std::map<std::string, bool> visited{
         {"methods", false},
         {"return", false},
