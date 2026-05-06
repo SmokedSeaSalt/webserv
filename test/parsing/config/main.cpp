@@ -513,3 +513,24 @@ TEST_CASE("Test duplicate location directives")
         CHECK(configResult.error() == ("Duplicate " + directive + " found"));
     }
 }
+
+TEST_CASE("Test duplicate cgi")
+{
+    auto ret = Config::parseConfigFile("test_files/duplicateCGI.conf");
+    CHECK(!ret.has_value());
+    CHECK_EQ(ret.error(), "Duplicate CGI extension not allowed");
+}
+
+TEST_CASE("Test non existent cgi executable")
+{
+    auto ret = Config::parseConfigFile("test_files/nonExistentCgiPath.conf");
+    CHECK(!ret.has_value());
+    CHECK_EQ(ret.error(), "CGI binary path not executable or existent");
+}
+
+TEST_CASE("Test non executable cgi executable")
+{
+    auto ret = Config::parseConfigFile("test_files/nonExecutableCgiPath.conf");
+    CHECK(!ret.has_value());
+    CHECK_EQ(ret.error(), "CGI binary path not executable or existent");
+}

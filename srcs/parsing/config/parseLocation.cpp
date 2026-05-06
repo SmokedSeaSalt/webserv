@@ -1,9 +1,12 @@
 #include "configParsing.hpp"
 #include "parsing.hpp"
 #include <expected>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <string>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace Config
 {
@@ -111,11 +114,26 @@ static auto parseUploadStore(Location& location, std::vector<std::string> tokens
     return {};
 }
 
+static auto isValidExecutable(std::string path)
+{
+    if (!std::filesystem::exists(path) || std::filesystem::is_directory(path))
+        return false;
+
+    if (access(path.c_str(), X_OK) == 0)
+        return true;
+
+    return false;
+}
+
 static auto parseCGI(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     if (tokens.size() != 3)
         return std::unexpected("Invalid cgi argument count");
+    if (location.cgiPaths.count(tokens[1]))
+        return std::unexpected("Duplicate CGI extension not allowed");
+    if (!isValidExecutable(tokens[2]))
+        return std::unexpected("CGI binary path not executable or existent");
     location.cgiPaths[tokens[1]] = tokens[2];
     return {};
 }
