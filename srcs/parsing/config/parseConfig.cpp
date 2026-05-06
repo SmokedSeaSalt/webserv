@@ -16,6 +16,16 @@ auto trimTrailingSemicolon(std::string& str) -> std::expected<void, std::string>
     return {};
 }
 
+auto isDuplicateIpPortPair(ServerBlock serverBlock) -> bool
+{
+    for (ServerBlock& existing : config.serverBlocks)
+    {
+        if (serverBlock.ip == existing.ip && serverBlock.port == existing.port)
+            return true;
+    }
+    return false;
+}
+
 auto parseConfigFile(std::string configFile) -> std::expected<void, std::string>
 {
     std::ifstream inFile;
@@ -34,7 +44,10 @@ auto parseConfigFile(std::string configFile) -> std::expected<void, std::string>
             auto serverBlock = parseServerBlock(inFile);
             if (!serverBlock.has_value())
                 return std::unexpected(serverBlock.error());
-            config.serverBlocks.push_back(serverBlock.value());
+            if (!isDuplicateIpPortPair(serverBlock.value()))
+                config.serverBlocks.push_back(serverBlock.value());
+            else
+                return std::unexpected("Duplicate ip port pair in location");
         }
         else if (!buf.empty())
         {
