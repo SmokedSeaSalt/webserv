@@ -1,4 +1,5 @@
 #include "ConnectionManager.hpp"
+#include "Client.hpp"
 #include "logging.hpp"
 #include <arpa/inet.h> // for client logging
 #include <netdb.h>     // for client logging
@@ -6,12 +7,19 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-ConnectionManager::ConnectionManager(int epollfd) : execution_(), epollfd_(epollfd) {}
+// Static member definitions
+std::map<int, Client> ConnectionManager::clientMap_;
+int                   ConnectionManager::epollfd_;
+
+auto ConnectionManager::setEpollfd(int epollfd) -> void
+{
+    epollfd_ = epollfd;
+}
 
 /// @brief receives data from the fd
 /// @param fd
 /// @return void or error string if recv() fails or client has closed the connection.
-auto ConnectionManager::handleReceivingEvent(int fd) -> std::expected<void, std::string>
+auto ConnectionManager::handleReceivingEvent(int fd) -> std::expected<std::string, std::string>
 {
     std::string buf;
     buf.resize(BUFFER_SIZE);
@@ -22,26 +30,11 @@ auto ConnectionManager::handleReceivingEvent(int fd) -> std::expected<void, std:
         return std::unexpected("Client " + std::to_string(fd) + " has disconnected. recv returned 0.");
 
     // todo error handling
-
-    auto it = clientMap_.find(fd);
-    if (it == clientMap_.end())
-        return std::unexpected("unknown client fd: " + std::to_string(fd));
-    Client& client = it->second;
-    client.request.newData(buf);
-
-    return {};
+    return buf;
 }
 
-auto ConnectionManager::handleSendingEvent(int fd) -> std::expected<void, std::string>
+auto ConnectionManager::handleSendingEvent(int fd, HTTPResponse& response) -> std::expected<void, std::string>
 {
-    // std::string response = client.getResponse();
-    // write client.Response to fd
-
-    auto it = clientMap_.find(fd);
-    if (it == clientMap_.end())
-        return std::unexpected("unknown client fd: " + std::to_string(fd));
-    Client&       client   = it->second;
-    HTTPResponse& response = client.response;
 
     if (response.getSendState() == SendState::kReady) // first send, needs to init the packet
     {
@@ -97,80 +90,13 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
         else
         {
             LOG(LogLevel::kDebug, "Closed client fd: {}", std::to_string(fd));
-            client.state = ClientState::Closed;
+            client.setState(ClientState::Closed);
             clientMap_.erase(fd);
         }
         return HandleEventResult::kError;
     }
 
-    switch (client.state)
-    {
-    case ClientState::Receiving:
-    {
-        if (!(events & EPOLLIN))
-            break;
-        auto handleReceivingEventResult = handleReceivingEvent(fd);
-        if (!handleReceivingEventResult.has_value())
-        {
-            LOG(LogLevel::kDebug, "recv() returned <= 0 at fd: {}, closing connection.", std::to_string(fd));
-            if (close(fd) == -1)
-                LOG(LogLevel::kDebug, "failed to close client fd: {}", std::to_string(fd));
-            else
-                client.state = ClientState::Closed;
-            return HandleEventResult::kError;
-        }
-        if (client.request.getState() != RequestState::KDone)
-            break;
-        LOG(LogLevel::kInfo, "Packet received from fd:{} with content:\n{}\n", fd, getHTTPMessageString(client.request.getMessage()));
-        client.response = execution_.execute(client.request.getMessage());
-        [[fallthrough]];
-    }
-    case ClientState::Processing:
-    {
-        if (client.response.getSendState() == SendState::kReady)
-            client.state = ClientState::Sending;
-        else
-        {
-            client.state = ClientState::Processing;
-            break;
-        }
-    }
-    case ClientState::Sending:
-    {
-        if (!(events & EPOLLOUT))
-            break;
-        handleSendingEvent(fd);
-        if (client.response.getSendState() == SendState::kDone)
-            client.state = ClientState::Sent;
-        break;
-    }
-    case ClientState::Sent:
-    {
-        if (client.response.getKeepAlive() == false)
-        {
-            if (close(fd) == -1)
-                LOG(LogLevel::kDebug, "failed to close client fd: {}", std::to_string(fd));
-            else
-            {
-                LOG(LogLevel::kDebug, "Closed client fd: {}. Erasing from clientMap_", std::to_string(fd));
-                clientMap_.erase(fd);
-            }
-        }
-        else
-        {
-            client.request  = {};
-            client.response = {};
-            client.state    = ClientState::Receiving;
-            LOG(LogLevel::kDebug, "Client socket at fd: {} being kept alive", std::to_string(fd));
-        }
-        break;
-    }
-    case ClientState::Closed:
-        break;
-    case ClientState::Error:
-        break;
-    }
-    return HandleEventResult::kSuccess; // todo: what to return here?
+    return client.handleEvent(epollEvent);
 }
 
 // auto ConnectionManager::logNewConnection(int connectionSocket, sockaddr_storage clientAddress, socklen_t addressLen) -> void
@@ -184,7 +110,18 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
 
 // }
 
-auto ConnectionManager::createConnection(const epoll_event& epollEvent, int listenSocketPort) -> std::expected<void, std::string>
+auto ConnectionManager::eraseClient(int fd) -> void
+{
+    if (close(fd) == -1)
+        LOG(LogLevel::kDebug, "failed to close client fd: {}", fd);
+    else
+    {
+        LOG(LogLevel::kDebug, "Closed client fd: {}. Erasing from clientMap_", fd);
+        clientMap_.erase(fd);
+    }
+}
+
+auto ConnectionManager::createConnection(const epoll_event& epollEvent, std::tuple<std::string, int> ipPortPair) -> std::expected<void, std::string>
 {
     int              connectionSocket;
     sockaddr_storage clientAddress{};
@@ -209,6 +146,7 @@ auto ConnectionManager::createConnection(const epoll_event& epollEvent, int list
     if (!setNonBlockingRes.has_value())
         return std::unexpected(setNonBlockingRes.error());
 
+    struct epoll_event ev_;
     ev_.events  = EPOLLIN | EPOLLRDHUP | EPOLLOUT;
     ev_.data.fd = connectionSocket;
     if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, connectionSocket, &ev_) == -1)
@@ -225,16 +163,12 @@ auto ConnectionManager::createConnection(const epoll_event& epollEvent, int list
     if (rc == 0)
         LOG(LogLevel::kInfo, "Client connected: ip={} port={} fd={}", host, service, connectionSocket);
     else
+    {
         LOG(LogLevel::kInfo, "Client connected: fd={}", connectionSocket);
+        return std::unexpected("getnameinfo could not get all paramaters");
+    }
 
-    clientMap_.emplace(connectionSocket, Client{.socketfd         = connectionSocket,
-                                                .listenSocketPort = listenSocketPort,
-                                                .service          = std::string(service),
-                                                .host             = std::string(host),
-                                                .state            = ClientState::Receiving,
-                                                .request          = HTTPRequest{},
-                                                .response         = HTTPResponse{},
-                                                .error            = ErrorType::None});
+    clientMap_.emplace(connectionSocket, Client(connectionSocket, listenSocket, ipPortPair, std::string(service), std::string(host)));
 
     return {};
 }

@@ -1,8 +1,14 @@
 #include "HTTPRequest.hpp"
+#include "parsing.hpp"
 
 auto HTTPRequest::getMessage() const -> HTTPMessage
 {
     return this->message_;
+}
+
+auto HTTPRequest::setMessage(HTTPMessage message) -> void
+{
+    this->message_ = message;
 }
 
 auto HTTPRequest::getExpectedBodyLength() const -> size_t
@@ -288,4 +294,34 @@ auto HTTPRequest::expectBody() -> std::expected<bool, ResponseStatusCode>
 auto HTTPRequest::getState() const -> RequestState
 {
     return this->state_;
+}
+
+auto HTTPRequest::setAbsoluteTarget(std::string absolutePath) -> void
+{
+    this->message_.absoluteRequestTarget = absolutePath;
+}
+
+auto HTTPRequest::setpathAfterLocation(std::string pathAfterLocation) -> void
+{
+    this->message_.pathAfterLocation = pathAfterLocation;
+}
+
+auto HTTPRequest::getServerBlock() const -> const Config::ServerBlock&
+{
+    return this->serverBlock_;
+}
+
+auto HTTPRequest::setServerBlock(const Config::ServerBlock& serverBlock) -> void
+{
+    this->serverBlock_ = serverBlock;
+}
+
+auto HTTPRequest::getLocation() const -> const Config::Location&
+{
+    return this->location_;
+}
+
+auto HTTPRequest::setLocation(Config::Location& location) -> void
+{
+    this->location_ = location;
 }

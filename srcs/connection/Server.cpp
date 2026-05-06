@@ -82,7 +82,7 @@ auto Server::setupListenSocket(std::string ip, int port) -> std::expected<int, s
 
 auto Server::closeListenSockets() -> void
 {
-    for (int fd : listenSockets_)
+    for (const auto& [fd, ipPortPair] : listenSocketFdToIpPortPair_)
         close(fd);
 }
 
@@ -97,8 +97,7 @@ auto Server::setupListenSockets() -> std::expected<void, std::string>
             closeListenSockets();
             return std::unexpected(fd.error());
         }
-        listenSockets_.insert(fd.value());
-        listenSocketFdToPort_[fd.value()] = serverBlock.port;
+        listenSocketFdToIpPortPair_[fd.value()] = make_tuple(serverBlock.ip, serverBlock.port);
 
         ev_.events  = EPOLLIN;
         ev_.data.fd = fd.value();
@@ -121,8 +120,8 @@ auto Server::setup() -> std::expected<void, std::string>
         return std::unexpected("epoll_create() failed");
     }
 
-    connectionManager_ = std::make_unique<ConnectionManager>(epollfd_);
-    auto ret           = setupListenSockets();
+    ConnectionManager::setEpollfd(epollfd_);
+    auto ret = setupListenSockets();
     if (!ret.has_value())
         return std::unexpected(ret.error());
     return {};
@@ -143,13 +142,13 @@ auto Server::connection_loop() -> std::expected<void, std::string>
 
         for (int n = 0; n < nfds; ++n)
         {
-            if (listenSockets_.contains(events_[n].data.fd))
+            if (listenSocketFdToIpPortPair_.contains(events_[n].data.fd))
             {
-                connectionManager_->createConnection(events_[n], listenSocketFdToPort_[events_[n].data.fd]); // tddo also pass whole epoll_event struct
+                ConnectionManager::createConnection(events_[n], listenSocketFdToIpPortPair_[events_[n].data.fd]); // todo also pass whole epoll_event struct
             }
             else
             {
-                connectionManager_->handleEvent(events_[n]);
+                ConnectionManager::handleEvent(events_[n]);
             }
         }
     }

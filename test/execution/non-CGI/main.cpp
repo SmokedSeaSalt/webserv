@@ -1,7 +1,11 @@
+#include "Client.hpp"
 #include "Execution.hpp"
+#include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include "HTTPRules.hpp"
+#include "InputArgs.hpp"
 #include "configParsing.hpp"
+#include "connection.hpp"
 #include "executionHelpers.hpp"
 #include <filesystem>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
@@ -122,13 +126,18 @@ TEST_CASE("Test readFile non existent file (404)")
 // execute tests/
 /////////////////
 
-TEST_CASE("Test full path get html file")
+TEST_CASE("Test get html file with -p")
 {
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Execution   execution{};
-    std::string path = std::filesystem::current_path() / "assets/helloWorld.html";
+    std::string path    = "/helloWorld.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
 
     HTTPMessage httpMessage;
     httpMessage.method            = "GET";
@@ -142,19 +151,29 @@ TEST_CASE("Test full path get html file")
     CHECK(httpMessage.requestTarget == path);
     CHECK(httpMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse response = execution.execute(httpMessage);
+    std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
+    Client                       client(0, 8080, dummyPair, "127.0.0.1", "");
+    client.getRequest().setMessage(httpMessage);
+
+    HTTPResponse response = Execution::execute(client);
     checkPacket(response.createPacket(), "text/html; charset=utf-8", "<p>Hello world</p>");
     // CHECK(repsonse. == "");
 }
 
-TEST_CASE("Test full path get png file test")
+TEST_CASE("Test get png file with -p")
 {
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Execution   execution{};
-    std::string path         = std::filesystem::current_path() / "assets/example.png";
-    std::string expectedBody = loadBinaryFile(path);
+    std::string path    = "/example.png";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
+
+    std::string expectedBody = loadBinaryFile(std::filesystem::current_path() / "assets/example.png");
 
     HTTPMessage httpMessage;
     httpMessage.method            = "GET";
@@ -168,7 +187,11 @@ TEST_CASE("Test full path get png file test")
     CHECK(httpMessage.requestTarget == path);
     CHECK(httpMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse response = execution.execute(httpMessage);
+    std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
+    Client                       client(0, 8080, dummyPair, "127.0.0.1", "");
+    client.getRequest().setMessage(httpMessage);
+
+    HTTPResponse response = Execution::execute(client);
     std::string  packet   = response.createPacket();
 
     CHECK(packet.rfind("HTTP/1.1 200 OK\r\n", 0) == 0);
@@ -186,13 +209,18 @@ TEST_CASE("Test full path get png file test")
     CHECK(body == expectedBody);
 }
 
-TEST_CASE("Test HEAD")
+TEST_CASE("Test HEAD with -p")
 {
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Execution   execution{};
-    std::string path = std::filesystem::current_path() / "assets/helloWorld.html";
+    std::string path    = "/helloWorld.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
 
     HTTPMessage httpMessage;
     httpMessage.method            = "HEAD";
@@ -206,37 +234,52 @@ TEST_CASE("Test HEAD")
     CHECK(httpMessage.requestTarget == path);
     CHECK(httpMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse response = execution.execute(httpMessage);
+    std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
+    Client                       client(0, 8080, dummyPair, "127.0.0.1", "");
+    client.getRequest().setMessage(httpMessage);
+
+    HTTPResponse response = Execution::execute(client);
     checkPacket(response.createPacket(), "text/html; charset=utf-8", "");
     // CHECK(repsonse. == "");
 }
 
-TEST_CASE("Test POST and then GET the file with manual file delete")
+TEST_CASE("Test POST and then GET the file with manual file delete with -p")
 {
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Execution   execution{};
-    std::string path         = std::filesystem::current_path() / "assets/newFile.html";
+    std::string path    = "/newFile.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
+
     std::string fileContents = "<h>This file has been posted</h>";
 
     std::system(("rm -rf " + path).c_str());
 
     HTTPMessage httpPostMessage;
-    httpPostMessage.method          = "POST";
-    httpPostMessage.requestTarget   = path;
-    httpPostMessage.protocol        = "HTTP/1.1";
-    httpPostMessage.headers["host"] = {"localhost:8080"};
-    httpPostMessage.body            = fileContents;
+    httpPostMessage.method                    = "POST";
+    httpPostMessage.requestTarget             = path;
+    httpPostMessage.protocol                  = "HTTP/1.1";
+    httpPostMessage.headers["host"]           = {"localhost:8080"};
+    httpPostMessage.headers["content-length"] = {std::to_string(fileContents.length())};
+    httpPostMessage.body                      = fileContents;
 
     CHECK(httpPostMessage.method == "POST");
     CHECK(httpPostMessage.requestTarget == path);
     CHECK(httpPostMessage.protocol == "HTTP/1.1");
 
-    HTTPResponse postResponse1 = execution.execute(httpPostMessage);
+    std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
+    Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
+    client1.getRequest().setMessage(httpPostMessage);
+
+    HTTPResponse postResponse1 = Execution::execute(client1);
     CHECK(postResponse1.createPacket().find("201") != std::string::npos);
 
-    HTTPResponse postResponse2 = execution.execute(httpPostMessage);
+    HTTPResponse postResponse2 = Execution::execute(client1);
     CHECK(postResponse2.createPacket().find("409") != std::string::npos);
 
     HTTPMessage httpGetMessage;
@@ -247,32 +290,46 @@ TEST_CASE("Test POST and then GET the file with manual file delete")
     httpGetMessage.headers["accept"] = {"text/html"};
     httpGetMessage.body              = "";
 
-    HTTPResponse getResponse = execution.execute(httpGetMessage);
+    Client client2(0, 8080, dummyPair, "127.0.0.1", "");
+    client2.getRequest().setMessage(httpGetMessage);
+
+    HTTPResponse getResponse = Execution::execute(client2);
     checkPacket(getResponse.createPacket(), "text/html; charset=utf-8", fileContents);
 
     // CHECK(repsonse. == "");
     std::system(("rm -rf " + path).c_str());
 }
 
-TEST_CASE("Test POST and then GET and then DELETE")
+TEST_CASE("Test POST and then GET and then DELETE with -p")
 {
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    Execution   execution{};
-    std::string path         = std::filesystem::current_path() / "assets/newFile.html";
+    std::string path    = "/newFile.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
     std::string fileContents = "<h>This file has been posted</h>";
 
-    std::system(("rm -rf " + path).c_str());
+    std::system(("rm -rf " + (std::filesystem::current_path() / "assets/newFile.html").string()).c_str());
 
     // POST the file
     HTTPMessage httpPostMessage;
-    httpPostMessage.method          = "POST";
-    httpPostMessage.requestTarget   = path;
-    httpPostMessage.protocol        = "HTTP/1.1";
-    httpPostMessage.headers["host"] = {"localhost:8080"};
-    httpPostMessage.body            = fileContents;
-    HTTPResponse postResponse       = execution.execute(httpPostMessage);
+    httpPostMessage.method                    = "POST";
+    httpPostMessage.requestTarget             = path;
+    httpPostMessage.protocol                  = "HTTP/1.1";
+    httpPostMessage.headers["host"]           = {"localhost:8080"};
+    httpPostMessage.headers["content-length"] = {std::to_string(fileContents.length())};
+    httpPostMessage.body                      = fileContents;
+
+    std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
+    Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
+    client1.getRequest().setMessage(httpPostMessage);
+
+    HTTPResponse postResponse = Execution::execute(client1);
     CHECK(postResponse.createPacket().find("201") != std::string::npos);
 
     // GET the file
@@ -283,7 +340,11 @@ TEST_CASE("Test POST and then GET and then DELETE")
     httpGetMessage.headers["host"]   = {"localhost:8080"};
     httpGetMessage.headers["accept"] = {"text/html"};
     httpGetMessage.body              = "";
-    HTTPResponse getResponse1        = execution.execute(httpGetMessage);
+
+    Client client2(0, 8080, dummyPair, "127.0.0.1", "");
+    client2.getRequest().setMessage(httpGetMessage);
+
+    HTTPResponse getResponse1 = Execution::execute(client2);
     checkPacket(getResponse1.createPacket(), "text/html; charset=utf-8", fileContents);
 
     // DELETE the file
@@ -293,10 +354,14 @@ TEST_CASE("Test POST and then GET and then DELETE")
     httpDeleteMessage.protocol        = "HTTP/1.1";
     httpDeleteMessage.headers["host"] = {"localhost:8080"};
     httpDeleteMessage.body            = "";
-    HTTPResponse deleteResponse       = execution.execute(httpDeleteMessage);
+
+    Client client3(0, 8080, dummyPair, "127.0.0.1", "");
+    client3.getRequest().setMessage(httpDeleteMessage);
+
+    HTTPResponse deleteResponse = Execution::execute(client3);
     CHECK(deleteResponse.createPacket().find("204") != std::string::npos);
 
     // GET the already deleted file (should fail)
-    HTTPResponse getResponse2 = execution.execute(httpGetMessage);
+    HTTPResponse getResponse2 = Execution::execute(client3);
     CHECK(getResponse2.createPacket().find("404") != std::string::npos);
 }

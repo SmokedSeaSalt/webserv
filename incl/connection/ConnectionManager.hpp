@@ -1,9 +1,12 @@
 #ifndef CONNECTIONMANAGER_HPP
 #define CONNECTIONMANAGER_HPP
 
-#include "Execution.hpp"
-#include "connection.hpp"
+#include "Client.hpp"
+#include "HTTPResponse.hpp"
+#include <expected>
+#include <map>
 #include <netinet/in.h>
+#include <string>
 #include <sys/epoll.h>
 
 enum class HandleEventResult
@@ -15,22 +18,20 @@ enum class HandleEventResult
 class ConnectionManager
 {
     public:
-        ConnectionManager(int epollfd);
+        static auto setEpollfd(int epollfd) -> void;
 
-        auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
+        static auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
+        static auto createConnection(const epoll_event& epollEvent, std::tuple<std::string, int>) -> std::expected<void, std::string>;
 
-        auto createConnection(const epoll_event& epollEvent, int listenSocketPort) -> std::expected<void, std::string>;
+        static auto eraseClient(int fd) -> void;
+        static auto handleReceivingEvent(int fd) -> std::expected<std::string, std::string>;
+        static auto handleSendingEvent(int fd, HTTPResponse& response) -> std::expected<void, std::string>;
 
     private:
-        std::map<int, Client> clientMap_;
-        Execution             execution_;
-        struct epoll_event    ev_;
-        int                   epollfd_;
+        static std::map<int, Client> clientMap_;
+        static int                   epollfd_;
 
-        auto handleReceivingEvent(int fd) -> std::expected<void, std::string>;
-        auto handleSendingEvent(int fd) -> std::expected<void, std::string>;
-
-        auto logNewConnection(int connectionSocket, sockaddr_storage clientAddress, socklen_t addressLen) -> void;
+        // auto logNewConnection(int connectionSocket, sockaddr_storage clientAddress, socklen_t addressLen) -> void;
 };
 
 #endif // CONNECTIONMANAGER_HPP

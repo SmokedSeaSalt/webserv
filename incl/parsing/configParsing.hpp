@@ -16,6 +16,19 @@ struct AcceptedMethods
         bool headAllowed   = false;
         bool postAllowed   = false;
         bool deleteAllowed = false;
+
+        bool isAllowed(const std::string& method) const
+        {
+            if (method == "GET")
+                return getAllowed;
+            if (method == "HEAD")
+                return headAllowed;
+            if (method == "POST")
+                return postAllowed;
+            if (method == "DELETE")
+                return deleteAllowed;
+            return false;
+        }
 };
 
 struct Location
@@ -25,7 +38,7 @@ struct Location
         AcceptedMethods                    acceptedMethods;          // methods
         int                                redirectCode = 0;         // return
         std::string                        redirectLocation;         // return
-        std::string                        root;                     // root
+        std::string                        root             = "/";   // root
         bool                               directoryListing = false; // autoindex
         std::string                        defaultFile;              // index
         bool                               uploadsAllowed = false;   // upload_store
