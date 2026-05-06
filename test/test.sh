@@ -11,11 +11,9 @@ set -uo pipefail
 printf "%b\n" "${BLUE}Starting webserv tester...${NC}"
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+export ROOT_DIR
 LOG_DIR="$ROOT_DIR/test/.logs"
 mkdir -p "$LOG_DIR"
-
-# Max parallel jobs in -m mode (override: JOBS=8 bash test/test.sh -m)
-JOBS="${JOBS:-$(nproc)}"
 
 DIRS=(
     "test/connection"
@@ -43,6 +41,20 @@ run_single() {
     done
 
     printf "%b\n" "${GREEN}All tests complete!${NC}"
+}
+
+run_one() {
+    local dir="$1"
+    if [[ ! -d "$ROOT_DIR/$dir" ]]; then
+        printf "%b\n" "${RED}Error: $dir does not exist.${NC}"
+        return 1
+    fi
+    printf "\n%b\n" "${BLUE}=== Running tests in $dir ===${NC}"
+    cd "$ROOT_DIR/$dir" || return 1
+    make all || return 1
+    make run --no-print-directory || return 1
+    make fclean >/dev/null 2>&1 || return 1
+    printf "%b\n" "${GREEN}Test $dir complete!${NC}"
 }
 
 run_end_to_end() {
@@ -77,82 +89,27 @@ run_end_to_end() {
     printf "${GREEN}End to end go tests passed!${NC}\n"
 }
 
-run_one() {
-    local dir="$1"
-    cd "$ROOT_DIR/$dir" || return 1
-    make all
-    make run --no-print-directory
-    make fclean >/dev/null 2>&1
-}
-
-run_multi() {
-    declare -A PID_TO_DIR
-    declare -A PID_TO_LOG
-    PIDS=()
-
-    for dir in "${DIRS[@]}"; do
-        if [[ ! -d "$ROOT_DIR/$dir" ]]; then
-            printf "%b\n" "${YELLOW}Warning: $dir does not exist, skipping.${NC}"
-            continue
-        fi
-
-        while (( "$(jobs -rp | wc -l)" >= JOBS )); do
-            sleep 0.1
-        done
-
-        log="$LOG_DIR/${dir//\//_}.log"
-        printf "%b\n" "${BLUE}Queued: $dir${NC}"
-        (run_one "$dir") >"$log" 2>&1 &
-        pid=$!
-        PIDS+=("$pid")
-        PID_TO_DIR["$pid"]="$dir"
-        PID_TO_LOG["$pid"]="$log"
-    done
-
-    FAILED=0
-
-    for pid in "${PIDS[@]}"; do
-        dir="${PID_TO_DIR[$pid]}"
-        log="${PID_TO_LOG[$pid]}"
-
-        if wait "$pid"; then
-            status_color="$GREEN"
-            status_text="PASS"
-        else
-            status_color="$RED"
-            status_text="FAIL"
-            FAILED=1
-        fi
-
-        # Print full output per case, one block at a time (no interleaving)
-        printf "\n%b\n" "${BLUE}===== $dir =====${NC}"
-        printf "%b\n" "${status_color}Result: ${status_text}${NC}"
-        printf "%b\n" "${YELLOW}--- output ---${NC}"
-        cat "$log" || true
-        printf "%b\n" "${YELLOW}--- end output ---${NC}"
-    done
-
-    if (( FAILED )); then
-        printf "%b\n" "${RED}Some tests failed.${NC}"
-        return 1
-    fi
-
-    printf "%b\n" "${GREEN}All tests complete!${NC}"
-}
-
 case "${1:-}" in
     "")
         run_single
-        ;;
-    -m)
-        run_multi
         ;;
     -e)
         run_end_to_end
         ;;
     *)
-        printf "%b\n" "${YELLOW}Usage: bash test/test.sh [-m]${NC}"
-        exit 2
+        # Try to run a single test directory by name
+        TEST_NAME="$1"
+        FOUND=0
+        for dir in "${DIRS[@]}"; do
+            if [[ "$dir" == *"$TEST_NAME"* ]]; then
+                run_one "$dir"
+                FOUND=1
+                break
+            fi
+        done
+        if [[ $FOUND -eq 0 ]]; then
+            printf "%b\n" "${RED}Test \"$TEST_NAME\" not found in DIRS.${NC}"
+            exit 2
+        fi
         ;;
 esac
-

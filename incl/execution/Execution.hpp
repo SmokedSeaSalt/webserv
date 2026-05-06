@@ -1,11 +1,11 @@
 #ifndef EXECUTION_HPP
 #define EXECUTION_HPP
 
+#include "Client.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include "configParsing.hpp"
 #include "connection.hpp"
-#include "Client.hpp"
 
 namespace Execution
 {
@@ -18,7 +18,7 @@ auto processValidRequest(Client& client) -> std::expected<HTTPResponse, Response
 auto validateContentType(Client& client);
 
 auto processGet(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>;
-auto processGetDir(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>;
+auto processGetDir(Client client, const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>;
 auto processGetFile(const std::string path) -> std::expected<HTTPResponse, ResponseStatusCode>;
 
 auto processHead(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>;
