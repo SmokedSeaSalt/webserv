@@ -96,7 +96,7 @@ auto checkRequestConfigCompliance(Client& client) -> ResponseStatusCode
 auto buildErrorResponse(Client& client, ResponseStatusCode statusCode) -> HTTPResponse
 {
     HTTPResponse response;
-    
+
     std::map<int, std::string> defaultErrorPages = client.getRequest().getServerBlock().defaultErrorPages;
     if (defaultErrorPages.count(static_cast<int>(statusCode)))
     {

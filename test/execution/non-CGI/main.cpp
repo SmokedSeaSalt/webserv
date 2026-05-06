@@ -418,8 +418,6 @@ TEST_CASE("Test location header in POST")
     CHECK(getResponse2.createPacket().find("404") != std::string::npos);
 }
 
-
-
 TEST_CASE("Test default error page")
 {
     Config::config    = {};
@@ -434,13 +432,12 @@ TEST_CASE("Test default error page")
     REQUIRE(InputArgs::args.relativePath != "");
     std::string fileContents = "<h> 404 Not found</h>";
 
-
     // POST the file
     HTTPMessage httpGetMessage;
-    httpGetMessage.method                    = "GET";
-    httpGetMessage.requestTarget             = path;
-    httpGetMessage.protocol                  = "HTTP/1.1";
-    httpGetMessage.headers["host"]           = {"localhost:8080"};
+    httpGetMessage.method          = "GET";
+    httpGetMessage.requestTarget   = path;
+    httpGetMessage.protocol        = "HTTP/1.1";
+    httpGetMessage.headers["host"] = {"localhost:8080"};
 
     std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
     Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
@@ -451,6 +448,4 @@ TEST_CASE("Test default error page")
     CHECK(getResponse.createPacket().find(fileContents) != std::string::npos);
     CHECK(getResponse.createPacket().find("content-length: " + std::to_string(fileContents.length())) != std::string::npos);
     CHECK(getResponse.createPacket() == "");
-
-
 }
