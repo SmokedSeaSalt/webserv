@@ -492,7 +492,6 @@ TEST_CASE("Test duplicate server block directives")
         CHECK(!ret.has_value());
         CHECK(ret.error() == "duplicate client_max_body_size found");
     }
-
 }
 
 TEST_CASE("Test duplicate location directives")
@@ -506,8 +505,9 @@ TEST_CASE("Test duplicate location directives")
         {"index", "duplicateIndex.conf"},
         {"upload_store", "duplicateUploadStore.conf"},
     };
-    for (const auto& [directive, file] : directives) {
-        Config::config = {};
+    for (const auto& [directive, file] : directives)
+    {
+        Config::config    = {};
         auto configResult = Config::parseConfigFile(std::string("test_files/") + file);
         REQUIRE(!configResult.has_value());
         CHECK(configResult.error() == ("Duplicate " + directive + " found"));

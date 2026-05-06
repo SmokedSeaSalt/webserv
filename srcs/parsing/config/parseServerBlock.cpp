@@ -152,7 +152,7 @@ auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
 {
     ServerBlock serverBlock;
     std::string buf;
-    bool foundListen = false, foundMaxBodySize = false;
+    bool        foundListen = false, foundMaxBodySize = false;
 
     while (std::getline(inFile, buf))
     {
