@@ -137,6 +137,14 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
             {"upload_store", parseUploadStore},
             {"cgi", parseCGI},
         };
+    std::map<std::string, bool> visited{
+        {"methods", false},
+        {"return", false},
+        {"root", false},
+        {"autoindex", false},
+        {"index", false},
+        {"upload_store", false},
+    };
 
     location.pathPrefix = pathPrefix;
     while (std::getline(inFile, buf))
@@ -160,6 +168,13 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
 
         if (functionMap.count(tokens[0]) != 1)
             return std::unexpected("Directive not found: " + tokens[0]);
+
+        if (visited.count(tokens[0]))
+        {
+            if (visited[tokens[0]] == true)
+                return std::unexpected("Duplicate " + tokens[0] + " found");
+            visited[tokens[0]] = true;
+        }
         auto result = functionMap[tokens[0]](location, tokens);
         if (!result.has_value())
             return std::unexpected(result.error());
