@@ -165,7 +165,7 @@ TEST_CASE("Test get png file with -p")
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    std::string path         = "/example.png";
+    std::string path    = "/example.png";
     const char* rootDir = std::getenv("ROOT_DIR");
     if (rootDir)
     {
@@ -214,7 +214,7 @@ TEST_CASE("Test HEAD with -p")
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    std::string path = "/helloWorld.html";
+    std::string path    = "/helloWorld.html";
     const char* rootDir = std::getenv("ROOT_DIR");
     if (rootDir)
     {
@@ -248,7 +248,7 @@ TEST_CASE("Test POST and then GET the file with manual file delete with -p")
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    std::string path         = "/newFile.html";
+    std::string path    = "/newFile.html";
     const char* rootDir = std::getenv("ROOT_DIR");
     if (rootDir)
     {
@@ -305,7 +305,7 @@ TEST_CASE("Test POST and then GET and then DELETE with -p")
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    std::string path         = "/newFile.html";
+    std::string path    = "/newFile.html";
     const char* rootDir = std::getenv("ROOT_DIR");
     if (rootDir)
     {
