@@ -95,13 +95,21 @@ auto checkRequestConfigCompliance(Client& client) -> ResponseStatusCode
 
 auto buildErrorResponse(Client& client, ResponseStatusCode statusCode) -> HTTPResponse
 {
-    (void)client;
     HTTPResponse response;
-
+    
+    std::map<int, std::string> defaultErrorPages = client.getRequest().getServerBlock().defaultErrorPages;
+    if (defaultErrorPages.count(static_cast<int>(statusCode)))
+    {
+        auto res = processGetFile(defaultErrorPages[static_cast<int>(statusCode)]);
+        if (res.has_value())
+        {
+            response = res.value();
+            response.setStatusCode(statusCode);
+            return response;
+        }
+    }
     response.setStatusCode(statusCode);
-    // error code, defailt error page
-    response.setHeader("content-length", std::to_string(response.getBodyLen()));
-
+    response.setHeader("content-length", std::to_string(response.getBodyLen())); // todo check does this overwrite anything?
     return response;
 }
 
