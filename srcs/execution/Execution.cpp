@@ -313,15 +313,23 @@ auto processHead(Client& client) -> std::expected<HTTPResponse, ResponseStatusCo
 
 auto processPost(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>
 {
-    HTTPResponse response;
-    std::string  path = client.getRequest().getMessage().absoluteRequestTarget;
+    HTTPResponse       response;
+    const HTTPRequest& request = client.getRequest();
+    std::string        path    = request.getMessage().absoluteRequestTarget;
 
-    auto postFileResult = createFileWithContent(path, client.getRequest().getMessage().body);
+    auto postFileResult = createFileWithContent(path, request.getMessage().body);
     if (!postFileResult.has_value())
         return std::unexpected(postFileResult.error());
     // todo: any headers need to be set here?
     response.setStatusCode(ResponseStatusCode::kCreated);
     response.setHeader("content-length", std::to_string(response.getBodyLen()));
+    std::string pathAfterLocation = request.getMessage().pathAfterLocation;
+    if (!pathAfterLocation.empty() && pathAfterLocation[0] == '/')
+        pathAfterLocation = pathAfterLocation.substr(1);
+    std::string locationValue  = std::filesystem::path(request.getLocation().pathPrefix) / std::filesystem::path(pathAfterLocation).generic_string();
+    if (!locationValue.empty() && locationValue[0] != '/')
+        locationValue = '/' + locationValue;
+    response.setHeader("location", locationValue);
     return response;
 }
 

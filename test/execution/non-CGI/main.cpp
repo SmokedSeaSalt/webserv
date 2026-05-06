@@ -332,6 +332,7 @@ TEST_CASE("Test POST and then GET and then DELETE with -p")
     HTTPResponse postResponse = Execution::execute(client1);
     CHECK(postResponse.createPacket().find("201") != std::string::npos);
 
+
     // GET the file
     HTTPMessage httpGetMessage;
     httpGetMessage.method            = "GET";
@@ -346,6 +347,59 @@ TEST_CASE("Test POST and then GET and then DELETE with -p")
 
     HTTPResponse getResponse1 = Execution::execute(client2);
     checkPacket(getResponse1.createPacket(), "text/html; charset=utf-8", fileContents);
+
+    // DELETE the file
+    HTTPMessage httpDeleteMessage;
+    httpDeleteMessage.method          = "DELETE";
+    httpDeleteMessage.requestTarget   = path;
+    httpDeleteMessage.protocol        = "HTTP/1.1";
+    httpDeleteMessage.headers["host"] = {"localhost:8080"};
+    httpDeleteMessage.body            = "";
+
+    Client client3(0, 8080, dummyPair, "127.0.0.1", "");
+    client3.getRequest().setMessage(httpDeleteMessage);
+
+    HTTPResponse deleteResponse = Execution::execute(client3);
+    CHECK(deleteResponse.createPacket().find("204") != std::string::npos);
+
+    // GET the already deleted file (should fail)
+    HTTPResponse getResponse2 = Execution::execute(client3);
+    CHECK(getResponse2.createPacket().find("404") != std::string::npos);
+}
+
+
+TEST_CASE("Test location header in POST")
+{
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("config.conf");
+    REQUIRE(configResult.has_value());
+    std::string path    = "/testlocation/newFile.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
+    std::string fileContents = "<h>This file has been posted</h>";
+
+    std::system(("rm -rf " + (std::filesystem::current_path() / "assets/newFile.html").string()).c_str());
+
+    // POST the file
+    HTTPMessage httpPostMessage;
+    httpPostMessage.method                    = "POST";
+    httpPostMessage.requestTarget             = path;
+    httpPostMessage.protocol                  = "HTTP/1.1";
+    httpPostMessage.headers["host"]           = {"localhost:8080"};
+    httpPostMessage.headers["content-length"] = {std::to_string(fileContents.length())};
+    httpPostMessage.body                      = fileContents;
+
+    std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
+    Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
+    client1.getRequest().setMessage(httpPostMessage);
+
+    HTTPResponse postResponse = Execution::execute(client1);
+    CHECK(postResponse.createPacket().find("201") != std::string::npos);
+    CHECK(postResponse.createPacket().find("location: " + path) != std::string::npos);
 
     // DELETE the file
     HTTPMessage httpDeleteMessage;
