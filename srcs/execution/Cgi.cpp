@@ -1,13 +1,11 @@
 #include "Cgi.hpp"
+#include "configUtils.hpp"
 #include "ConnectionManager.hpp"
 #include "connection.hpp"
 #include "logging.hpp"
 #include "parsing.hpp"
 #include <sys/socket.h> //for socketpair
 #include <unistd.h>     //for dup2, close
-
-// this should be grabbed from config
-std::map<std::string, std::string> Cgi::CgiTypes_ = {{".php", "/usr/bin/php"}, {".sh", "/usr/bin/sh"}};
 
 Cgi::Cgi(Client& client) : client_(client), state_(CgiState::kInit)
 {
@@ -75,20 +73,21 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
     }
 }
 
-auto Cgi::isRequestTargetCgi(const std::string target) -> bool
+auto Cgi::isRequestTargetCgi(const std::string target, const Config::Location& location) -> bool
 {
     auto targetSegments = split(target, '/');
     for (std::string& segment : targetSegments.value())
     {
-        if (endsInCgi(segment))
+        if (endsInCgi(segment, location))
             return true;
     }
     return false;
 }
 
-auto Cgi::endsInCgi(const std::string& segment) -> bool
+auto Cgi::endsInCgi(const std::string& segment, const Config::Location& location) -> bool
 {
-    for (auto& [CgiType, CgiPath] : Cgi::CgiTypes_)
+    auto& cgiTypes = location.cgiPaths;
+    for (auto& [CgiType, CgiPath] : cgiTypes)
     {
         if (segment.ends_with(CgiType))
             return true;
@@ -96,9 +95,10 @@ auto Cgi::endsInCgi(const std::string& segment) -> bool
     return false;
 }
 
-auto Cgi::getInterpreterPath(std::string path) -> std::string
+auto Cgi::getInterpreterPath(std::string path, const Config::Location& location) -> std::string
 {
-    for (auto& [CgiType, CgiPath] : Cgi::CgiTypes_)
+    auto& cgiTypes = location.cgiPaths;
+    for (auto& [CgiType, CgiPath] : cgiTypes)
     {
         if (path.ends_with(CgiType))
             return CgiPath;
@@ -154,7 +154,7 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     {
         if (!foundScript)
         {
-            if (!Cgi::endsInCgi(segment))
+            if (!Cgi::endsInCgi(segment, request.getLocation()))
                 scriptName += ("/" + segment);
             else
             {
@@ -203,17 +203,19 @@ static auto headerToEnvVar(std::string header, std::vector<std::string> value) -
 
 auto Cgi::init() -> std::expected<int, HTTPResponse>
 {
-    // Todo do some more standard execution checking.
+    // Todo do some more standard execution checking. like, does the script even exist?
     this->bodyToCgi_                    = client_.getRequest().getMessage().body;
-    std::vector<std::string> envStrings = createEnv(client_.getRequest()); // TODO get this acess to client request
-    this->interpreterPath_              = getInterpreterPath(this->scriptPath_);
+    std::vector<std::string> envStrings = createEnv(client_.getRequest());
+    Config::ServerBlock block = Config::getServerBlock(this->client_.getListenSocketIpPortPair()).value();
+    Config::Location location = Config::getLocation(block, this->scriptPath_).value();
+    this->interpreterPath_              = getInterpreterPath(this->scriptPath_, location);
     if (this->interpreterPath_ == "")
         return; // TODO handle error; maybe place this within child if errors can be dealt with?
 
     int fd[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
         return; // TODO Handle Error;
-    pid_t pid = fork();
+    pid_t pid = fork(); // TODO handle error
 
     if (pid == 0)
     {

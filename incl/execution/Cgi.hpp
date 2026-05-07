@@ -42,7 +42,7 @@ class Cgi
         auto init() -> std::expected<int, HTTPResponse>;
         auto createResponse() -> std::string;
 
-        static auto isRequestTargetCgi(const std::string target) -> bool;
+        static auto Cgi::isRequestTargetCgi(const std::string target, const Config::Location& location) -> bool;
 
     private:
         Client&     client_;
@@ -58,8 +58,8 @@ class Cgi
         auto newData(std::string data) -> void;
         auto createEnv(const HTTPRequest& request) -> std::vector<std::string>;
 
-        static auto endsInCgi(const std::string& segment) -> bool;
-        static auto headerToEnvVar(std::string header, std::vector<std::string> value) -> std::string;
+        static auto Cgi::endsInCgi(const std::string& segment, const Config::Location& location) -> bool;
+        static auto Cgi::getInterpreterPath(std::string path, const Config::Location& location) -> std::string;
 
         static std::map<std::string, std::string> CgiTypes_;
         static auto                               getInterpreterPath(std::string) -> std::string;

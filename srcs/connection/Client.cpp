@@ -25,7 +25,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         if (fd != this->socketfd_ && !(events & EPOLLIN))
             break;
         auto handleReceivingEventResult = ConnectionManager::handleReceivingEvent(fd);
-        if (std::get<ssize_t>(handleReceivingEventResult) <= 0) // cant read errno should we actually exit or let epoll deal with it?
+        if (std::get<ssize_t>(handleReceivingEventResult) <= 0)
         {
             LOG(LogLevel::kDebug, "recv() returned <= 0 at fd: {}, closing connection.", fd);
             ConnectionManager::closeConnection(this->getSocketfd());
@@ -36,6 +36,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             break;
         LOG(LogLevel::kInfo, "Packet received from fd:{} with content:\n{}\n", fd, getHTTPMessageString(this->request_.getMessage()));
 
+        // TODO put this below in helper function until --delim--
         //also check if is cgi set in location in config
         this->requestIsCgi_ = Cgi::isRequestTargetCgi(this->request_.getMessage().requestTarget); // need absolute path? is it already set?
         if (this->requestIsCgi_)
@@ -51,7 +52,9 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         }
         else
             this->response_ = Execution::execute(*this);
-        [[fallthrough]]; // prob should be gone for cgi.
+        // --delim--
+        this->state_ = ClientState::Processing;
+        break;
     }
     case ClientState::Processing:
     { // only handle cgi events here
@@ -70,7 +73,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
                 this->state_ = ClientState::Sending;
                 break;
             }
-
+            break;
         }
         if (this->response_.getSendState() == SendState::kReady)
         {
@@ -82,7 +85,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             this->response_.setSendState(SendState::kSending);
             this->state_ = ClientState::Sending;
         }
-        break;
+        [[fallthrough]];
     }
     case ClientState::Sending:
     {
