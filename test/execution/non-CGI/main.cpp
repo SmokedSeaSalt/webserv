@@ -447,5 +447,4 @@ TEST_CASE("Test default error page")
     CHECK(getResponse.createPacket().find("404") != std::string::npos);
     CHECK(getResponse.createPacket().find(fileContents) != std::string::npos);
     CHECK(getResponse.createPacket().find("content-length: " + std::to_string(fileContents.length())) != std::string::npos);
-    CHECK(getResponse.createPacket() == "");
 }

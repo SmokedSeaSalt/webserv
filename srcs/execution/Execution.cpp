@@ -4,6 +4,7 @@
 #include "configUtils.hpp"
 #include "executionHelpers.hpp"
 #include "logging.hpp"
+#include "InputArgs.hpp"
 #include <filesystem>
 #include <string>
 
@@ -100,7 +101,12 @@ auto buildErrorResponse(Client& client, ResponseStatusCode statusCode) -> HTTPRe
     std::map<int, std::string> defaultErrorPages = client.getRequest().getServerBlock().defaultErrorPages;
     if (defaultErrorPages.count(static_cast<int>(statusCode)))
     {
-        auto res = processGetFile(defaultErrorPages[static_cast<int>(statusCode)]);
+        std::string relativePath = defaultErrorPages[static_cast<int>(statusCode)];
+        if (relativePath.length() > 0 && relativePath[0] == '/')
+            relativePath = relativePath.substr(1);
+        std::string absolutePath = std::filesystem::path(InputArgs::args.relativePath) / relativePath;
+        std::cout << "\n\n\n" + absolutePath + "\n\n\n" << std::endl;
+        auto res = processGetFile(absolutePath);
         if (res.has_value())
         {
             response = res.value();
