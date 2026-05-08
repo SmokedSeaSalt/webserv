@@ -105,7 +105,6 @@ auto buildErrorResponse(Client& client, ResponseStatusCode statusCode) -> HTTPRe
         if (relativePath.length() > 0 && relativePath[0] == '/')
             relativePath = relativePath.substr(1);
         std::string absolutePath = std::filesystem::path(InputArgs::args.relativePath) / relativePath;
-        std::cout << "\n\n\n" + absolutePath + "\n\n\n" << std::endl;
         auto res = processGetFile(absolutePath);
         if (res.has_value())
         {

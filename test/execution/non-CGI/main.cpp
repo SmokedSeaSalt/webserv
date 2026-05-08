@@ -418,7 +418,7 @@ TEST_CASE("Test location header in POST")
     CHECK(getResponse2.createPacket().find("404") != std::string::npos);
 }
 
-TEST_CASE("Test default error page")
+TEST_CASE("Test default error page 404")
 {
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
@@ -447,4 +447,64 @@ TEST_CASE("Test default error page")
     CHECK(getResponse.createPacket().find("404") != std::string::npos);
     CHECK(getResponse.createPacket().find(fileContents) != std::string::npos);
     CHECK(getResponse.createPacket().find("content-length: " + std::to_string(fileContents.length())) != std::string::npos);
+}
+
+TEST_CASE("Test default error page when not available")
+{
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("config_no_error_page.conf");
+    REQUIRE(configResult.has_value());
+    std::string path    = "/doesntExist.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
+
+    // POST the file
+    HTTPMessage httpGetMessage;
+    httpGetMessage.method          = "GET";
+    httpGetMessage.requestTarget   = path;
+    httpGetMessage.protocol        = "HTTP/1.1";
+    httpGetMessage.headers["host"] = {"localhost:8080"};
+
+    std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
+    Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
+    client1.getRequest().setMessage(httpGetMessage);
+
+    HTTPResponse getResponse = Execution::execute(client1);
+    CHECK(getResponse.createPacket().find("404") != std::string::npos);
+    CHECK(getResponse.createPacket().find("content-length: 0") != std::string::npos);
+}
+
+TEST_CASE("Test default error page 405 with PUT")
+{
+     Config::config    = {};
+    auto configResult = Config::parseConfigFile("config.conf");
+    REQUIRE(configResult.has_value());
+    std::string path    = "/doesntExist.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
+    std::string fileContents = "<h> 405 Method not allowed</h>";
+
+    // POST the file
+    HTTPMessage httpPutMessage;
+    httpPutMessage.method          = "PUT";
+    httpPutMessage.requestTarget   = path;
+    httpPutMessage.protocol        = "HTTP/1.1";
+    httpPutMessage.headers["host"] = {"localhost:8080"};
+
+    std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
+    Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
+    client1.getRequest().setMessage(httpPutMessage);
+
+    HTTPResponse putResponse = Execution::execute(client1);
+    CHECK(putResponse.createPacket().find("405") != std::string::npos);
+    CHECK(putResponse.createPacket().find(fileContents) != std::string::npos);
+    CHECK(putResponse.createPacket().find("content-length: " + std::to_string(fileContents.length())) != std::string::npos);
 }
