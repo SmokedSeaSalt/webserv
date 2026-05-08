@@ -36,6 +36,9 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             break;
         LOG(LogLevel::kInfo, "Packet received from fd:{} with content:\n{}\n", fd, getHTTPMessageString(this->request_.getMessage()));
 
+        //do config check
+        //add optional flag paths
+
         // TODO put this below in helper function until --delim--
         //also check if is cgi set in location in config
         this->requestIsCgi_ = Cgi::isRequestTargetCgi(this->request_.getMessage().requestTarget); // need absolute path? is it already set?

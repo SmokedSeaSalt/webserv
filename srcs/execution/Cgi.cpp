@@ -1,6 +1,6 @@
 #include "Cgi.hpp"
-#include "configUtils.hpp"
 #include "ConnectionManager.hpp"
+#include "configUtils.hpp"
 #include "connection.hpp"
 #include "logging.hpp"
 #include "parsing.hpp"
@@ -58,7 +58,7 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             LOG(LogLevel::kInfo, "CGI finished receiving on fd:{}", fd);
             // EOF happened
             ConnectionManager::closeConnection(this->fd_);
-            //build actual http response for client
+            // build actual http response for client
             this->createResponse();
             this->state_ == CgiState::KDone;
         }
@@ -69,7 +69,7 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
     {
     }
 
-    return HandleEventResult::kSuccess;
+        return HandleEventResult::kSuccess;
     }
 }
 
@@ -170,9 +170,8 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     this->scriptPath_ = scriptName;
     env_strings.push_back("PATH_INFO=" + pathInfo);
 
-    // TODO ROOT + pathInfo
-    // std::string pathTranslated = (getLocation().root + pathInfo);
-    // env_strings.push_back("PATH_TRANSLATED=" + pathTranslated);
+    std::string pathTranslated = (request.getLocation().root + pathInfo);
+    env_strings.push_back("PATH_TRANSLATED=" + pathTranslated);
 
     for (auto& [key, value] : request.getMessage().headers)
     {
@@ -206,15 +205,15 @@ auto Cgi::init() -> std::expected<int, HTTPResponse>
     // Todo do some more standard execution checking. like, does the script even exist?
     this->bodyToCgi_                    = client_.getRequest().getMessage().body;
     std::vector<std::string> envStrings = createEnv(client_.getRequest());
-    Config::ServerBlock block = Config::getServerBlock(this->client_.getListenSocketIpPortPair()).value();
-    Config::Location location = Config::getLocation(block, this->scriptPath_).value();
+    Config::ServerBlock      block      = Config::getServerBlock(this->client_.getListenSocketIpPortPair()).value();
+    Config::Location         location   = Config::getLocation(block, this->scriptPath_).value();
     this->interpreterPath_              = getInterpreterPath(this->scriptPath_, location);
     if (this->interpreterPath_ == "")
         return; // TODO handle error; maybe place this within child if errors can be dealt with?
 
     int fd[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
-        return; // TODO Handle Error;
+        return;         // TODO Handle Error;
     pid_t pid = fork(); // TODO handle error
 
     if (pid == 0)
