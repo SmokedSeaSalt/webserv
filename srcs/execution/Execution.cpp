@@ -60,16 +60,18 @@ auto execute(Client& client) -> HTTPResponse
     ResponseStatusCode status = checkRequestConfigCompliance(client);
 
     if (status != ResponseStatusCode::kOK)
-        return buildErrorResponse(client, status);
-    // if (cgi)
-    //      executeCGI
-    // else non cgi below
-    auto validRequestResult = processValidRequest(client);
-    if (!validRequestResult.has_value())
-        response = buildErrorResponse(client, validRequestResult.error()); // todo check this error handling
+        response = buildErrorResponse(client, status);
     else
-        response = validRequestResult.value();
-
+    {
+        // if (cgi)
+        //      executeCGI
+        // else non cgi below
+        auto validRequestResult = processValidRequest(client);
+        if (!validRequestResult.has_value())
+            response = buildErrorResponse(client, validRequestResult.error()); // todo check this error handling
+        else
+            response = validRequestResult.value();
+    }
     response.setSendState(SendState::kReady);
 
     return response;
