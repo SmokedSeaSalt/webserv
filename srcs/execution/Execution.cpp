@@ -52,6 +52,7 @@ auto setupRequestForExecution(Client& client) -> std::expected<void, HTTPRespons
 auto execute(Client& client) -> HTTPResponse
 {
     HTTPResponse response;
+    HTTPMessage  requestMessage = client.getRequest().getMessage();
 
     auto setupResult = setupRequestForExecution(client);
     if (!setupResult.has_value())
@@ -73,6 +74,17 @@ auto execute(Client& client) -> HTTPResponse
             response = validRequestResult.value();
     }
     response.setSendState(SendState::kReady);
+
+    if (requestMessage.headers.contains("connection") && requestMessage.headers.at("connection")[0] == "close")
+    {
+        response.addHeaderValue("connection", "close");
+        response.setKeepAlive(false);
+    }
+    else
+    {
+        response.addHeaderValue("connection", "keep-alive");
+        response.setKeepAlive(true);
+    }
 
     return response;
 }
@@ -152,16 +164,6 @@ auto processValidRequest(Client& client) -> std::expected<HTTPResponse, Response
         if (!processDeleteResult.has_value())
             return std::unexpected(processDeleteResult.error());
         httpResponse = processDeleteResult.value();
-    }
-    if (request.headers.contains("connection") && request.headers.at("connection")[0] == "close")
-    {
-        httpResponse.addHeaderValue("connection", "close");
-        httpResponse.setKeepAlive(false);
-    }
-    else
-    {
-        httpResponse.addHeaderValue("connection", "keep-alive");
-        httpResponse.setKeepAlive(true);
     }
 
     return httpResponse;
