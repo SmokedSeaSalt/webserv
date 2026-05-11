@@ -7,7 +7,8 @@
 #include <sys/socket.h> //for socketpair
 #include <unistd.h>     //for dup2, close
 
-Cgi::Cgi(Client& client) : client_(client), state_(CgiState::kInit)
+Cgi::Cgi(Client& client)
+    : client_(client), state_(CgiState::kInit)
 {
     this->bodyToCgiBytesSend_ = 0;
 }
@@ -249,4 +250,15 @@ auto Cgi::init() -> std::expected<int, HTTPResponse>
         ConnectionManager::addCGIConnection(this->fd_, this->client_); // Todo Error handling
         return this->fd_;
     }
+}
+
+auto Cgi::createResponse() -> HTTPResponse
+{
+    HTTPResponse response;
+
+    //create first line (search for Status: header in cgi response)
+    //add body-lenght header if there is a body
+
+
+    response.setProtocol("HTTP/1.1")
 }

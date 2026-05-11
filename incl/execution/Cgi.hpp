@@ -40,7 +40,7 @@ class Cgi
         Cgi(Client& client);
         auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
         auto init() -> std::expected<int, HTTPResponse>;
-        auto createResponse() -> std::string;
+        auto createResponse() -> HTTPResponse;
 
         static auto Cgi::isRequestTargetCgi(const std::string target, const Config::Location& location) -> bool;
 
