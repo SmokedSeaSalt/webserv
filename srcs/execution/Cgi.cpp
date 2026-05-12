@@ -4,6 +4,7 @@
 #include "connection.hpp"
 #include "logging.hpp"
 #include "parsing.hpp"
+#include <string>
 #include <sys/socket.h> //for socketpair
 #include <unistd.h>     //for dup2, close
 
@@ -60,8 +61,8 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             // EOF happened
             ConnectionManager::closeConnection(this->fd_);
             // build actual http response for client
-            this->createResponse();
-            this->state_ == CgiState::KDone;
+            this->client_.setResponse(this->createResponse());
+            this->state_ = CgiState::KDone;
         }
         this->cgiResponse_ += std::get<std::string>(handleReceivingEventResult);
         break;
@@ -72,6 +73,7 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
 
         return HandleEventResult::kSuccess;
     }
+    return HandleEventResult::kSuccess;
 }
 
 auto Cgi::isRequestTargetCgi(const std::string target, const Config::Location& location) -> bool
@@ -137,7 +139,7 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     {
         env_strings.push_back("SERVER_NAME=" + get<std::string>(this->client_.getListenSocketIpPortPair()));
     }
-    env_strings.push_back("SERVER_PORT=" + get<int>(this->client_.getListenSocketIpPortPair()));
+    env_strings.push_back("SERVER_PORT=" + std::to_string(get<int>(this->client_.getListenSocketIpPortPair())));
 
     env_strings.push_back("REMOTE_ADDR=" + this->client_.getHost());
     env_strings.push_back("REMOTE_HOST=" + this->client_.getHost());
@@ -184,24 +186,28 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     return env_strings;
 }
 
-static auto headerToEnvVar(std::string header, std::vector<std::string> value) -> std::string
+auto Cgi::headerToEnvVar(std::string header, std::vector<std::string> value) -> std::string
 {
-    std::string envVar;
+    std::string envHeader;
     for (auto& c : header)
     {
         c = std::toupper(static_cast<unsigned char>(c));
         if (c == '-')
             c = '_';
     }
-    envVar.append("HTTP_" + header + "=");
-    for (std::string entry : value)
+    envHeader.append("HTTP_" + header + "=");
+
+    std::string envValue;
+    for (std::string& entry : value)
     {
-        envVar.append(entry);
+        if (!envValue.empty())
+            envValue.append(", ");
+        envValue.append(entry);
     }
-    return envVar;
+    return envHeader + envValue;
 }
 
-auto Cgi::init() -> std::expected<int, HTTPResponse>
+auto Cgi::init() -> std::expected<int, ResponseStatusCode>
 {
     // Todo do some more standard execution checking. like, does the script even exist?
     this->bodyToCgi_                    = client_.getRequest().getMessage().body;
@@ -210,12 +216,14 @@ auto Cgi::init() -> std::expected<int, HTTPResponse>
     Config::Location         location   = Config::getLocation(block, this->scriptPath_).value();
     this->interpreterPath_              = getInterpreterPath(this->scriptPath_, location);
     if (this->interpreterPath_ == "")
-        return; // TODO handle error; maybe place this within child if errors can be dealt with?
+        return std::unexpected(ResponseStatusCode::kNotImplemented);
 
     int fd[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
-        return;         // TODO Handle Error;
-    pid_t pid = fork(); // TODO handle error
+        return std::unexpected(ResponseStatusCode::kInternalServerError);
+    pid_t pid = fork();
+    if (pid == -1)
+        return std::unexpected(ResponseStatusCode::kInternalServerError);
 
     if (pid == 0)
     {
@@ -238,6 +246,8 @@ auto Cgi::init() -> std::expected<int, HTTPResponse>
         argv.push_back(scriptPath_.data());
         argv.push_back(nullptr);
 
+        // TODO?: cd this programm to script folder? 7.2 The current working directory for the script SHOULD be set to the directory containing the script.
+
         execve(argv[0], argv.data(), envp.data());
         LOG(LogLevel::kErrors, "Execve failed!");
         std::exit(1); // error check? What will epoll do?
@@ -256,9 +266,21 @@ auto Cgi::createResponse() -> HTTPResponse
 {
     HTTPResponse response;
 
-    //create first line (search for Status: header in cgi response)
-    //add body-lenght header if there is a body
+    std::string headers = this->cgiResponse_.substr(0, this->cgiResponse_.find("\r\n\r\n") + 4);
+    std::string body    = this->cgiResponse_.substr(this->cgiResponse_.find("\r\n\r\n") + 4);
 
+    std::string firstLine;
+    if (headers.find("Status: ") == std::string::npos)
+        firstLine = "HTTP/1.1 200 OK\r\n";
+    else
+        firstLine = "HTTP/1.1 " + headers.substr(headers.find("Status: ") + 8, headers.find("\r\n", headers.find("Status: ")));
 
-    response.setProtocol("HTTP/1.1")
+    if (headers.find("Content-Length: ") == std::string::npos)
+    {
+        std::string contentLenght = "content-length: " + std::to_string(body.size());
+        headers.insert(0, contentLenght);
+    }
+
+    response.setPacket(firstLine + headers + body);
+    return response;
 }

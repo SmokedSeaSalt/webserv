@@ -5,7 +5,7 @@
 #include "logging.hpp"
 #include <string>
 
-Client::Client(int socketfd, int listenSocketPort, std::tuple<std::string, int>& listenSocketIpPortPair, std::string service, std::string host) : socketfd_(socketfd), listenSocketPort_(listenSocketPort), listenSocketIpPortPair_(listenSocketIpPortPair), service_(service), host_(host), request_(), response_(), CgiHandler_(*this)
+Client::Client(int socketfd, int listenSocketPort, std::tuple<std::string, int>& listenSocketIpPortPair, std::string service, std::string host) : socketfd_(socketfd), listenSocketPort_(listenSocketPort), listenSocketIpPortPair_(listenSocketIpPortPair), service_(service), host_(host), CgiHandler_(*this), request_(), response_()
 {
     this->state_        = ClientState::Receiving;
     this->error_        = ErrorType::None;
@@ -36,18 +36,21 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             break;
         LOG(LogLevel::kInfo, "Packet received from fd:{} with content:\n{}\n", fd, getHTTPMessageString(this->request_.getMessage()));
 
-        //do config check
-        //add optional flag paths
+        // do config check
+        // add optional flag paths
 
         // TODO put this below in helper function until --delim--
-        //also check if is cgi set in location in config
-        this->requestIsCgi_ = Cgi::isRequestTargetCgi(this->request_.getMessage().requestTarget); // need absolute path? is it already set?
+        // also check if is cgi set in location in config
+        Config::ServerBlock block    = Config::getServerBlock(this->getListenSocketIpPortPair()).value();
+        Config::Location    location = Config::getLocation(block, this->request_.getMessage().requestTarget).value();
+        this->requestIsCgi_          = Cgi::isRequestTargetCgi(this->request_.getMessage().requestTarget, location); // need absolute path? is it already set?
         if (this->requestIsCgi_)
         {
             auto CgiInitRet = this->CgiHandler_.init(); // Todo: error handling for this.
             if (!CgiInitRet.has_value())
             {
-                this->response_     = CgiInitRet.error();
+                this->response_.setPacket(this->response_.createPacket(CgiInitRet.error()));
+                this->response_.setSendState(SendState::kReady);
                 this->requestIsCgi_ = false;
                 break;
             }
@@ -95,7 +98,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         if (!(events & EPOLLOUT))
             break;
         if (!(this->response_.getSendState() == SendState::kSending))
-            break; //should never get in this state
+            break; // should never get in this state
         ssize_t bytesSend = ConnectionManager::handleSendingEvent(fd, this->response_.getRemainingPacket());
 
         if (bytesSend < 0)
