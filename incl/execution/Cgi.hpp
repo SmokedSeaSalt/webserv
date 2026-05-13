@@ -62,7 +62,7 @@ class Cgi
         auto        createEnv(const HTTPRequest& request, std::shared_ptr<Client> client) -> std::vector<std::string>;
         static auto headerToEnvVar(std::string header, std::vector<std::string> value) -> std::string;
 
-            static auto endsInCgi(const std::string& segment, const Config::Location& location) -> bool;
+        static auto endsInCgi(const std::string& segment, const Config::Location& location) -> bool;
         static auto getInterpreterPath(std::string path, const Config::Location& location) -> std::string;
 };
 
