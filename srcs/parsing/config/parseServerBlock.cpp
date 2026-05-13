@@ -9,6 +9,26 @@
 namespace Config
 {
 
+static auto isDuplicateLocationPathPrefix(const ServerBlock& serverBlock, const Location& location) -> bool
+{
+    for (const Location& existing : serverBlock.locations)
+    {
+        if (location.pathPrefix == existing.pathPrefix)
+            return true;
+    }
+    return false;
+}
+
+static auto isDuplicateErrorPage(const ServerBlock& serverBlock, const int& errorCode) -> bool
+{
+    for (const auto& [existingErrorCode, existingErrorPage] : serverBlock.defaultErrorPages)
+    {
+        if (errorCode == existingErrorCode)
+            return true;
+    }
+    return false;
+}
+
 static auto parseErrorPage(ServerBlock& serverBlock, std::string buf)
     -> std::expected<void, std::string>
 {
@@ -39,7 +59,10 @@ static auto parseErrorPage(ServerBlock& serverBlock, std::string buf)
     }
     if (tokens[2].empty())
         return std::unexpected("Invalid error page at: " + buf);
-    serverBlock.defaultErrorPages[errorCode] = tokens[2];
+    if (!isDuplicateErrorPage(serverBlock, errorCode))
+        serverBlock.defaultErrorPages[errorCode] = tokens[2];
+    else
+        return std::unexpected(("Duplicate error page found for: " + std::to_string(errorCode)));
     return {};
 }
 
@@ -129,21 +152,28 @@ auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
 {
     ServerBlock serverBlock;
     std::string buf;
+    bool        foundListen = false, foundMaxBodySize = false;
 
     while (std::getline(inFile, buf))
     {
         buf = stringTrim(buf);
         if (buf.find("listen") == 0)
         {
+            if (foundListen)
+                return std::unexpected("duplicate listen found");
             auto result = parseListen(serverBlock, buf);
             if (!result.has_value())
                 return std::unexpected(result.error());
+            foundListen = true;
         }
         else if (buf.find("client_max_body_size") == 0)
         {
+            if (foundMaxBodySize)
+                return std::unexpected("duplicate client_max_body_size found");
             auto result = parseMaxBodySize(serverBlock, buf);
             if (!result.has_value())
                 return std::unexpected(result.error());
+            foundMaxBodySize = true;
         }
         else if (buf.find("error_page") == 0)
         {
@@ -162,7 +192,10 @@ auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
             auto result = parseLocation(inFile, splitResult.value()[1]);
             if (!result.has_value())
                 return std::unexpected(result.error());
-            serverBlock.locations.push_back(result.value());
+            if (!isDuplicateLocationPathPrefix(serverBlock, result.value()))
+                serverBlock.locations.push_back(result.value());
+            else
+                return std::unexpected("Duplicate location path prefix");
         }
         else if (buf == "}")
             return serverBlock;

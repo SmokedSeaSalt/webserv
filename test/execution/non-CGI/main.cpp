@@ -365,3 +365,146 @@ TEST_CASE("Test POST and then GET and then DELETE with -p")
     HTTPResponse getResponse2 = Execution::execute(client3);
     CHECK(getResponse2.createPacket().find("404") != std::string::npos);
 }
+
+TEST_CASE("Test location header in POST")
+{
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("config.conf");
+    REQUIRE(configResult.has_value());
+    std::string path    = "/testlocation/newFile.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
+    std::string fileContents = "<h>This file has been posted</h>";
+
+    std::system(("rm -rf " + (std::filesystem::current_path() / "assets/newFile.html").string()).c_str());
+
+    // POST the file
+    HTTPMessage httpPostMessage;
+    httpPostMessage.method                    = "POST";
+    httpPostMessage.requestTarget             = path;
+    httpPostMessage.protocol                  = "HTTP/1.1";
+    httpPostMessage.headers["host"]           = {"localhost:8080"};
+    httpPostMessage.headers["content-length"] = {std::to_string(fileContents.length())};
+    httpPostMessage.body                      = fileContents;
+
+    std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
+    Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
+    client1.getRequest().setMessage(httpPostMessage);
+
+    HTTPResponse postResponse = Execution::execute(client1);
+    CHECK(postResponse.createPacket().find("201") != std::string::npos);
+    CHECK(postResponse.createPacket().find("location: " + path) != std::string::npos);
+
+    // DELETE the file
+    HTTPMessage httpDeleteMessage;
+    httpDeleteMessage.method          = "DELETE";
+    httpDeleteMessage.requestTarget   = path;
+    httpDeleteMessage.protocol        = "HTTP/1.1";
+    httpDeleteMessage.headers["host"] = {"localhost:8080"};
+    httpDeleteMessage.body            = "";
+
+    Client client3(0, 8080, dummyPair, "127.0.0.1", "");
+    client3.getRequest().setMessage(httpDeleteMessage);
+
+    HTTPResponse deleteResponse = Execution::execute(client3);
+    CHECK(deleteResponse.createPacket().find("204") != std::string::npos);
+
+    // GET the already deleted file (should fail)
+    HTTPResponse getResponse2 = Execution::execute(client3);
+    CHECK(getResponse2.createPacket().find("404") != std::string::npos);
+}
+
+TEST_CASE("Test default error page 404")
+{
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("config.conf");
+    REQUIRE(configResult.has_value());
+    std::string path    = "/doesntExist.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
+    std::string fileContents = "<h> 404 Not found</h>";
+
+    // POST the file
+    HTTPMessage httpGetMessage;
+    httpGetMessage.method          = "GET";
+    httpGetMessage.requestTarget   = path;
+    httpGetMessage.protocol        = "HTTP/1.1";
+    httpGetMessage.headers["host"] = {"localhost:8080"};
+
+    std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
+    Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
+    client1.getRequest().setMessage(httpGetMessage);
+
+    HTTPResponse getResponse = Execution::execute(client1);
+    CHECK(getResponse.createPacket().find("404") != std::string::npos);
+    CHECK(getResponse.createPacket().find(fileContents) != std::string::npos);
+    CHECK(getResponse.createPacket().find("content-length: " + std::to_string(fileContents.length())) != std::string::npos);
+}
+
+TEST_CASE("Test default error page when not available")
+{
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("config_no_error_page.conf");
+    REQUIRE(configResult.has_value());
+    std::string path    = "/doesntExist.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
+
+    // POST the file
+    HTTPMessage httpGetMessage;
+    httpGetMessage.method          = "GET";
+    httpGetMessage.requestTarget   = path;
+    httpGetMessage.protocol        = "HTTP/1.1";
+    httpGetMessage.headers["host"] = {"localhost:8080"};
+
+    std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
+    Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
+    client1.getRequest().setMessage(httpGetMessage);
+
+    HTTPResponse getResponse = Execution::execute(client1);
+    CHECK(getResponse.createPacket().find("404") != std::string::npos);
+    CHECK(getResponse.createPacket().find("content-length: 0") != std::string::npos);
+}
+
+TEST_CASE("Test default error page 405 with PUT")
+{
+    Config::config    = {};
+    auto configResult = Config::parseConfigFile("config.conf");
+    REQUIRE(configResult.has_value());
+    std::string path    = "/doesntExist.html";
+    const char* rootDir = std::getenv("ROOT_DIR");
+    if (rootDir)
+    {
+        InputArgs::args.relativePath = rootDir;
+    } // handle missing env variable
+    REQUIRE(InputArgs::args.relativePath != "");
+    std::string fileContents = "<h> 405 Method not allowed</h>";
+
+    // POST the file
+    HTTPMessage httpPutMessage;
+    httpPutMessage.method          = "PUT";
+    httpPutMessage.requestTarget   = path;
+    httpPutMessage.protocol        = "HTTP/1.1";
+    httpPutMessage.headers["host"] = {"localhost:8080"};
+
+    std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
+    Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
+    client1.getRequest().setMessage(httpPutMessage);
+
+    HTTPResponse putResponse = Execution::execute(client1);
+    CHECK(putResponse.createPacket().find("405") != std::string::npos);
+    CHECK(putResponse.createPacket().find(fileContents) != std::string::npos);
+    CHECK(putResponse.createPacket().find("content-length: " + std::to_string(fileContents.length())) != std::string::npos);
+}

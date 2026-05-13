@@ -1,9 +1,12 @@
 #include "configParsing.hpp"
 #include "parsing.hpp"
 #include <expected>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <string>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace Config
 {
@@ -111,11 +114,26 @@ static auto parseUploadStore(Location& location, std::vector<std::string> tokens
     return {};
 }
 
+static auto isValidExecutable(std::string path)
+{
+    if (!std::filesystem::exists(path) || std::filesystem::is_directory(path))
+        return false;
+
+    if (access(path.c_str(), X_OK) == 0)
+        return true;
+
+    return false;
+}
+
 static auto parseCGI(Location& location, std::vector<std::string> tokens)
     -> std::expected<void, std::string>
 {
     if (tokens.size() != 3)
         return std::unexpected("Invalid cgi argument count");
+    if (location.cgiPaths.count(tokens[1]))
+        return std::unexpected("Duplicate CGI extension not allowed");
+    if (!isValidExecutable(tokens[2]))
+        return std::unexpected("CGI binary path not executable or existent");
     location.cgiPaths[tokens[1]] = tokens[2];
     return {};
 }
@@ -137,6 +155,14 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
             {"upload_store", parseUploadStore},
             {"cgi", parseCGI},
         };
+    std::map<std::string, bool> visited{
+        {"methods", false},
+        {"return", false},
+        {"root", false},
+        {"autoindex", false},
+        {"index", false},
+        {"upload_store", false},
+    };
 
     location.pathPrefix = pathPrefix;
     while (std::getline(inFile, buf))
@@ -160,6 +186,13 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
 
         if (functionMap.count(tokens[0]) != 1)
             return std::unexpected("Directive not found: " + tokens[0]);
+
+        if (visited.count(tokens[0]))
+        {
+            if (visited[tokens[0]] == true)
+                return std::unexpected("Duplicate " + tokens[0] + " found");
+            visited[tokens[0]] = true;
+        }
         auto result = functionMap[tokens[0]](location, tokens);
         if (!result.has_value())
             return std::unexpected(result.error());
