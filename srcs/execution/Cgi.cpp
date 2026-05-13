@@ -133,7 +133,10 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     if (request.getMessage().headers.contains("host"))
     {
         std::string host = request.getMessage().headers["host"][0];
-        env_strings.push_back("SERVER_NAME=" + host.substr(0, host.find_first_of(':')));
+        if (host.find_first_of(':') != std::string::npos)
+            env_strings.push_back("SERVER_NAME=" + host.substr(0, host.find_first_of(':')));
+        else
+            env_strings.push_back("SERVER_NAME=" + host);
     }
     else
     {
@@ -145,8 +148,12 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     env_strings.push_back("REMOTE_HOST=" + this->client_.getHost());
 
     std::string target = request.getMessage().requestTarget;
-    std::string query  = target.substr(target.find_first_of('?'));
-    target.erase(target.find_first_of('?'));
+    std::string query;
+    if (target.find_first_of('?') != std::string::npos)
+    {
+        query = target.substr(target.find_first_of('?'));
+        target.erase(target.find_first_of('?'));
+    }
     env_strings.push_back("QUERY_STRING=" + query);
 
     auto        targetSegments = split(target, '/');
@@ -212,6 +219,7 @@ auto Cgi::init() -> std::expected<int, ResponseStatusCode>
     // Todo do some more standard execution checking. like, does the script even exist?
     this->bodyToCgi_                    = client_.getRequest().getMessage().body;
     std::vector<std::string> envStrings = createEnv(client_.getRequest());
+    LOG(LogLevel::kDebug, "listening ip:{}, listening port:{}", get<0>(this->client_.getListenSocketIpPortPair()), get<1>(this->client_.getListenSocketIpPortPair()) );
     Config::ServerBlock      block      = Config::getServerBlock(this->client_.getListenSocketIpPortPair()).value();
     Config::Location         location   = Config::getLocation(block, this->scriptPath_).value();
     this->interpreterPath_              = getInterpreterPath(this->scriptPath_, location);
