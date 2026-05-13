@@ -5,8 +5,10 @@
 #include "logging.hpp"
 #include <string>
 
-Client::Client(int socketfd, int listenSocketPort, std::tuple<std::string, int>& listenSocketIpPortPair, std::string service, std::string host) : socketfd_(socketfd), listenSocketPort_(listenSocketPort), listenSocketIpPortPair_(listenSocketIpPortPair), service_(service), host_(host), CgiHandler_(*this), request_(), response_()
+Client::Client(int socketfd, int listenSocketPort, std::tuple<std::string, int> listenSocketIpPortPair, std::string service, std::string host) : socketfd_(socketfd), listenSocketPort_(listenSocketPort), listenSocketIpPortPair_(listenSocketIpPortPair), service_(service), host_(host), request_(), response_()
 {
+    LOG(LogLevel::kInfo, "Listen socket ip={} port={} opened at: {}.", get<0>(listenSocketIpPortPair), get<1>(listenSocketIpPortPair), socketfd);
+
     this->state_        = ClientState::Receiving;
     this->error_        = ErrorType::None;
     this->requestIsCgi_ = false;
@@ -46,7 +48,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         this->requestIsCgi_          = Cgi::isRequestTargetCgi(this->request_.getMessage().requestTarget, location); // need absolute path? is it already set?
         if (this->requestIsCgi_)
         {
-            auto CgiInitRet = this->CgiHandler_.init(); // Todo: error handling for this.
+            auto CgiInitRet = this->CgiHandler_.init(shared_from_this()); // Todo: error handling for this.
             if (!CgiInitRet.has_value())
             {
                 this->response_.setPacket(this->response_.createPacket(CgiInitRet.error()));
@@ -54,6 +56,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
                 this->requestIsCgi_ = false;
                 break;
             }
+            ConnectionManager::addCGIConnection(CgiInitRet.value(), shared_from_this()); // Todo Error handling
             this->cgifd_ = CgiInitRet.value();
         }
         else

@@ -22,14 +22,16 @@ class ConnectionManager
 
         static auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
         static auto createConnection(const epoll_event& epollEvent, std::tuple<std::string, int>) -> std::expected<void, std::string>;
-        static auto addCGIConnection(int cgiFd, Client& client)  -> std::expected<void, std::string>;
+        static auto addCGIConnection(int cgiFd, std::shared_ptr<Client> client)  -> std::expected<void, std::string>;
 
         static auto closeConnection(int fd) -> void;
         static auto handleReceivingEvent(int fd) -> std::tuple<std::string, ssize_t>;
         static auto handleSendingEvent(int fd, std::string data) -> ssize_t;
 
+        static auto getClient(int fd) -> std::shared_ptr<Client>;
+
     private:
-        static std::map<int, Client> clientMap_;
+        static std::map<int, std::shared_ptr<Client>> clientMap_;
         static int                   epollfd_;
 
         // auto logNewConnection(int connectionSocket, sockaddr_storage clientAddress, socklen_t addressLen) -> void;

@@ -8,8 +8,7 @@
 #include <sys/socket.h> //for socketpair
 #include <unistd.h>     //for dup2, close
 
-Cgi::Cgi(Client& client)
-    : client_(client), state_(CgiState::kInit)
+Cgi::Cgi() : state_(CgiState::kInit)
 {
     this->bodyToCgiBytesSend_ = 0;
 }
@@ -59,9 +58,9 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         {
             LOG(LogLevel::kInfo, "CGI finished receiving on fd:{}", fd);
             // EOF happened
-            ConnectionManager::closeConnection(this->fd_);
             // build actual http response for client
-            this->client_.setResponse(this->createResponse());
+            ConnectionManager::getClient(this->fd_)->setResponse(this->createResponse());
+            ConnectionManager::closeConnection(this->fd_);
             this->state_ = CgiState::KDone;
         }
         this->cgiResponse_ += std::get<std::string>(handleReceivingEventResult);
@@ -109,7 +108,9 @@ auto Cgi::getInterpreterPath(std::string path, const Config::Location& location)
     return "";
 }
 
-auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
+#include <assert.h>
+
+auto Cgi::createEnv(const HTTPRequest& request, std::shared_ptr<Client> client) -> std::vector<std::string>
 {
 
     std::vector<std::string> env_strings;
@@ -121,11 +122,11 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     env_strings.push_back("REQUEST_METHOD=" + request.getMessage().method);
 
     if (request.getMessage().headers.contains("content-type"))
-        env_strings.push_back("CONTENT_TYPE=" + request.getMessage().headers["contect-type"][0]);
+        env_strings.push_back("CONTENT_TYPE=" + request.getMessage().headers["content-type"][0]);
     else
         env_strings.push_back("CONTECT_TYPE=application/octet-stream");
     if (request.getMessage().headers.contains("content-length"))
-        env_strings.push_back("CONTENT_LENGTH=" + request.getMessage().headers["contect-length"][0]);
+        env_strings.push_back("CONTENT_LENGTH=" + request.getMessage().headers["content-length"][0]);
     else
         env_strings.push_back("CONTECT_LENGTH=");
 
@@ -140,15 +141,15 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     }
     else
     {
-        env_strings.push_back("SERVER_NAME=" + get<std::string>(this->client_.getListenSocketIpPortPair()));
+        env_strings.push_back("SERVER_NAME=" + get<std::string>(client->getListenSocketIpPortPair()));
     }
-    env_strings.push_back("SERVER_PORT=" + std::to_string(get<int>(this->client_.getListenSocketIpPortPair())));
+    env_strings.push_back("SERVER_PORT=" + std::to_string(get<int>(client->getListenSocketIpPortPair())));
 
-    env_strings.push_back("REMOTE_ADDR=" + this->client_.getHost());
-    env_strings.push_back("REMOTE_HOST=" + this->client_.getHost());
+    env_strings.push_back("REMOTE_ADDR=" + client->getHost());
+    env_strings.push_back("REMOTE_HOST=" + client->getHost());
 
     std::string target = request.getMessage().requestTarget;
-    std::string query;
+    std::string query  = "";
     if (target.find_first_of('?') != std::string::npos)
     {
         query = target.substr(target.find_first_of('?'));
@@ -157,9 +158,9 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     env_strings.push_back("QUERY_STRING=" + query);
 
     auto        targetSegments = split(target, '/');
-    std::string scriptName;
-    std::string pathInfo;
-    bool        foundScript = false;
+    std::string scriptName     = "";
+    std::string pathInfo       = "";
+    bool        foundScript    = false;
     for (std::string& segment : targetSegments.value())
     {
         if (!foundScript)
@@ -214,21 +215,25 @@ auto Cgi::headerToEnvVar(std::string header, std::vector<std::string> value) -> 
     return envHeader + envValue;
 }
 
-auto Cgi::init() -> std::expected<int, ResponseStatusCode>
+auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseStatusCode>
 {
-    // Todo do some more standard execution checking. like, does the script even exist?
-    this->bodyToCgi_                    = client_.getRequest().getMessage().body;
-    std::vector<std::string> envStrings = createEnv(client_.getRequest());
-    LOG(LogLevel::kDebug, "listening ip:{}, listening port:{}", get<0>(this->client_.getListenSocketIpPortPair()), get<1>(this->client_.getListenSocketIpPortPair()) );
-    Config::ServerBlock      block      = Config::getServerBlock(this->client_.getListenSocketIpPortPair()).value();
-    Config::Location         location   = Config::getLocation(block, this->scriptPath_).value();
-    this->interpreterPath_              = getInterpreterPath(this->scriptPath_, location);
-    if (this->interpreterPath_ == "")
-        return std::unexpected(ResponseStatusCode::kNotImplemented);
-
+    //create socketpair
     int fd[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
         return std::unexpected(ResponseStatusCode::kInternalServerError);
+    this->fd_ = fd[0];
+
+    // Todo do some more standard execution checking. like, does the script even exist?
+    this->bodyToCgi_                    = client->getRequest().getMessage().body;
+    std::vector<std::string> envStrings = createEnv(client->getRequest(), client);
+    LOG(LogLevel::kDebug, "listening ip:{}, listening port:{}", get<0>(client->getListenSocketIpPortPair()), get<1>(client->getListenSocketIpPortPair()));
+    Config::ServerBlock block    = Config::getServerBlock(client->getListenSocketIpPortPair()).value();
+    Config::Location    location = Config::getLocation(block, this->scriptPath_).value();
+    this->interpreterPath_       = getInterpreterPath(this->scriptPath_, location);
+    if (this->interpreterPath_ == "")
+        return std::unexpected(ResponseStatusCode::kNotImplemented);
+
+
     pid_t pid = fork();
     if (pid == -1)
         return std::unexpected(ResponseStatusCode::kInternalServerError);
@@ -237,7 +242,7 @@ auto Cgi::init() -> std::expected<int, ResponseStatusCode>
     {
         // Child.
         if (dup2(fd[1], STDIN_FILENO) == -1 || dup2(fd[1], STDOUT_FILENO) == -1)
-            std::exit(1); // error check? What will epoll do?
+            std::exit(1); // error check? What will epoll do? //make static close and free function in connectionmanager
 
         close(fd[0]); // Close parent side.
         close(fd[1]); // dupped, so can close child side.
@@ -258,14 +263,12 @@ auto Cgi::init() -> std::expected<int, ResponseStatusCode>
 
         execve(argv[0], argv.data(), envp.data());
         LOG(LogLevel::kErrors, "Execve failed!");
-        std::exit(1); // error check? What will epoll do?
+        std::exit(1); // error check? What will epoll do? //make static close and free function in connectionmanager
     }
     else
     {
         // Parent
         close(fd[1]); // Close child side.
-        this->fd_ = fd[0];
-        ConnectionManager::addCGIConnection(this->fd_, this->client_); // Todo Error handling
         return this->fd_;
     }
 }

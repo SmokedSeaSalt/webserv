@@ -42,16 +42,14 @@ enum class CgiState
 class Cgi
 {
     public:
-        Cgi(Client& client);
+        Cgi();
         auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
-        auto init() -> std::expected<int, ResponseStatusCode>;
+        auto init(std::shared_ptr<Client> client) -> std::expected<int, ResponseStatusCode>;
         auto createResponse() -> HTTPResponse;
 
         static auto isRequestTargetCgi(const std::string target, const Config::Location& location) -> bool;
 
     private:
-        Client& client_;
-
         size_t      bodyToCgiBytesSend_;
         std::string bodyToCgi_;
         std::string cgiResponse_;
@@ -61,7 +59,7 @@ class Cgi
         std::string interpreterPath_;
 
         auto        newData(std::string data) -> void;
-        auto        createEnv(const HTTPRequest& request) -> std::vector<std::string>;
+        auto        createEnv(const HTTPRequest& request, std::shared_ptr<Client> client) -> std::vector<std::string>;
         static auto headerToEnvVar(std::string header, std::vector<std::string> value) -> std::string;
 
             static auto endsInCgi(const std::string& segment, const Config::Location& location) -> bool;

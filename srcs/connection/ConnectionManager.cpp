@@ -8,8 +8,8 @@
 #include <unistd.h>
 
 // Static member definitions
-std::map<int, Client> ConnectionManager::clientMap_;
-int                   ConnectionManager::epollfd_;
+std::map<int, std::shared_ptr<Client>> ConnectionManager::clientMap_;
+int                                    ConnectionManager::epollfd_;
 
 auto ConnectionManager::setEpollfd(int epollfd) -> void
 {
@@ -24,10 +24,10 @@ auto ConnectionManager::handleReceivingEvent(int fd) -> std::tuple<std::string, 
     std::string buf;
     buf.resize(BUFFER_SIZE);
     ssize_t numBytes = recv(fd, buf.data(), BUFFER_SIZE, 0);
-    //if (numBytes < 0)
-    //    return std::unexpected("recv failed");
-    //if (numBytes == 0)
-    //    return std::unexpected("Client " + std::to_string(fd) + " has disconnected. recv returned 0.");
+    // if (numBytes < 0)
+    //     return std::unexpected("recv failed");
+    // if (numBytes == 0)
+    //     return std::unexpected("Client " + std::to_string(fd) + " has disconnected. recv returned 0.");
 
     // todo error handling
     return {buf, numBytes};
@@ -52,7 +52,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
         LOG(LogLevel::kDebug, "unknown client fd: {}", std::to_string(fd));
         return HandleEventResult::kError;
     }
-    Client& client = it->second;
+    Client& client = *it->second;
 
     if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
     {
@@ -92,7 +92,7 @@ auto ConnectionManager::closeConnection(int fd) -> void
     }
 }
 
-auto ConnectionManager::addCGIConnection(int cgiFd, Client& client) -> std::expected<void, std::string>
+auto ConnectionManager::addCGIConnection(int cgiFd, std::shared_ptr<Client> client) -> std::expected<void, std::string>
 {
     auto setNonBlockingRes = setNonBlocking(cgiFd);
     if (!setNonBlockingRes.has_value())
@@ -157,7 +157,15 @@ auto ConnectionManager::createConnection(const epoll_event& epollEvent, std::tup
         return std::unexpected("getnameinfo could not get all paramaters");
     }
 
-    clientMap_.emplace(connectionSocket, Client(connectionSocket, listenSocket, ipPortPair, std::string(service), std::string(host)));
+    clientMap_.emplace(connectionSocket, std::make_shared<Client>(connectionSocket, listenSocket, ipPortPair, std::string(service), std::string(host)));
 
     return {};
+}
+
+auto ConnectionManager::getClient(int fd) -> std::shared_ptr<Client>
+{
+    auto it = clientMap_.find(fd);
+    if (it == clientMap_.end())
+        return nullptr;
+    return it->second;
 }

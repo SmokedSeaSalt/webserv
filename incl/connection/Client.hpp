@@ -19,10 +19,11 @@ enum class ClientState
     Error,
 };
 
-class Client
+class Client : public std::enable_shared_from_this<Client>
+
 {
     public:
-        Client(int socketfd, int listendSocketPort, std::tuple<std::string, int>& listenSocketIpPortPair, std::string service, std::string host);
+        Client(int socketfd, int listendSocketPort, std::tuple<std::string, int> listenSocketIpPortPair, std::string service, std::string host);
         auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
 
         // get/set
@@ -59,10 +60,10 @@ class Client
         std::string                  host_;
         bool                         requestIsCgi_;
 
-        Cgi          CgiHandler_;
         ClientState  state_;
         HTTPRequest  request_;
         HTTPResponse response_;
+        Cgi          CgiHandler_;
         ErrorType    error_;
 };
 
