@@ -85,7 +85,6 @@ class HTTPRules
         static auto is_query(const std::string& str) -> bool;
         static auto is_origin_form(const std::string& str) -> bool;
 
-        static auto validateMethod(const std::string& str) -> std::expected<bool, ResponseStatusCode>;
         static auto validateRequestTarget(const std::string& str) -> std::expected<bool, ResponseStatusCode>;
         static auto validateProtocol(const std::string& str) -> std::expected<bool, ResponseStatusCode>;
         static auto validateHeader(const std::string& key, const std::string& value) -> bool;

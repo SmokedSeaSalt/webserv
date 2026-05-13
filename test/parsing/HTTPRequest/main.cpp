@@ -165,16 +165,6 @@ TEST_CASE("Basic chunked body test")
 // Invalid first line                                                         //
 ////////////////////////////////////////////////////////////////////////////////
 
-TEST_CASE("Invalid method")
-{
-    HTTPRequest request{};
-    std::string basic = "INVALID /index.html HTTP/1.1\r\n\r\n";
-
-    auto ret = request.newData(basic);
-    REQUIRE(!ret.has_value());
-    CHECK(ret.error() == ResponseStatusCode::kNotImplemented);
-}
-
 TEST_CASE("Invalid target")
 {
     HTTPRequest request{};

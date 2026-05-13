@@ -3,7 +3,6 @@
 #include <cctype>
 
 const std::string           HTTPRules::delimiter_        = "\r\n";
-const std::set<std::string> HTTPRules::supportedMethods_ = {"GET", "HEAD", "POST", "DELETE"};
 const std::string           HTTPRules::HTTPVersion_      = "HTTP/1.1";
 
 auto HTTPRules::is_tchar(const unsigned char& c) -> bool
@@ -152,13 +151,6 @@ auto HTTPRules::is_origin_form(const std::string& str) -> bool
     if (!is_query(str.substr(pos + 1, str.length() - (pos + 1))))
         return false;
     return true;
-}
-
-auto HTTPRules::validateMethod(const std::string& str) -> std::expected<bool, ResponseStatusCode>
-{
-    if (supportedMethods_.contains(str))
-        return true;
-    return std::unexpected(ResponseStatusCode::kNotImplemented);
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages#request_targets

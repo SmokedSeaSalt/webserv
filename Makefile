@@ -6,7 +6,7 @@ NAME = webserv
 CPP = c++
 CPPFLAGS = -Wall -Werror -Wextra -MMD --std=c++23 --stdlib=libc++
 LDFLAGS = -Wl,-rpath,$(HOME)/.local/lib/x86_64-unknown-linux-gnu -lc++ -lc++abi
-DEBUGFLAGS = -g
+DEBUGFLAGS = -g -gdwarf-4
 ASANFLAGS = -fsanitize=address,undefined
 
 ################################################################################
