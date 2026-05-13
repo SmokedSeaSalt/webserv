@@ -49,6 +49,16 @@ auto setupRequestForExecution(Client& client) -> std::expected<void, HTTPRespons
     return {};
 }
 
+auto getRedirectResponse(Client& client) -> HTTPResponse
+{
+    HTTPResponse     response;
+    Config::Location location = client.getRequest().getLocation();
+
+    response.setHeader("location", location.redirectLocation);
+    response.setStatusCode(static_cast<ResponseStatusCode>(location.redirectCode));
+    return response;
+}
+
 auto execute(Client& client) -> HTTPResponse
 {
     HTTPResponse response;
@@ -58,7 +68,12 @@ auto execute(Client& client) -> HTTPResponse
     if (!setupResult.has_value())
         return setupResult.error();
 
+    // move this to Client right before cgi or execute() call
+    if (!client.getRequest().getLocation().redirectLocation.empty())
+        return getRedirectResponse(client);
+        
     ResponseStatusCode status = checkRequestConfigCompliance(client);
+
 
     if (status != ResponseStatusCode::kOK)
         response = buildErrorResponse(client, status);
@@ -136,6 +151,7 @@ auto processValidRequest(Client& client) -> std::expected<HTTPResponse, Response
 {
     HTTPResponse httpResponse;
     HTTPMessage  request = client.getRequest().getMessage();
+
 
     if (request.method == "GET")
     {
