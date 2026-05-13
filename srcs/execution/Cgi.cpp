@@ -217,22 +217,20 @@ auto Cgi::headerToEnvVar(std::string header, std::vector<std::string> value) -> 
 
 auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseStatusCode>
 {
-    //create socketpair
+    // create socketpair
     int fd[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
         return std::unexpected(ResponseStatusCode::kInternalServerError);
     this->fd_ = fd[0];
 
-    // Todo do some more standard execution checking. like, does the script even exist?
+    // Todo do some more standard execution checking. like, does the script even exist? prepend the relative path
     this->bodyToCgi_                    = client->getRequest().getMessage().body;
     std::vector<std::string> envStrings = createEnv(client->getRequest(), client);
-    LOG(LogLevel::kDebug, "listening ip:{}, listening port:{}", get<0>(client->getListenSocketIpPortPair()), get<1>(client->getListenSocketIpPortPair()));
-    Config::ServerBlock block    = Config::getServerBlock(client->getListenSocketIpPortPair()).value();
-    Config::Location    location = Config::getLocation(block, this->scriptPath_).value();
-    this->interpreterPath_       = getInterpreterPath(this->scriptPath_, location);
+    Config::ServerBlock      block      = Config::getServerBlock(client->getListenSocketIpPortPair()).value();
+    Config::Location         location   = Config::getLocation(block, this->scriptPath_).value();
+    this->interpreterPath_              = getInterpreterPath(this->scriptPath_, location);
     if (this->interpreterPath_ == "")
         return std::unexpected(ResponseStatusCode::kNotImplemented);
-
 
     pid_t pid = fork();
     if (pid == -1)
@@ -253,13 +251,25 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
             envp.push_back(s.data());
         envp.push_back(nullptr);
 
+        std::string cdPath;
+        std::string scriptName;
+        if (scriptPath_.find_last_of('/') != std::string::npos)
+        {
+            cdPath = scriptPath_.substr(0, scriptPath_.find_last_of('/'));
+            if (cdPath.starts_with('/') == true)
+                cdPath.erase(0, 1);
+            scriptName = scriptPath_.substr(scriptPath_.find_last_of('/') + 1);
+        }
+
         // get interpeter and script
         std::vector<char*> argv;
         argv.push_back(interpreterPath_.data());
-        argv.push_back(scriptPath_.data());
+        argv.push_back(scriptName.data());
         argv.push_back(nullptr);
 
         // TODO?: cd this programm to script folder? 7.2 The current working directory for the script SHOULD be set to the directory containing the script.
+
+        chdir(cdPath.data());
 
         execve(argv[0], argv.data(), envp.data());
         LOG(LogLevel::kErrors, "Execve failed!");
