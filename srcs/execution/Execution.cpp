@@ -55,7 +55,10 @@ auto getRedirectResponse(Client& client) -> HTTPResponse
     Config::Location location = client.getRequest().getLocation();
 
     response.setHeader("location", location.redirectLocation);
+    response.setHeader("content-length", "0");
     response.setStatusCode(static_cast<ResponseStatusCode>(location.redirectCode));
+    response.setSendState(SendState::kReady);
+
     return response;
 }
 
