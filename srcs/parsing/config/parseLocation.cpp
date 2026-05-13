@@ -169,7 +169,7 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
         if (buf == "}")
         {
             if (visited["return"])
-                for (const std::string& directive : visited)
+                for (const auto& directive : visited)
                     if (directive.first != "return" && directive.second)
                         return std::unexpected("No other directives allowed with 'return' in location block");
             return location;
