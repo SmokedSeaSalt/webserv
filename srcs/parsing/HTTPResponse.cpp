@@ -21,7 +21,7 @@ auto HTTPResponse::setHeader(std::string key, std::string value) -> std::expecte
     if (this->message_.headers.contains(keyLower))
         this->message_.headers[keyLower].clear();
     else
-        this->message_.headers[keyLower].push_back(value);
+        this->message_.headers[keyLower].push_back(value); // todo check if this works correctly. (not overwriting)
 
     return {};
 }

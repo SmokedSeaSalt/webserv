@@ -205,12 +205,9 @@ auto HTTPRequest::parseStartLine(std::string line) -> std::expected<size_t, Resp
         return std::unexpected(ResponseStatusCode::kBadRequest);
 
     this->message_.method = line.substr(0, pos1);
-    auto ret              = validateMethod(this->message_.method);
-    if (!ret.has_value())
-        return std::unexpected(ret.error());
 
     this->message_.requestTarget = line.substr(pos1 + 1, pos2 - pos1 - 1);
-    ret                          = validateRequestTarget(this->message_.requestTarget);
+    auto ret                     = validateRequestTarget(this->message_.requestTarget);
     if (!ret.has_value())
         return std::unexpected(ret.error());
 

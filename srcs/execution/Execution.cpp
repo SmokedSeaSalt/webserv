@@ -1,5 +1,6 @@
 #include "Execution.hpp"
 #include "Client.hpp"
+#include "InputArgs.hpp"
 #include "configParsing.hpp"
 #include "configUtils.hpp"
 #include "executionHelpers.hpp"
@@ -51,6 +52,7 @@ auto setupRequestForExecution(Client& client) -> std::expected<void, HTTPRespons
 auto execute(Client& client) -> HTTPResponse
 {
     HTTPResponse response;
+    HTTPMessage  requestMessage = client.getRequest().getMessage();
 
     auto setupResult = setupRequestForExecution(client);
     if (!setupResult.has_value())
@@ -59,17 +61,30 @@ auto execute(Client& client) -> HTTPResponse
     ResponseStatusCode status = checkRequestConfigCompliance(client);
 
     if (status != ResponseStatusCode::kOK)
-        return buildErrorResponse(client, status);
-    // if (cgi)
-    //      executeCGI
-    // else non cgi below
-    auto validRequestResult = processValidRequest(client);
-    if (!validRequestResult.has_value())
-        response = buildErrorResponse(client, validRequestResult.error()); // todo check this error handling
+        response = buildErrorResponse(client, status);
     else
-        response = validRequestResult.value();
-
+    {
+        // if (cgi)
+        //      executeCGI
+        // else non cgi below
+        auto validRequestResult = processValidRequest(client);
+        if (!validRequestResult.has_value())
+            response = buildErrorResponse(client, validRequestResult.error()); // todo check this error handling
+        else
+            response = validRequestResult.value();
+    }
     response.setSendState(SendState::kReady);
+
+    if (requestMessage.headers.contains("connection") && requestMessage.headers.at("connection")[0] == "close")
+    {
+        response.addHeaderValue("connection", "close");
+        response.setKeepAlive(false);
+    }
+    else
+    {
+        response.addHeaderValue("connection", "keep-alive");
+        response.setKeepAlive(true);
+    }
 
     return response;
 }
@@ -95,13 +110,25 @@ auto checkRequestConfigCompliance(Client& client) -> ResponseStatusCode
 
 auto buildErrorResponse(Client& client, ResponseStatusCode statusCode) -> HTTPResponse
 {
-    (void)client;
     HTTPResponse response;
 
+    std::map<int, std::string> defaultErrorPages = client.getRequest().getServerBlock().defaultErrorPages;
+    if (defaultErrorPages.count(static_cast<int>(statusCode)))
+    {
+        std::string relativePath = defaultErrorPages[static_cast<int>(statusCode)];
+        if (relativePath.length() > 0 && relativePath[0] == '/')
+            relativePath = relativePath.substr(1);
+        std::string absolutePath = std::filesystem::path(InputArgs::args.relativePath) / relativePath;
+        auto        res          = processGetFile(absolutePath);
+        if (res.has_value())
+        {
+            response = res.value();
+            response.setStatusCode(statusCode);
+            return response;
+        }
+    }
     response.setStatusCode(statusCode);
-    // error code, defailt error page
-    response.setHeader("content-length", std::to_string(response.getBodyLen()));
-
+    response.setHeader("content-length", std::to_string(response.getBodyLen())); // todo check does this overwrite anything?
     return response;
 }
 
@@ -137,16 +164,6 @@ auto processValidRequest(Client& client) -> std::expected<HTTPResponse, Response
         if (!processDeleteResult.has_value())
             return std::unexpected(processDeleteResult.error());
         httpResponse = processDeleteResult.value();
-    }
-    if (request.headers.contains("connection") && request.headers.at("connection")[0] == "close")
-    {
-        httpResponse.addHeaderValue("connection", "close");
-        httpResponse.setKeepAlive(false);
-    }
-    else
-    {
-        httpResponse.addHeaderValue("connection", "keep-alive");
-        httpResponse.setKeepAlive(true);
     }
 
     return httpResponse;
