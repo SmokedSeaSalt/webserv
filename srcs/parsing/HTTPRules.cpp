@@ -2,8 +2,8 @@
 #include <algorithm>
 #include <cctype>
 
-const std::string           HTTPRules::delimiter_        = "\r\n";
-const std::string           HTTPRules::HTTPVersion_      = "HTTP/1.1";
+const std::string HTTPRules::delimiter_   = "\r\n";
+const std::string HTTPRules::HTTPVersion_ = "HTTP/1.1";
 
 auto HTTPRules::is_tchar(const unsigned char& c) -> bool
 {

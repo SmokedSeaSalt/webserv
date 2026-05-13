@@ -480,7 +480,7 @@ TEST_CASE("Test default error page when not available")
 
 TEST_CASE("Test default error page 405 with PUT")
 {
-     Config::config    = {};
+    Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
     std::string path    = "/doesntExist.html";

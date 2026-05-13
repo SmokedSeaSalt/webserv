@@ -1,10 +1,10 @@
 #include "Execution.hpp"
 #include "Client.hpp"
+#include "InputArgs.hpp"
 #include "configParsing.hpp"
 #include "configUtils.hpp"
 #include "executionHelpers.hpp"
 #include "logging.hpp"
-#include "InputArgs.hpp"
 #include <filesystem>
 #include <string>
 
@@ -119,7 +119,7 @@ auto buildErrorResponse(Client& client, ResponseStatusCode statusCode) -> HTTPRe
         if (relativePath.length() > 0 && relativePath[0] == '/')
             relativePath = relativePath.substr(1);
         std::string absolutePath = std::filesystem::path(InputArgs::args.relativePath) / relativePath;
-        auto res = processGetFile(absolutePath);
+        auto        res          = processGetFile(absolutePath);
         if (res.has_value())
         {
             response = res.value();
