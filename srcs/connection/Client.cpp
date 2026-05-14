@@ -29,7 +29,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         auto handleReceivingEventResult = ConnectionManager::handleReceivingEvent(fd);
         if (std::get<ssize_t>(handleReceivingEventResult) <= 0)
         {
-            LOG(LogLevel::kDebug, "recv() returned <= 0 at fd: {}, closing connection.", fd);
+            LOG(LogLevel::kDebug, "recv() returned {} at fd: {}, closing connection.", std::get<ssize_t>(handleReceivingEventResult), fd);
             ConnectionManager::closeConnection(this->getSocketfd());
             return HandleEventResult::kError;
         }
