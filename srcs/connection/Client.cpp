@@ -56,7 +56,6 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
                 this->requestIsCgi_ = false;
                 break;
             }
-            ConnectionManager::addCGIConnection(CgiInitRet.value(), shared_from_this()); // Todo Error handling
             this->cgifd_ = CgiInitRet.value();
         }
         else
@@ -81,6 +80,11 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
                 this->response_.setSendState(SendState::kSending);
                 this->state_ = ClientState::Sending;
                 break;
+            }
+            if (CgiHandler_.getState() == CgiState::KDone)
+            {
+                this->state_ = ClientState::Sending;
+                this->response_.setSendState(SendState::kSending);
             }
             break;
         }

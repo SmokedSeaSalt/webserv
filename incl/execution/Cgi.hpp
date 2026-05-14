@@ -47,6 +47,8 @@ class Cgi
         auto init(std::shared_ptr<Client> client) -> std::expected<int, ResponseStatusCode>;
         auto createResponse() -> HTTPResponse;
 
+        auto getState() -> CgiState;
+
         static auto isRequestTargetCgi(const std::string target, const Config::Location& location) -> bool;
 
     private:

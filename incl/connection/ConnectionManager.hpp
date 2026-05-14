@@ -23,6 +23,7 @@ class ConnectionManager
         static auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
         static auto createConnection(const epoll_event& epollEvent, std::tuple<std::string, int>) -> std::expected<void, std::string>;
         static auto addCGIConnection(int cgiFd, std::shared_ptr<Client> client) -> std::expected<void, std::string>;
+        static auto changeCGIConnectionToRead(int cgiFd) -> std::expected<void, std::string>;
 
         static auto closeConnection(int fd) -> void;
         static auto handleReceivingEvent(int fd) -> std::tuple<std::string, ssize_t>;

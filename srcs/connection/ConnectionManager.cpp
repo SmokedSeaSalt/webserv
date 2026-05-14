@@ -24,12 +24,11 @@ auto ConnectionManager::handleReceivingEvent(int fd) -> std::tuple<std::string, 
     std::string buf;
     buf.resize(BUFFER_SIZE);
     ssize_t numBytes = recv(fd, buf.data(), BUFFER_SIZE, 0);
-    // if (numBytes < 0)
-    //     return std::unexpected("recv failed");
-    // if (numBytes == 0)
-    //     return std::unexpected("Client " + std::to_string(fd) + " has disconnected. recv returned 0.");
+    LOG(LogLevel::kDebug, "recv fd={} returned={}", fd, numBytes);
+    if (numBytes <= 0)
+        return {"", numBytes}; // don't return garbage buffer on EOF or error
+    buf.resize(numBytes);      // trim to actual received size
 
-    // todo error handling
     return {buf, numBytes};
 }
 
@@ -54,7 +53,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
     }
     Client& client = *it->second;
 
-    if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
+    if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP) && !(events & EPOLLIN))
     {
         if (close(fd) == -1)
             LOG(LogLevel::kDebug, "failed to close client fd: {}", std::to_string(fd));
@@ -99,14 +98,26 @@ auto ConnectionManager::addCGIConnection(int cgiFd, std::shared_ptr<Client> clie
         return std::unexpected(setNonBlockingRes.error());
 
     struct epoll_event ev_;
-    ev_.events  = EPOLLIN | EPOLLRDHUP | EPOLLOUT;
+    ev_.events  = EPOLLRDHUP | EPOLLOUT;
     ev_.data.fd = cgiFd;
     if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, cgiFd, &ev_) == -1)
     {
         perror("epoll_ctl: connectionSocket");
         return std::unexpected("epoll_ctl failed");
     }
+    LOG(LogLevel::kInfo, "New CGI fd added to epoll on fd={}", cgiFd);
+
     clientMap_.emplace(cgiFd, client);
+    return {};
+}
+
+auto ConnectionManager::changeCGIConnectionToRead(int cgiFd) -> std::expected<void, std::string>
+{
+    // Re-arm epoll for reading
+    epoll_event ev{};
+    ev.events  = EPOLLIN | EPOLLRDHUP;
+    ev.data.fd = cgiFd;
+    epoll_ctl(epollfd_, EPOLL_CTL_MOD, cgiFd, &ev); // MOD, not ADD
     return {};
 }
 
