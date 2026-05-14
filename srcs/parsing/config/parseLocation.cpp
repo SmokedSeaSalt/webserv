@@ -141,20 +141,18 @@ static auto parseCGI(Location& location, std::vector<std::string> tokens)
 auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
     -> std::expected<Location, std::string>
 {
-    Location                 location;
-    std::string              buf;
-    std::vector<std::string> tokens;
-    std::map<std::string, std::function<std::expected<void, std::string>(Location & location,
-                                                                         std::vector<std::string>)>>
-        functionMap{
-            {"methods", parseMethods},
-            {"return", parseRedirect},
-            {"root", parseRoot},
-            {"autoindex", parseAutoIndex},
-            {"index", parseIndex},
-            {"upload_store", parseUploadStore},
-            {"cgi", parseCGI},
-        };
+    Location                                                                                                              location;
+    std::string                                                                                                           buf;
+    std::vector<std::string>                                                                                              tokens;
+    std::map<std::string, std::function<std::expected<void, std::string>(Location & location, std::vector<std::string>)>> functionMap{
+        {"methods", parseMethods},
+        {"return", parseRedirect},
+        {"root", parseRoot},
+        {"autoindex", parseAutoIndex},
+        {"index", parseIndex},
+        {"upload_store", parseUploadStore},
+        {"cgi", parseCGI},
+    };
     std::map<std::string, bool> visited{
         {"methods", false},
         {"return", false},
@@ -169,7 +167,13 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
     {
         buf = stringTrim(buf);
         if (buf == "}")
+        {
+            if (visited["return"])
+                for (const auto& directive : visited)
+                    if (directive.first != "return" && directive.second)
+                        return std::unexpected("No other directives allowed with 'return' in location block");
             return location;
+        }
         if (buf.empty())
             continue;
 
