@@ -33,6 +33,9 @@ class Client : public std::enable_shared_from_this<Client>
         auto setListenSocketPort(int) -> void;
         auto getListenSocketPort() -> int;
 
+        auto setCgiPID(int) -> void;
+        auto getCgiPID() -> int;
+
         auto setService(std::string) -> void;
         auto getService() -> std::string;
 
@@ -55,6 +58,7 @@ class Client : public std::enable_shared_from_this<Client>
         int                          socketfd_;
         int                          cgifd_;
         int                          listenSocketPort_;
+        int                          cgiPID_ = -1;
         std::tuple<std::string, int> listenSocketIpPortPair_;
         std::string                  service_;
         std::string                  host_;

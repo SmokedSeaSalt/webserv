@@ -40,6 +40,7 @@ class Server
 
         // cleanup
         auto closeListenSockets() -> void;
+        auto serverCleanup() -> void;
 };
 
 #endif // SERVER_HPP

@@ -4,7 +4,10 @@
 #include <arpa/inet.h> // for client logging
 #include <netdb.h>     // for client logging
 #include <netinet/in.h>
+#include <signal.h>
 #include <sys/epoll.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 // Static member definitions
@@ -168,4 +171,19 @@ auto ConnectionManager::getClient(int fd) -> std::shared_ptr<Client>
     if (it == clientMap_.end())
         return nullptr;
     return it->second;
+}
+
+auto ConnectionManager::connectionManagerCleanup() -> void
+{
+    int cgiPID;
+    for (auto& [fd, client] : clientMap_)
+    {
+        cgiPID = client->getCgiPID();
+        if (cgiPID > 0)
+        {
+            kill(cgiPID, SIGTERM); // todo SIGTERM or SIGKILL
+            waitpid(cgiPID, NULL, 0);
+        }
+        closeConnection(fd);
+    }
 }
