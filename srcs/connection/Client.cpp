@@ -24,7 +24,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
     {
     case ClientState::Receiving:
     {
-        if (fd != this->socketfd_ && !(events & EPOLLIN))
+        if (fd != this->socketfd_ || !(events & EPOLLIN))
             break;
         auto handleReceivingEventResult = ConnectionManager::handleReceivingEvent(fd);
         if (std::get<ssize_t>(handleReceivingEventResult) <= 0)
@@ -114,7 +114,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         this->response_.incrementTotalBytesSent(bytesSend);
         if (bytesSend == 0 || this->response_.getRemainingPacketLen() == 0)
         {
-            LOG(LogLevel::kInfo, "Request finished sending on fd:{}", fd);
+            LOG(LogLevel::kInfo, "Response finished sending on fd:{}", fd);
             this->response_.setSendState(SendState::kDone);
             this->state_ = ClientState::Sent;
             break;
