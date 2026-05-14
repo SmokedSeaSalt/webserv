@@ -17,7 +17,7 @@ int main(int argc, char** argv)
     }
     if (Signals::initSignals() == -1)
     {
-    	LOG(LogLevel::kInfo, "initSignals failed. Shutting down.");
+        LOG(LogLevel::kInfo, "initSignals failed. Shutting down.");
         return 1;
     }
     Server server = Server();

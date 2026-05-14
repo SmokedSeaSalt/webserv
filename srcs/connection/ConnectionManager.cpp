@@ -4,11 +4,11 @@
 #include <arpa/inet.h> // for client logging
 #include <netdb.h>     // for client logging
 #include <netinet/in.h>
-#include <sys/epoll.h>
-#include <unistd.h>
 #include <signal.h>
+#include <sys/epoll.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 // Static member definitions
 std::map<int, std::shared_ptr<Client>> ConnectionManager::clientMap_;

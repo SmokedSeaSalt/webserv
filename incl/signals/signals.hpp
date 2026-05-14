@@ -1,7 +1,8 @@
 #ifndef SIGNALS_HPP
 #define SIGNALS_HPP
 
-namespace Signals{
+namespace Signals
+{
 
 inline bool shouldShutdown = false;
 

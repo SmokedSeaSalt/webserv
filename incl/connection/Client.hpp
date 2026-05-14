@@ -36,7 +36,6 @@ class Client : public std::enable_shared_from_this<Client>
         auto setCgiPID(int) -> void;
         auto getCgiPID() -> int;
 
-
         auto setService(std::string) -> void;
         auto getService() -> std::string;
 
