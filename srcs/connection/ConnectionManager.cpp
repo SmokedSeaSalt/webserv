@@ -6,6 +6,9 @@
 #include <netinet/in.h>
 #include <sys/epoll.h>
 #include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 // Static member definitions
 std::map<int, std::shared_ptr<Client>> ConnectionManager::clientMap_;
@@ -168,4 +171,19 @@ auto ConnectionManager::getClient(int fd) -> std::shared_ptr<Client>
     if (it == clientMap_.end())
         return nullptr;
     return it->second;
+}
+
+auto ConnectionManager::connectionManagerCleanup() -> void
+{
+    int cgiPID;
+    for (auto& [fd, client] : clientMap_)
+    {
+        cgiPID = client->getCgiPID();
+        if (cgiPID > 0)
+        {
+            kill(cgiPID, SIGTERM); // todo SIGTERM or SIGKILL
+            waitpid(cgiPID, NULL, 0);
+        }
+        closeConnection(fd);
+    }
 }

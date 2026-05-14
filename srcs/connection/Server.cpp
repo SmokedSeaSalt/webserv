@@ -3,6 +3,7 @@
 #include "Execution.hpp"
 #include "connection.hpp"
 #include "logging.hpp"
+#include "signals.hpp"
 #include <arpa/inet.h>
 #include <expected>
 #include <fcntl.h>
@@ -136,8 +137,8 @@ auto Server::connection_loop() -> std::expected<void, std::string>
         nfds = epoll_wait(epollfd_, events_, MAX_EVENTS, -1);
         if (nfds == -1)
         {
-            perror("epoll_wait");
-            return std::unexpected("epoll_wait() failed");
+            LOG(LogLevel::kDebug, "Epoll wait returned -1");
+            break;
         }
 
         for (int n = 0; n < nfds; ++n)
@@ -151,7 +152,13 @@ auto Server::connection_loop() -> std::expected<void, std::string>
                 ConnectionManager::handleEvent(events_[n]);
             }
         }
+        if (Signals::shouldShutdown == true)
+        {
+            LOG(LogLevel::kDebug, "Terminating connection loop.");
+            break;
+        }
     }
+    serverCleanup();
     return {};
 }
 
@@ -159,6 +166,13 @@ auto Server::connection_loop() -> std::expected<void, std::string>
 auto Server::getListenSockets() -> std::set<int>
 {
     return listenSockets_;
+}
+
+auto Server::serverCleanup() -> void
+{
+    close(epollfd_);
+    closeListenSockets();
+    ConnectionManager::connectionManagerCleanup();
 }
 
 // Server

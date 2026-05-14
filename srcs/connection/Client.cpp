@@ -217,3 +217,13 @@ auto Client::getListenSocketIpPortPair() -> std::tuple<std::string, int>
 {
     return this->listenSocketIpPortPair_;
 }
+
+auto Client::setCgiPID(int pid) -> void
+{
+    this->cgiPID_ = pid;
+}
+
+auto Client::getCgiPID() -> int
+{
+    return this->cgiPID_;
+}

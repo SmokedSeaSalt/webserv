@@ -38,9 +38,10 @@ SRC =	main.cpp \
 		loggingHelpers.cpp \
 		configUtils.cpp \
 		Client.cpp \
-		Cgi.cpp
+		Cgi.cpp \
+		signalHandler.cpp
 
-INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/connection  -I$(ROOT_DIR)/incl/logging#TODO
+INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/connection  -I$(ROOT_DIR)/incl/logging -I$(ROOT_DIR)/incl/signals#TODO
 
 OBJ = $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SRC))
 DEP = ${OBJ:.o=.d}
@@ -50,6 +51,7 @@ vpath %.cpp .:$(ROOT_DIR)/srcs/parsing/config
 vpath %.cpp .:$(ROOT_DIR)/srcs/logging
 vpath %.cpp .:$(ROOT_DIR)/srcs/connection
 vpath %.cpp .:$(ROOT_DIR)/srcs/execution
+vpath %.cpp .:$(ROOT_DIR)/srcs/signals
 vpath %.cpp .:$(ROOT_DIR)/srcs
 
 

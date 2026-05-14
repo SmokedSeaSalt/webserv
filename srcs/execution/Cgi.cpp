@@ -235,6 +235,7 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
     pid_t pid = fork();
     if (pid == -1)
         return std::unexpected(ResponseStatusCode::kInternalServerError);
+    client->setCgiPID(pid);
 
     if (pid == 0)
     {
