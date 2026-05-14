@@ -7,7 +7,7 @@ int main(int argc, char** argv)
 {
     if (!InputArgs::parseArguments(argc, argv))
         return 1;
-    Logging::init(InputArgs::args.logFile.c_str(), InputArgs::args.logLevel);
+    Logging::init(InputArgs::args.logFile, InputArgs::args.logLevel);
     auto ret = Config::parseConfigFile(InputArgs::args.configFile);
     if (!ret.has_value())
     {
