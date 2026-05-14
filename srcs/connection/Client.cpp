@@ -94,6 +94,8 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             this->response_.setSendState(SendState::kSending);
             this->state_ = ClientState::Sending;
         }
+        else
+            break;
         [[fallthrough]];
     }
     case ClientState::Sending:

@@ -46,6 +46,8 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
     }
     case CgiState::kReceiveCGIResponse:
     {
+        if (!(events & EPOLLIN))
+            break;
         auto handleReceivingEventResult = ConnectionManager::handleReceivingEvent(fd);
         if (std::get<ssize_t>(handleReceivingEventResult) < 0)
         {
@@ -107,8 +109,6 @@ auto Cgi::getInterpreterPath(std::string path, const Config::Location& location)
     }
     return "";
 }
-
-#include <assert.h>
 
 auto Cgi::createEnv(const HTTPRequest& request, std::shared_ptr<Client> client) -> std::vector<std::string>
 {
