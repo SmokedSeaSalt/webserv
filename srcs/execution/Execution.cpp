@@ -26,7 +26,7 @@ auto getPathAfterLocation(Client& client) -> std::string
 
 auto setupRequestForExecution(Client& client) -> std::expected<void, HTTPResponse>
 {
-    auto serverBlock = Config::getServerBlock(Config::config, client.getListenSocketIpPortPair());
+    auto serverBlock = Config::getServerBlock(client.getListenSocketIpPortPair());
     if (!serverBlock.has_value())
     {
         LOG(LogLevel::kDebug, "Server block not found client fd: {}", client.getSocketfd());

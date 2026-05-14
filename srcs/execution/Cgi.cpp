@@ -1,26 +1,97 @@
 #include "Cgi.hpp"
+#include "ConnectionManager.hpp"
+#include "configUtils.hpp"
 #include "connection.hpp"
 #include "logging.hpp"
 #include "parsing.hpp"
+#include <string>
 #include <sys/socket.h> //for socketpair
 #include <unistd.h>     //for dup2, close
 
-std::map<std::string, std::string> Cgi::CgiTypes_ = {{".php", "/usr/bin/php"}, {".sh", "/usr/bin/sh"}};
+Cgi::Cgi() : state_(CgiState::kInit)
+{
+    this->bodyToCgiBytesSend_ = 0;
+}
 
-auto Cgi::isRequestTargetCgi(const std::string target) -> bool
+auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
+{
+    int      fd     = epollEvent.data.fd;
+    uint32_t events = epollEvent.events;
+
+    switch (this->state_)
+    {
+    case CgiState::kInit:
+    {
+        // should not get here.
+    }
+    case CgiState::kSendingBody:
+    {
+        if (!(events & EPOLLOUT))
+            break;
+        ssize_t bytesSend = ConnectionManager::handleSendingEvent(fd, this->bodyToCgi_.substr(this->bodyToCgiBytesSend_));
+
+        if (bytesSend < 0)
+        {
+            LOG(LogLevel::kErrors, "Error during CGI send on fd:{}", fd);
+            return HandleEventResult::kError;
+        }
+        this->bodyToCgiBytesSend_ += bytesSend;
+        if (bytesSend == 0 || this->bodyToCgiBytesSend_ >= this->bodyToCgi_.size())
+        {
+            LOG(LogLevel::kInfo, "CGI finished sending on fd:{}", fd);
+            this->state_ = CgiState::kReceiveCGIResponse;
+            shutdown(fd, SHUT_WR);
+            break;
+        }
+    }
+    case CgiState::kReceiveCGIResponse:
+    {
+        if (!(events & EPOLLIN))
+            break;
+        auto handleReceivingEventResult = ConnectionManager::handleReceivingEvent(fd);
+        if (std::get<ssize_t>(handleReceivingEventResult) < 0)
+        {
+            // error happened but it might be EAGAIN
+            LOG(LogLevel::kDebug, "recv() returned < 0 at fd: {}, closing connection.", fd);
+            ConnectionManager::closeConnection(this->fd_); // TODO: how to handle this error? generate internal server error
+            return HandleEventResult::kError;
+        }
+        if (std::get<ssize_t>(handleReceivingEventResult) == 0)
+        {
+            LOG(LogLevel::kInfo, "CGI finished receiving on fd:{}", fd);
+            // EOF happened
+            // build actual http response for client
+            ConnectionManager::getClient(this->fd_)->setResponse(this->createResponse());
+            ConnectionManager::closeConnection(this->fd_);
+            this->state_ = CgiState::KDone;
+        }
+        this->cgiResponse_ += std::get<std::string>(handleReceivingEventResult);
+        break;
+    }
+    case CgiState::KDone:
+    {
+    }
+
+        return HandleEventResult::kSuccess;
+    }
+    return HandleEventResult::kSuccess;
+}
+
+auto Cgi::isRequestTargetCgi(const std::string target, const Config::Location& location) -> bool
 {
     auto targetSegments = split(target, '/');
     for (std::string& segment : targetSegments.value())
     {
-        if (endsInCgi(segment))
+        if (endsInCgi(segment, location))
             return true;
     }
     return false;
 }
 
-auto Cgi::endsInCgi(const std::string& segment) -> bool
+auto Cgi::endsInCgi(const std::string& segment, const Config::Location& location) -> bool
 {
-    for (auto& [CgiType, CgiPath] : Cgi::CgiTypes_)
+    auto& cgiTypes = location.cgiPaths;
+    for (auto& [CgiType, CgiPath] : cgiTypes)
     {
         if (segment.ends_with(CgiType))
             return true;
@@ -28,9 +99,10 @@ auto Cgi::endsInCgi(const std::string& segment) -> bool
     return false;
 }
 
-auto Cgi::getInterpreterPath(std::string path) -> std::string
+auto Cgi::getInterpreterPath(std::string path, const Config::Location& location) -> std::string
 {
-    for (auto& [CgiType, CgiPath] : Cgi::CgiTypes_)
+    auto& cgiTypes = location.cgiPaths;
+    for (auto& [CgiType, CgiPath] : cgiTypes)
     {
         if (path.ends_with(CgiType))
             return CgiPath;
@@ -38,7 +110,7 @@ auto Cgi::getInterpreterPath(std::string path) -> std::string
     return "";
 }
 
-auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
+auto Cgi::createEnv(const HTTPRequest& request, std::shared_ptr<Client> client) -> std::vector<std::string>
 {
 
     std::vector<std::string> env_strings;
@@ -50,11 +122,11 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     env_strings.push_back("REQUEST_METHOD=" + request.getMessage().method);
 
     if (request.getMessage().headers.contains("content-type"))
-        env_strings.push_back("CONTENT_TYPE=" + request.getMessage().headers["contect-type"][0]);
+        env_strings.push_back("CONTENT_TYPE=" + request.getMessage().headers["content-type"][0]);
     else
         env_strings.push_back("CONTECT_TYPE=application/octet-stream");
     if (request.getMessage().headers.contains("content-length"))
-        env_strings.push_back("CONTENT_LENGTH=" + request.getMessage().headers["contect-length"][0]);
+        env_strings.push_back("CONTENT_LENGTH=" + request.getMessage().headers["content-length"][0]);
     else
         env_strings.push_back("CONTECT_LENGTH=");
 
@@ -62,30 +134,38 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     if (request.getMessage().headers.contains("host"))
     {
         std::string host = request.getMessage().headers["host"][0];
-        env_strings.push_back("SERVER_NAME=" + host.substr(0, host.find_first_of(':')));
+        if (host.find_first_of(':') != std::string::npos)
+            env_strings.push_back("SERVER_NAME=" + host.substr(0, host.find_first_of(':')));
+        else
+            env_strings.push_back("SERVER_NAME=" + host);
     }
     else
     {
-        // TODO: get host from client connection data
+        env_strings.push_back("SERVER_NAME=" + get<std::string>(client->getListenSocketIpPortPair()));
     }
+    env_strings.push_back("SERVER_PORT=" + std::to_string(get<int>(client->getListenSocketIpPortPair())));
 
-    // TODO: REMOTE_ADDR -> get host from client data
-    // TODO: SERVER_PORT -> get port from client data
+    env_strings.push_back("REMOTE_ADDR=" + client->getHost());
+    env_strings.push_back("REMOTE_HOST=" + client->getHost());
 
     std::string target = request.getMessage().requestTarget;
-    std::string query  = target.substr(target.find_first_of('?'));
-    target.erase(target.find_first_of('?'));
+    std::string query  = "";
+    if (target.find_first_of('?') != std::string::npos)
+    {
+        query = target.substr(target.find_first_of('?'));
+        target.erase(target.find_first_of('?'));
+    }
     env_strings.push_back("QUERY_STRING=" + query);
 
     auto        targetSegments = split(target, '/');
-    std::string scriptName;
-    std::string pathInfo;
-    bool        foundScript = false;
+    std::string scriptName     = "";
+    std::string pathInfo       = "";
+    bool        foundScript    = false;
     for (std::string& segment : targetSegments.value())
     {
         if (!foundScript)
         {
-            if (!Cgi::endsInCgi(segment))
+            if (!Cgi::endsInCgi(segment, request.getLocation()))
                 scriptName += ("/" + segment);
             else
             {
@@ -101,9 +181,8 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     this->scriptPath_ = scriptName;
     env_strings.push_back("PATH_INFO=" + pathInfo);
 
-    // TODO ROOT + pathInfo
-    // std::string pathTranslated = (getLocation().root + pathInfo);
-    // env_strings.push_back("PATH_TRANSLATED=" + pathTranslated);
+    std::string pathTranslated = (request.getLocation().root + pathInfo);
+    env_strings.push_back("PATH_TRANSLATED=" + pathTranslated);
 
     for (auto& [key, value] : request.getMessage().headers)
     {
@@ -115,40 +194,53 @@ auto Cgi::createEnv(const HTTPRequest& request) -> std::vector<std::string>
     return env_strings;
 }
 
-static auto headerToEnvVar(std::string header, std::vector<std::string> value) -> std::string
+auto Cgi::headerToEnvVar(std::string header, std::vector<std::string> value) -> std::string
 {
-    std::string envVar;
+    std::string envHeader;
     for (auto& c : header)
     {
         c = std::toupper(static_cast<unsigned char>(c));
         if (c == '-')
             c = '_';
     }
-    envVar.append("HTTP_" + header + "=");
-    for (std::string entry : value)
+    envHeader.append("HTTP_" + header + "=");
+
+    std::string envValue;
+    for (std::string& entry : value)
     {
-        envVar.append(entry);
+        if (!envValue.empty())
+            envValue.append(", ");
+        envValue.append(entry);
     }
-    return envVar;
+    return envHeader + envValue;
 }
 
-auto Cgi::execute(Client& client) -> void
+auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseStatusCode>
 {
-    std::vector<std::string> envStrings = createEnv(client.request); // TODO get this acess to client request
-    this->interpreterPath_              = getInterpreterPath(this->scriptPath_);
-    if (this->interpreterPath_ == "")
-        return; // TODO handle error; maybe place this within child if errors can be dealt with?
-
+    // create socketpair
     int fd[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
-        return; // TODO Handle Error;
+        return std::unexpected(ResponseStatusCode::kInternalServerError);
+    this->fd_ = fd[0];
+
+    // Todo do some more standard execution checking. like, does the script even exist? prepend the relative path
+    this->bodyToCgi_                    = client->getRequest().getMessage().body;
+    std::vector<std::string> envStrings = createEnv(client->getRequest(), client);
+    Config::ServerBlock      block      = Config::getServerBlock(client->getListenSocketIpPortPair()).value();
+    Config::Location         location   = Config::getLocation(block, this->scriptPath_).value();
+    this->interpreterPath_              = getInterpreterPath(this->scriptPath_, location);
+    if (this->interpreterPath_ == "")
+        return std::unexpected(ResponseStatusCode::kNotImplemented);
+
     pid_t pid = fork();
+    if (pid == -1)
+        return std::unexpected(ResponseStatusCode::kInternalServerError);
 
     if (pid == 0)
     {
         // Child.
         if (dup2(fd[1], STDIN_FILENO) == -1 || dup2(fd[1], STDOUT_FILENO) == -1)
-            std::exit(1); // error check? What will epoll do?
+            std::exit(1); // error check? What will epoll do? //make static close and free function in connectionmanager
 
         close(fd[0]); // Close parent side.
         close(fd[1]); // dupped, so can close child side.
@@ -159,21 +251,57 @@ auto Cgi::execute(Client& client) -> void
             envp.push_back(s.data());
         envp.push_back(nullptr);
 
+        std::string cdPath;
+        std::string scriptName;
+        if (scriptPath_.find_last_of('/') != std::string::npos)
+        {
+            cdPath = scriptPath_.substr(0, scriptPath_.find_last_of('/'));
+            if (cdPath.starts_with('/') == true)
+                cdPath.erase(0, 1);
+            scriptName = scriptPath_.substr(scriptPath_.find_last_of('/') + 1);
+        }
+
         // get interpeter and script
         std::vector<char*> argv;
         argv.push_back(interpreterPath_.data());
-        argv.push_back(scriptPath_.data());
+        argv.push_back(scriptName.data());
         argv.push_back(nullptr);
+
+        // TODO?: cd this programm to script folder? 7.2 The current working directory for the script SHOULD be set to the directory containing the script.
+
+        chdir(cdPath.data());
 
         execve(argv[0], argv.data(), envp.data());
         LOG(LogLevel::kErrors, "Execve failed!");
-        std::exit(1); // error check? What will epoll do?
+        std::exit(1); // error check? What will epoll do? //make static close and free function in connectionmanager
     }
     else
     {
         // Parent
         close(fd[1]); // Close child side.
-        this->fd_ = fd[0];
-        // add this fd to epoll
+        return this->fd_;
     }
+}
+
+auto Cgi::createResponse() -> HTTPResponse
+{
+    HTTPResponse response;
+
+    std::string headers = this->cgiResponse_.substr(0, this->cgiResponse_.find("\r\n\r\n") + 4);
+    std::string body    = this->cgiResponse_.substr(this->cgiResponse_.find("\r\n\r\n") + 4);
+
+    std::string firstLine;
+    if (headers.find("Status: ") == std::string::npos)
+        firstLine = "HTTP/1.1 200 OK\r\n";
+    else
+        firstLine = "HTTP/1.1 " + headers.substr(headers.find("Status: ") + 8, headers.find("\r\n", headers.find("Status: ")));
+
+    if (headers.find("Content-Length: ") == std::string::npos)
+    {
+        std::string contentLenght = "content-length: " + std::to_string(body.size());
+        headers.insert(0, contentLenght);
+    }
+
+    response.setPacket(firstLine + headers + body);
+    return response;
 }

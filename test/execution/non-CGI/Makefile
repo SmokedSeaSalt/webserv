@@ -35,7 +35,8 @@ SRC =	main.cpp \
 		configUtils.cpp \
 		Client.cpp \
 		ConnectionManager.cpp \
-		connectionHelpers.cpp
+		connectionHelpers.cpp \
+		Cgi.cpp 
 
 
 INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/logging -I$(ROOT_DIR)/incl/connection

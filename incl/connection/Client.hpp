@@ -1,6 +1,7 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include "Cgi.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include "connection.hpp"
@@ -18,10 +19,11 @@ enum class ClientState
     Error,
 };
 
-class Client
+class Client : public std::enable_shared_from_this<Client>
+
 {
     public:
-        Client(int socketfd, int listendSocketPort, std::tuple<std::string, int>& listenSocketIpPortPair, std::string service, std::string host);
+        Client(int socketfd, int listendSocketPort, std::tuple<std::string, int> listenSocketIpPortPair, std::string service, std::string host);
         auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
 
         // get/set
@@ -51,14 +53,17 @@ class Client
 
     private:
         int                          socketfd_;
+        int                          cgifd_;
         int                          listenSocketPort_;
         std::tuple<std::string, int> listenSocketIpPortPair_;
         std::string                  service_;
         std::string                  host_;
+        bool                         requestIsCgi_;
 
         ClientState  state_;
         HTTPRequest  request_;
         HTTPResponse response_;
+        Cgi          CgiHandler_;
         ErrorType    error_;
 };
 

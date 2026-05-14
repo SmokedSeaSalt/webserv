@@ -21,40 +21,49 @@
 
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
+#include "configParsing.hpp"
+#include "configUtils.hpp"
+#include "connection.hpp"
 #include <map>
 #include <string>
+#include <sys/epoll.h>
+
+enum class HandleEventResult;
+class Client;
 
 enum class CgiState
 {
-    kCreateEnv,
-    kExecute,
+    kInit,
+    kSendingBody,
     kReceiveCGIResponse,
-    kBuildHTTPResponse,
     KDone,
 };
 
 class Cgi
 {
     public:
-        auto createEnv(const HTTPRequest& request) -> std::vector<std::string>;
-        auto newData(std::string data) -> void;
-        auto execute(Client& client) -> void;
-        auto createPacket() -> std::string;
+        Cgi();
+        auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
+        auto init(std::shared_ptr<Client> client) -> std::expected<int, ResponseStatusCode>;
+        auto createResponse() -> HTTPResponse;
+
+        static auto isRequestTargetCgi(const std::string target, const Config::Location& location) -> bool;
 
     private:
-        CgiState     state_;
-        HTTPResponse response_;
-        int          fd_;
-        std::string  scriptPath_;
-        std::string  interpreterPath_;
+        size_t      bodyToCgiBytesSend_;
+        std::string bodyToCgi_;
+        std::string cgiResponse_;
+        CgiState    state_;
+        int         fd_;
+        std::string scriptPath_;
+        std::string interpreterPath_;
 
-        static auto endsInCgi(const std::string& segment) -> bool;
-        static auto isRequestTargetCgi(const std::string target) -> bool;
-
+        auto        newData(std::string data) -> void;
+        auto        createEnv(const HTTPRequest& request, std::shared_ptr<Client> client) -> std::vector<std::string>;
         static auto headerToEnvVar(std::string header, std::vector<std::string> value) -> std::string;
 
-        static std::map<std::string, std::string> CgiTypes_;
-        static auto                               getInterpreterPath(std::string) -> std::string;
+        static auto endsInCgi(const std::string& segment, const Config::Location& location) -> bool;
+        static auto getInterpreterPath(std::string path, const Config::Location& location) -> std::string;
 };
 
 #endif // CGI_HPP

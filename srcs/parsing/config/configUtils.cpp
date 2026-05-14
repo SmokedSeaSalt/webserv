@@ -7,7 +7,7 @@
 namespace Config
 {
 
-auto getServerBlock(Config& config, const std::tuple<std::string, int>& listenSocketIpPortPair) -> std::expected<ServerBlock, std::string>
+auto getServerBlock(const std::tuple<std::string, int>& listenSocketIpPortPair) -> std::expected<ServerBlock, std::string>
 {
     for (ServerBlock& serverBlock : config.serverBlocks)
     {
