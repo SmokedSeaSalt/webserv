@@ -150,7 +150,11 @@ auto isDirectiveAlone(std::string directive, const std::map<std::string, bool>& 
 auto isUploadStoreLocationValid(Location location, const std::map<std::string, bool>& visited) -> std::expected<void, std::string>
 {
     if (!visited.at("upload_store"))
+    {
+        if (location.acceptedMethods.postAllowed)
+            return std::unexpected("Method post only allowed if upload_store present");
         return {};
+    }
 
     if (!visited.at("methods"))
         return std::unexpected("Locations with upload_store should have a methods directive");
