@@ -210,13 +210,6 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
             res = isUploadStoreLocationValid(location, visited);
             if (!res.has_value())
                 return std::unexpected(res.error());
-            if (location.uploadAllowed)
-            {
-                std::string tmpUploadLocation;
-                if (location.uploadLocation.length() > 0 && location.uploadLocation[0] == '/')
-                    tmpUploadLocation = location.uploadLocation.substr(1);
-                location.absoluteUploadStorePath = std::filesystem::path(InputArgs::args.relativePath) / tmpUploadLocation;
-            }
             return location;
         }
         if (buf.empty())

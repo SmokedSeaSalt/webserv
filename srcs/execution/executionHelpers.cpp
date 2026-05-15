@@ -181,9 +181,14 @@ auto deleteFile(std::string pathString) -> std::expected<void, ResponseStatusCod
 /// @brief request.pathAfterLocation should be set already
 /// @param request
 /// @return
-auto getAbsFilePath(HTTPRequest& request) -> std::string
+auto getAbsFilePath(HTTPRequest& request, bool useUploadStoreRoot = false) -> std::string
 {
-    std::string root              = request.getLocation().root;
+    std::string root;
+
+    if (useUploadStoreRoot)
+        root = request.getLocation().uploadLocation;
+    else
+        root = request.getLocation().root;
     std::string pathAfterLocation = request.getMessage().pathAfterLocation;
 
     // -p "/home/egrisel/webserv", root ""

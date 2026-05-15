@@ -44,7 +44,6 @@ struct Location
         bool                               uploadsAllowed = false;   // upload_store
         std::string                        uploadLocation;           // upload_store
         std::map<std::string, std::string> cgiPaths;                 // cgi <cgi type, cgi path>
-        std::string                        absoluteUploadStorePath;  // upload -p path flag + upload store path. the location to upload files with post
 };
 
 struct ServerBlock

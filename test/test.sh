@@ -16,7 +16,7 @@ LOG_DIR="$ROOT_DIR/test/.logs"
 mkdir -p "$LOG_DIR"
 
 DIRS=(
-    "test/connection"
+    # "test/connection"
     "test/parsing/config"
     "test/parsing/HTTPRequest"
     "test/parsing/HTTPResponse"

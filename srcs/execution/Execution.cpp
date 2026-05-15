@@ -44,7 +44,10 @@ auto setupRequestForExecution(Client& client) -> std::expected<void, HTTPRespons
 
     client.getRequest().setpathAfterLocation(getPathAfterLocation(client));
 
-    client.getRequest().setAbsoluteTarget(getAbsFilePath(client.getRequest()));
+    if (client.getRequest().getMessage().method == "POST" || client.getRequest().getMessage().method == "DELETE")
+        client.getRequest().setAbsoluteTarget(getAbsFilePath(client.getRequest(), true));
+    else
+        client.getRequest().setAbsoluteTarget(getAbsFilePath(client.getRequest()));
 
     return {};
 }
