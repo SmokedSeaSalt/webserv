@@ -54,7 +54,7 @@ class Client : public std::enable_shared_from_this<Client>
         auto setListenSocketIpPortPair(std::tuple<std::string, int>) -> void;
         auto getListenSocketIpPortPair() -> std::tuple<std::string, int>;
 
-        auto updateLastActivityTime() -> void;
+        auto                                  updateLastActivityTime() -> void;
         std::chrono::steady_clock::time_point getLastActivity();
 
     private:
