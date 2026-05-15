@@ -86,6 +86,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
 
 auto ConnectionManager::closeConnection(int fd) -> void
 {
+    epoll_ctl(epollfd_, EPOLL_CTL_DEL, fd, NULL);
     if (close(fd) == -1)
         LOG(LogLevel::kDebug, "failed to close client fd: {}", fd);
     else
@@ -184,6 +185,23 @@ auto ConnectionManager::connectionManagerCleanup() -> void
             kill(cgiPID, SIGTERM); // todo SIGTERM or SIGKILL
             waitpid(cgiPID, NULL, 0);
         }
+        closeConnection(fd);
+    }
+}
+
+auto ConnectionManager::processTimeouts() -> void
+{
+    std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+    std::vector<int>                      fdsToClose;
+    for (const auto& [fd, client] : clientMap_)
+    {
+        auto idleSeconds = std::chrono::duration_cast<std::chrono::seconds>(now - client->getLastActivity()).count();
+        if (idleSeconds > clientTimeoutSeconds_)
+            fdsToClose.push_back(fd);
+    }
+    for (int fd : fdsToClose)
+    {
+        LOG(LogLevel::kDebug, "Client fd: {} timed out", fd);
         closeConnection(fd);
     }
 }

@@ -54,7 +54,6 @@ class Client : public std::enable_shared_from_this<Client>
         auto setListenSocketIpPortPair(std::tuple<std::string, int>) -> void;
         auto getListenSocketIpPortPair() -> std::tuple<std::string, int>;
 
-        auto                                  updateLastActivityTime() -> void;
         std::chrono::steady_clock::time_point getLastActivity();
 
     private:
@@ -73,6 +72,8 @@ class Client : public std::enable_shared_from_this<Client>
         HTTPResponse response_;
         Cgi          CgiHandler_;
         ErrorType    error_;
+
+        auto updateLastActivityTime() -> void;
 };
 
 #endif // CLIENT_HPP

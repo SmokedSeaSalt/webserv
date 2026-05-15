@@ -32,9 +32,12 @@ class ConnectionManager
 
         static auto connectionManagerCleanup() -> void;
 
+        static auto processTimeouts() -> void;
+
     private:
         static std::map<int, std::shared_ptr<Client>> clientMap_;
         static int                                    epollfd_;
+        static const int                              clientTimeoutSeconds_ = 10;
 
         // auto logNewConnection(int connectionSocket, sockaddr_storage clientAddress, socklen_t addressLen) -> void;
 };
