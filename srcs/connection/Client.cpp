@@ -227,3 +227,13 @@ auto Client::getCgiPID() -> int
 {
     return this->cgiPID_;
 }
+
+void Client::updateLastActivityTime()
+{
+    lastActivityTime_ = std::chrono::steady_clock::now();
+}
+
+std::chrono::steady_clock::time_point Client::getLastActivity()
+{
+    return lastActivityTime_;
+}
