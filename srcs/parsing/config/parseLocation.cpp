@@ -138,6 +138,36 @@ static auto parseCGI(Location& location, std::vector<std::string> tokens)
     return {};
 }
 
+auto isDirectiveAlone(std::string directive, const std::map<std::string, bool>& visited) -> std::expected<void, std::string>
+{
+    if (visited.at(directive))
+        for (const auto& curDirective : visited)
+            if (curDirective.first != directive && curDirective.second)
+                return std::unexpected("No other directives allowed with " + directive + " in location block");
+    return {};
+}
+
+auto isUploadStoreLocationValid(Location location, const std::map<std::string, bool>& visited) -> std::expected<void, std::string>
+{
+    if (!visited.at("upload_store"))
+        return {};
+
+    if (!visited.at("methods"))
+        return std::unexpected("Locations with upload_store should have a methods directive");
+    
+    if (!location.acceptedMethods.postAllowed || location.acceptedMethods.getAllowed || location.acceptedMethods.headAllowed || location.acceptedMethods.deleteAllowed)
+        return std::unexpected("Locations with upload_store should only have method post");
+    
+    for (const auto& curDirective : visited)
+    {
+        if ((curDirective.first == "upload_store" && curDirective.second) || (curDirective.first == "methods" && curDirective.second))
+            continue;
+        if (curDirective.second)
+            return std::unexpected("No other directives allowed with upload_store and methods in location block");
+    }
+    return {};
+}
+
 auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
     -> std::expected<Location, std::string>
 {
@@ -168,10 +198,12 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
         buf = stringTrim(buf);
         if (buf == "}")
         {
-            if (visited["return"])
-                for (const auto& directive : visited)
-                    if (directive.first != "return" && directive.second)
-                        return std::unexpected("No other directives allowed with 'return' in location block");
+            auto res = isDirectiveAlone("return", visited);
+            if (!res.has_value())
+                return std::unexpected(res.error());
+            res = isUploadStoreLocationValid(location, visited);
+            if (!res.has_value())
+                return std::unexpected(res.error());
             return location;
         }
         if (buf.empty())
