@@ -152,15 +152,17 @@ auto isUploadStoreLocationValid(Location location, const std::map<std::string, b
     if (!visited.at("upload_store"))
     {
         if (location.acceptedMethods.postAllowed)
-            return std::unexpected("Method post only allowed if upload_store present");
+            return std::unexpected("Method POST only allowed if upload_store present");
+        if (location.acceptedMethods.deleteAllowed)
+            return std::unexpected("Method DELETE only allowed if upload_store present");
         return {};
     }
 
     if (!visited.at("methods"))
         return std::unexpected("Locations with upload_store should have a methods directive");
     
-    if (!location.acceptedMethods.postAllowed || location.acceptedMethods.getAllowed || location.acceptedMethods.headAllowed || location.acceptedMethods.deleteAllowed)
-        return std::unexpected("Locations with upload_store should only have method post");
+    if (!(location.acceptedMethods.postAllowed || location.acceptedMethods.deleteAllowed) || location.acceptedMethods.getAllowed || location.acceptedMethods.headAllowed)
+        return std::unexpected("Locations with upload_store should only contain POST and/or DELETE and must not contain any other methods");
     
     for (const auto& curDirective : visited)
     {
@@ -208,6 +210,13 @@ auto parseLocation(std::ifstream& inFile, std::string pathPrefix)
             res = isUploadStoreLocationValid(location, visited);
             if (!res.has_value())
                 return std::unexpected(res.error());
+            if (location.uploadAllowed)
+            {
+                std::string tmpUploadLocation;
+                if (location.uploadLocation.length() > 0 && location.uploadLocation[0] == '/')
+                    tmpUploadLocation = location.uploadLocation.substr(1);
+                location.absoluteUploadStorePath = std::filesystem::path(InputArgs::args.relativePath) / tmpUploadLocation;
+            }
             return location;
         }
         if (buf.empty())
