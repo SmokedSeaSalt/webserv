@@ -160,10 +160,10 @@ auto isUploadStoreLocationValid(Location location, const std::map<std::string, b
 
     if (!visited.at("methods"))
         return std::unexpected("Locations with upload_store should have a methods directive");
-    
+
     if (!(location.acceptedMethods.postAllowed || location.acceptedMethods.deleteAllowed) || location.acceptedMethods.getAllowed || location.acceptedMethods.headAllowed)
         return std::unexpected("Locations with upload_store should only contain POST and/or DELETE and must not contain any other methods");
-    
+
     for (const auto& curDirective : visited)
     {
         if ((curDirective.first == "upload_store" && curDirective.second) || (curDirective.first == "methods" && curDirective.second))
