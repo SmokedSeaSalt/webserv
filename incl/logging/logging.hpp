@@ -32,7 +32,7 @@ struct Logger
 inline Logger g_logger;
 
 auto level_name(LogLevel level) -> std::string_view;
-auto init(const char* path, LogLevel level) -> void;
+auto init(std::string path, LogLevel level) -> void;
 
 template <typename... Args>
 auto log_impl(LogLevel level, std::source_location locaction, std::format_string<Args...> format, Args&&... args) -> void
