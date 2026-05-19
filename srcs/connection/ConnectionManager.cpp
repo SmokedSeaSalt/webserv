@@ -180,7 +180,7 @@ auto ConnectionManager::connectionManagerCleanup() -> void
     {
         int   fd     = it->first;
         auto& client = it->second;
-        cgiPID = client->getCgiPID();
+        cgiPID       = client->getCgiPID();
         if (cgiPID > 0)
         {
             kill(cgiPID, SIGTERM); // todo SIGTERM or SIGKILL
