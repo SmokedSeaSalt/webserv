@@ -1,6 +1,7 @@
 #include "ConnectionManager.hpp"
 #include "Client.hpp"
 #include "logging.hpp"
+#include "InputArgs.hpp"
 #include <arpa/inet.h> // for client logging
 #include <netdb.h>     // for client logging
 #include <netinet/in.h>
@@ -191,12 +192,15 @@ auto ConnectionManager::connectionManagerCleanup() -> void
 
 auto ConnectionManager::processTimeouts() -> void
 {
+    unsigned int timeout = InputArgs::args.timeout;
+    if (timeout == 0)
+        return;
     std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
     std::vector<int>                      fdsToClose;
     for (const auto& [fd, client] : clientMap_)
     {
         auto idleSeconds = std::chrono::duration_cast<std::chrono::seconds>(now - client->getLastActivity()).count();
-        if (idleSeconds > clientTimeoutSeconds_)
+        if (idleSeconds > timeout)
             fdsToClose.push_back(fd);
     }
     for (int fd : fdsToClose)
