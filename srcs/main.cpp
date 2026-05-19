@@ -22,7 +22,7 @@ int main(int argc, char** argv)
         return 1;
     }
     Server server = Server();
-    ret = server.setup();
+    ret           = server.setup();
     if (!ret.has_value())
     {
         std::cerr << ret.error() << "Setup failed. Shutting down webserv" << std::endl;
