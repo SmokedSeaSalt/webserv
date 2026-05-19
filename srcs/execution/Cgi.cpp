@@ -8,7 +8,7 @@
 #include <sys/socket.h> //for socketpair
 #include <unistd.h>     //for dup2, close
 
-Cgi::Cgi() : state_(CgiState::kInit)
+Cgi::Cgi() : state_(CgiState::KDone)
 {
     this->bodyToCgiBytesSend_ = 0;
 }
@@ -25,11 +25,6 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
 
     switch (this->state_)
     {
-    case CgiState::kInit:
-    {
-        // should not get here.
-        break;
-    }
     case CgiState::kSendingBody:
     {
         if (!(events & EPOLLOUT))
@@ -81,8 +76,8 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
     }
     case CgiState::KDone:
     {
-    }
         return HandleEventResult::kSuccess;
+    }
     }
     return HandleEventResult::kSuccess;
 }

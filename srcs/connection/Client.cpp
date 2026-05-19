@@ -122,32 +122,28 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         {
             LOG(LogLevel::kInfo, "Response finished sending on fd:{}", fd);
             this->response_.setSendState(SendState::kDone);
-            this->state_ = ClientState::Sent;
+            finishRequest();
             break;
         }
 
         break;
     }
-    case ClientState::Sent:
-    {
-        if (this->response_.getKeepAlive() == false)
-            ConnectionManager::closeConnection(this->getSocketfd());
-        else
-        {
-            // Todo Reset CGI stuff
-            this->request_  = {};
-            this->response_ = {};
-            this->state_    = ClientState::Receiving;
-            LOG(LogLevel::kDebug, "Client socket at fd: {} being kept alive", fd);
-        }
-        break;
-    }
-    case ClientState::Closed:
-        break;
-    case ClientState::Error:
-        break;
     }
     return HandleEventResult::kSuccess;
+}
+
+auto Client::finishRequest() -> void
+{
+    if (this->response_.getKeepAlive() == false)
+        ConnectionManager::closeConnection(this->getSocketfd());
+    else
+    {
+        // Todo Reset CGI stuff
+        this->request_  = {};
+        this->response_ = {};
+        this->state_    = ClientState::Receiving;
+        LOG(LogLevel::kDebug, "Client socket at fd: {} being kept alive", fd);
+    }
 }
 
 auto Client::setSocketfd(int arg) -> void

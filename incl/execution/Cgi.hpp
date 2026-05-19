@@ -33,7 +33,6 @@ class Client;
 
 enum class CgiState
 {
-    kInit,
     kSendingBody,
     kReceiveCGIResponse,
     KDone,

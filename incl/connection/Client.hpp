@@ -14,9 +14,6 @@ enum class ClientState
     Receiving,
     Processing,
     Sending,
-    Sent,
-    Closed,
-    Error,
 };
 
 class Client : public std::enable_shared_from_this<Client>
