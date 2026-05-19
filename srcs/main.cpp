@@ -18,9 +18,15 @@ int main(int argc, char** argv)
     if (Signals::initSignals() == -1)
     {
         LOG(LogLevel::kInfo, "initSignals failed. Shutting down.");
+        std::cerr << ret.error() << "Config parsing error. Shutting down webserv" << std::endl;
         return 1;
     }
     Server server = Server();
-    server.setup();
+    ret           = server.setup();
+    if (!ret.has_value())
+    {
+        std::cerr << ret.error() << "Setup failed. Shutting down webserv" << std::endl;
+        return 1;
+    }
     server.connection_loop();
 }
