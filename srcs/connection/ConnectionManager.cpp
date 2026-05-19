@@ -176,14 +176,20 @@ auto ConnectionManager::getClient(int fd) -> std::shared_ptr<Client>
 auto ConnectionManager::connectionManagerCleanup() -> void
 {
     int cgiPID;
-    for (auto& [fd, client] : clientMap_)
+    for (auto it = clientMap_.begin(); it != clientMap_.end();)
     {
+        int   fd     = it->first;
+        auto& client = it->second;
         cgiPID = client->getCgiPID();
         if (cgiPID > 0)
         {
             kill(cgiPID, SIGTERM); // todo SIGTERM or SIGKILL
             waitpid(cgiPID, NULL, 0);
         }
-        closeConnection(fd);
+        if (close(fd) == -1)
+            LOG(LogLevel::kDebug, "failed to close client fd: {}", fd);
+        else
+            LOG(LogLevel::kDebug, "Closed client fd: {}. Erasing from clientMap_", fd);
+        it = clientMap_.erase(it);
     }
 }
