@@ -12,6 +12,7 @@ Client::Client(int socketfd, int listenSocketPort, std::tuple<std::string, int> 
     this->state_        = ClientState::Receiving;
     this->error_        = ErrorType::None;
     this->requestIsCgi_ = false;
+    this->updateLastActivityTime();
 };
 
 auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
@@ -33,6 +34,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             ConnectionManager::closeConnection(this->getSocketfd());
             return HandleEventResult::kError;
         }
+        this->updateLastActivityTime();
         this->request_.newData(std::get<std::string>(handleReceivingEventResult));
         if (this->request_.getState() != RequestState::KDone)
             break;
@@ -105,7 +107,6 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         if (!(this->response_.getSendState() == SendState::kSending))
             break; // should never get in this state
         ssize_t bytesSend = ConnectionManager::handleSendingEvent(fd, this->response_.getRemainingPacket());
-
         if (bytesSend < 0)
         {
             this->response_.setSendState(SendState::kFailed);
@@ -113,6 +114,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             return HandleEventResult::kError;
             // todo handle error
         }
+        this->updateLastActivityTime();
         this->response_.incrementTotalBytesSent(bytesSend);
         if (bytesSend == 0 || this->response_.getRemainingPacketLen() == 0)
         {
@@ -226,4 +228,14 @@ auto Client::setCgiPID(int pid) -> void
 auto Client::getCgiPID() -> int
 {
     return this->cgiPID_;
+}
+
+void Client::updateLastActivityTime()
+{
+    lastActivityTime_ = std::chrono::steady_clock::now();
+}
+
+std::chrono::steady_clock::time_point Client::getLastActivity()
+{
+    return lastActivityTime_;
 }

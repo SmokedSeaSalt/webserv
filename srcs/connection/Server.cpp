@@ -84,7 +84,10 @@ auto Server::setupListenSocket(std::string ip, int port) -> std::expected<int, s
 auto Server::closeListenSockets() -> void
 {
     for (const auto& [fd, ipPortPair] : listenSocketFdToIpPortPair_)
+    {
+        epoll_ctl(epollfd_, EPOLL_CTL_DEL, fd, NULL);
         close(fd);
+    }
 }
 
 auto Server::setupListenSockets() -> std::expected<void, std::string>
@@ -134,7 +137,8 @@ auto Server::connection_loop() -> std::expected<void, std::string>
 
     while (true)
     {
-        nfds = epoll_wait(epollfd_, events_, MAX_EVENTS, -1);
+        int epollTimeoutMs = 1000;
+        nfds               = epoll_wait(epollfd_, events_, MAX_EVENTS, epollTimeoutMs);
         if (nfds == -1)
         {
             LOG(LogLevel::kDebug, "Epoll wait returned -1");
@@ -152,6 +156,7 @@ auto Server::connection_loop() -> std::expected<void, std::string>
                 ConnectionManager::handleEvent(events_[n]);
             }
         }
+        ConnectionManager::processTimeouts();
         if (Signals::shouldShutdown == true)
         {
             LOG(LogLevel::kDebug, "Terminating connection loop.");
@@ -170,9 +175,9 @@ auto Server::getListenSockets() -> std::set<int>
 
 auto Server::serverCleanup() -> void
 {
-    close(epollfd_);
-    closeListenSockets();
     ConnectionManager::connectionManagerCleanup();
+    closeListenSockets();
+    close(epollfd_);
 }
 
 // Server

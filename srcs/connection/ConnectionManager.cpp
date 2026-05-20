@@ -1,5 +1,6 @@
 #include "ConnectionManager.hpp"
 #include "Client.hpp"
+#include "InputArgs.hpp"
 #include "logging.hpp"
 #include <arpa/inet.h> // for client logging
 #include <netdb.h>     // for client logging
@@ -86,6 +87,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
 
 auto ConnectionManager::closeConnection(int fd) -> void
 {
+    epoll_ctl(epollfd_, EPOLL_CTL_DEL, fd, NULL);
     if (close(fd) == -1)
         LOG(LogLevel::kDebug, "failed to close client fd: {}", fd);
     else
@@ -175,15 +177,33 @@ auto ConnectionManager::getClient(int fd) -> std::shared_ptr<Client>
 
 auto ConnectionManager::connectionManagerCleanup() -> void
 {
-    int cgiPID;
-    for (auto& [fd, client] : clientMap_)
+    std::vector<int> fdsToClose;
+    for (const auto& [fd, client] : clientMap_)
     {
-        cgiPID = client->getCgiPID();
-        if (cgiPID > 0)
-        {
-            kill(cgiPID, SIGTERM); // todo SIGTERM or SIGKILL
-            waitpid(cgiPID, NULL, 0);
-        }
+        fdsToClose.push_back(fd);
+    }
+    for (int fd : fdsToClose)
+    {
+        closeConnection(fd);
+    }
+}
+
+auto ConnectionManager::processTimeouts() -> void
+{
+    unsigned int timeout = InputArgs::args.timeout;
+    if (timeout == 0)
+        return;
+    std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+    std::vector<int>                      fdsToClose;
+    for (const auto& [fd, client] : clientMap_)
+    {
+        auto idleSeconds = std::chrono::duration_cast<std::chrono::seconds>(now - client->getLastActivity()).count();
+        if (idleSeconds > timeout)
+            fdsToClose.push_back(fd);
+    }
+    for (int fd : fdsToClose)
+    {
+        LOG(LogLevel::kDebug, "Client fd: {} timed out", fd);
         closeConnection(fd);
     }
 }

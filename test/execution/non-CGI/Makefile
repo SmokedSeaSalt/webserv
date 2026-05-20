@@ -44,6 +44,33 @@ INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT
 OBJ = $(addprefix $(BUILD_DIR)/,$(patsubst %.cpp,%.o,$(SRC)))
 DEP = $(OBJ:.o=.d)
 
+# Link against central object files if LINK_ONLY is set
+ifdef LINK_ONLY
+  CENTRAL_BUILD_DIR = $(ROOT_DIR)/build
+  CENTRAL_OBJS = $(CENTRAL_BUILD_DIR)/parseConfig.o \
+                 $(CENTRAL_BUILD_DIR)/parseLocation.o \
+                 $(CENTRAL_BUILD_DIR)/parseServerBlock.o \
+                 $(CENTRAL_BUILD_DIR)/Execution.o \
+                 $(CENTRAL_BUILD_DIR)/HTTPResponse.o \
+                 $(CENTRAL_BUILD_DIR)/HTTPRequest.o \
+                 $(CENTRAL_BUILD_DIR)/executionHelpers.o \
+                 $(CENTRAL_BUILD_DIR)/HTTPRules.o \
+                 $(CENTRAL_BUILD_DIR)/parsing.o \
+                 $(CENTRAL_BUILD_DIR)/stringTrim.o \
+                 $(CENTRAL_BUILD_DIR)/split.o \
+                 $(CENTRAL_BUILD_DIR)/contentType.o \
+                 $(CENTRAL_BUILD_DIR)/logging.o \
+                 $(CENTRAL_BUILD_DIR)/loggingHelpers.o \
+                 $(CENTRAL_BUILD_DIR)/configUtils.o \
+                 $(CENTRAL_BUILD_DIR)/Client.o \
+                 $(CENTRAL_BUILD_DIR)/ConnectionManager.o \
+                 $(CENTRAL_BUILD_DIR)/connectionHelpers.o \
+                 $(CENTRAL_BUILD_DIR)/Cgi.o
+  LINK_OBJS = $(CENTRAL_OBJS) $(BUILD_DIR)/main.o
+else
+  LINK_OBJS = $(OBJ)
+endif
+
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing/config
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing
 vpath %.cpp .:$(ROOT_DIR)/srcs/execution
@@ -62,9 +89,13 @@ all: $(NAME)
 run: all
 	@./$(NAME) -ni -nv
 
-$(NAME): $(DOCTEST) $(OBJ) Makefile
-	@$(CPP) $(LDFLAGS) $(OBJ) -o $@
+$(NAME): $(DOCTEST) $(LINK_OBJS) Makefile
+	@$(CPP) $(LDFLAGS) $(LINK_OBJS) -o $@
 	@printf "$(COLOUR_GREEN)Compilation done👍\n$(COLOUR_END)"
+
+$(BUILD_DIR)/main.o: main.cpp Makefile | $(BUILD_DIR)
+	@printf "$(COLOUR_BLUE)Compiling $< \n$(COLOUR_END)"
+	@$(CPP) $(CPPFLAGS) $(INCLUDE_FLAGS) -c $< -o $@ -MF $(BUILD_DIR)/main.d
 
 $(BUILD_DIR)/%.o: %.cpp Makefile | $(BUILD_DIR)
 	@printf "$(COLOUR_BLUE)Compiling $< \n$(COLOUR_END)"
