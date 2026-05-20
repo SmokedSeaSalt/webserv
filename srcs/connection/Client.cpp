@@ -40,73 +40,25 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             break;
         LOG(LogLevel::kInfo, "Packet received from fd:{} with content:\n{}\n", fd, getHTTPMessageString(this->request_.getMessage()));
 
-        // execution
-        //      preprocessing
-        //           do config check
-        //           do cgi check
-        //           add optional flag paths
-        //      if cgi -> prepare everything for cgi
-        //      if normal ->
-
-        // TODO put this below in helper function until --delim--
-        // also check if is cgi set in location in config
-        Config::ServerBlock block    = Config::getServerBlock(this->getListenSocketIpPortPair()).value();
-        Config::Location    location = Config::getLocation(block, this->request_.getMessage().requestTarget).value();
-        this->requestIsCgi_          = Cgi::isRequestTargetCgi(this->request_.getMessage().requestTarget, location); // need absolute path? is it already set?
-        if (this->requestIsCgi_)
-        {
-            auto CgiInitRet = this->CgiHandler_.init(shared_from_this()); // Todo: error handling for this.
-            if (!CgiInitRet.has_value())
-            {
-                this->response_.setPacket(this->response_.createPacket(CgiInitRet.error()));
-                this->response_.setSendState(SendState::kReady);
-                this->requestIsCgi_ = false;
-                break;
-            }
-            this->cgifd_ = CgiInitRet.value();
-            this->state_ = ClientState::Processing;
-        }
-        else
-        {
-            this->response_ = Execution::execute(*this);
-            if (this->response_.getSendState() == SendState::kReady) // should all be in execute
-            {
-                std::string packet = this->response_.createPacket();
-                LOG(LogLevel::kInfo, "Packet created for fd:{}", fd);
-                LOG(LogLevel::kVerbose, "with content:\n{}\n", packet);
-
-                this->response_.setPacket(packet);
-                this->response_.setSendState(SendState::kSending);
-                this->state_ = ClientState::Sending;
-            }
-        }
-
-        // --delim--
+        execute();
+        if (!this->requestIsCgi_)
+            prepareResponseForSending();
 
         break;
     }
     case ClientState::Processing:
-    { // only handle cgi events here
+    {
         if (this->requestIsCgi_ && fd == this->cgifd_)
         {
-            if (CgiHandler_.handleEvent(epollEvent) == HandleEventResult::kError) // TODO: error handling if fails should try to make internal server error to send to client
+            if (CgiHandler_.handleEvent(epollEvent) == HandleEventResult::kError)
             {
                 LOG(LogLevel::kErrors, "CGI Error. Creating internal server error packet.");
-                this->response_.clearAllHeaders();
-                std::string packet = this->response_.createPacket(ResponseStatusCode::kInternalServerError);
-                LOG(LogLevel::kInfo, "Packet created for fd:{}", fd);
-                LOG(LogLevel::kVerbose, "with content:\n{}\n", packet);
-
-                this->response_.setPacket(packet);
-                this->response_.setSendState(SendState::kSending);
-                this->state_ = ClientState::Sending;
+                this->response_ = Execution::buildErrorResponse(*this, ResponseStatusCode::kInternalServerError);
+                prepareResponseForSending();
                 break;
             }
             if (CgiHandler_.getState() == CgiState::KDone)
-            {
-                this->state_ = ClientState::Sending;
-                this->response_.setSendState(SendState::kSending);
-            }
+                prepareResponseForSending();
             break;
         }
         break;
@@ -115,8 +67,8 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
     {
         if (!(events & EPOLLOUT))
             break;
-        if (!(this->response_.getSendState() == SendState::kSending))
-            break; // should never get in this state
+        // if (!(this->response_.getSendState() == SendState::kSending))
+        //     break; // should never get in this state
         ssize_t bytesSend = ConnectionManager::handleSendingEvent(fd, this->response_.getRemainingPacket());
         if (bytesSend < 0)
         {
@@ -139,6 +91,68 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
     }
     }
     return HandleEventResult::kSuccess;
+}
+
+auto Client::prepareResponseForSending() -> void
+{
+    HTTPMessage requestMessage = this->getRequest().getMessage();
+
+    if (requestMessage.headers.contains("connection") && requestMessage.headers.at("connection")[0] == "close")
+    {
+        this->response_.setKeepAlive(false);
+        this->response_.setHeader("connection", "close");
+    }
+    else
+    {
+        this->response_.setKeepAlive(true);
+        this->response_.setHeader("connection", "keep-alive");
+    }
+
+    std::string packet = this->response_.createPacket();
+    LOG(LogLevel::kInfo, "Packet created for fd:{}", this->socketfd_);
+    LOG(LogLevel::kVerbose, "with content:\n{}\n", packet);
+
+    this->response_.setPacket(packet);
+    this->response_.setSendState(SendState::kSending);
+    this->state_ = ClientState::Sending;
+}
+
+auto Client::execute() -> void
+{
+    // execution
+    //      preprocessing
+    //           do config check
+    //           do cgi check
+    //           add optional flag paths
+    //      if cgi -> prepare everything for cgi
+    //      if normal ->
+
+    auto setupResult = Execution::setupRequestForExecution(*this);
+    if (!setupResult.has_value())
+    {
+        this->response_ = setupResult.error();
+        return;
+    }
+
+    // also check if is cgi set in location in config
+
+    if (this->requestIsCgi_)
+    {
+        auto CgiInitRet = this->CgiHandler_.init(shared_from_this());
+        if (!CgiInitRet.has_value())
+        {
+            this->response_     = Execution::buildErrorResponse(*this, CgiInitRet.error());
+            this->requestIsCgi_ = false;
+            return;
+        }
+        this->cgifd_ = CgiInitRet.value();
+        this->state_ = ClientState::Processing;
+    }
+    else
+    {
+        this->response_ = Execution::executeNonCGI(*this);
+    }
+    return;
 }
 
 /// @brief checks if the connection should be closed
@@ -227,6 +241,15 @@ auto Client::setListenSocketIpPortPair(std::tuple<std::string, int> arg) -> void
 auto Client::getListenSocketIpPortPair() -> std::tuple<std::string, int>
 {
     return this->listenSocketIpPortPair_;
+}
+
+auto Client::setRequestIsCgi(bool isCgi) -> void
+{
+    this->requestIsCgi_ = isCgi;
+}
+auto Client::getRequestIsCgi() -> bool
+{
+    return this->requestIsCgi_;
 }
 
 auto Client::setCgiPID(int pid) -> void

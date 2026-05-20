@@ -51,6 +51,9 @@ class Client : public std::enable_shared_from_this<Client>
         auto setListenSocketIpPortPair(std::tuple<std::string, int>) -> void;
         auto getListenSocketIpPortPair() -> std::tuple<std::string, int>;
 
+        auto setRequestIsCgi(bool) -> void;
+        auto getRequestIsCgi() -> bool;
+
         std::chrono::steady_clock::time_point getLastActivity();
 
     private:
@@ -64,7 +67,9 @@ class Client : public std::enable_shared_from_this<Client>
         bool                                  requestIsCgi_;
         std::chrono::steady_clock::time_point lastActivityTime_;
 
+        auto execute() -> void;
         auto processKeepAlive() -> void;
+        auto prepareResponseForSending() -> void;
 
         ClientState  state_;
         HTTPRequest  request_;
