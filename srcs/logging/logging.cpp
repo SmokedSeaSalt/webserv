@@ -14,12 +14,15 @@ Logger::~Logger()
     }
 }
 
-auto init(const char* path, LogLevel level) -> void
+auto init(std::string path, LogLevel level) -> void
 {
     g_logger.level = level;
-    if (path == nullptr)
+    if (path.empty())
+    {
+        g_logger.file = nullptr;
         return;
-    FILE* file = std::fopen(path, "a");
+    }
+    FILE* file = std::fopen(path.c_str(), "a");
     if (file == nullptr)
     {
         std::cerr << "Opening logfile failed. Defaulting to logging to cout." << std::endl;
