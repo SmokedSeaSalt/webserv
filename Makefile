@@ -99,7 +99,7 @@ $(BUILD_DIR):
 
 -include $(DEP)
 
-.PHONY:	clean fclean re all run debug asan test format
+.PHONY:	clean fclean re all run debug asan test format 
 
 ################################################################################
 # Testing                                                                      #
@@ -114,9 +114,11 @@ test_multithread:
 test_end_to_end:
 	@./test/test.sh -e
 
-
+build-objects: $(OBJ)
+	@printf "$(COLOUR_GREEN)Object files built✓\n$(COLOUR_END)"
 
 .PHONY += test
+.PHONY += build-objects
 
 ################################################################################
 # Installs                                                                     #
