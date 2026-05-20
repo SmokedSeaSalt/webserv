@@ -124,7 +124,7 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
             CHECK(loc.pathPrefix == "/scripts");
             CHECK(loc.acceptedMethods.getAllowed == true);
             CHECK(loc.acceptedMethods.headAllowed == false);
-            CHECK(loc.acceptedMethods.postAllowed == true);
+            CHECK(loc.acceptedMethods.postAllowed == false);
             CHECK(loc.acceptedMethods.deleteAllowed == false);
 
             CHECK(loc.root == "/var/www/cgi");
@@ -229,7 +229,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.acceptedMethods.getAllowed == false);
                 CHECK(loc.acceptedMethods.headAllowed == false);
                 CHECK(loc.acceptedMethods.postAllowed == true);
-                CHECK(loc.acceptedMethods.deleteAllowed == true);
+                CHECK(loc.acceptedMethods.deleteAllowed == false);
 
                 CHECK(loc.uploadsAllowed == true);
                 CHECK(loc.uploadLocation == "/tmp/uploads");
@@ -268,7 +268,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.pathPrefix == "/scripts");
                 CHECK(loc.acceptedMethods.getAllowed == true);
                 CHECK(loc.acceptedMethods.headAllowed == false);
-                CHECK(loc.acceptedMethods.postAllowed == true);
+                CHECK(loc.acceptedMethods.postAllowed == false);
                 CHECK(loc.acceptedMethods.deleteAllowed == false);
 
                 CHECK(loc.root == "/var/www/cgi");
@@ -320,8 +320,8 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.pathPrefix == "/");
                 CHECK(loc.acceptedMethods.getAllowed == true);
                 CHECK(loc.acceptedMethods.headAllowed == false);
-                CHECK(loc.acceptedMethods.postAllowed == true);
-                CHECK(loc.acceptedMethods.deleteAllowed == true);
+                CHECK(loc.acceptedMethods.postAllowed == false);
+                CHECK(loc.acceptedMethods.deleteAllowed == false);
 
                 CHECK(loc.defaultFile == "index.html");
                 CHECK(loc.directoryListing == false);
@@ -340,8 +340,8 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.pathPrefix == "/api");
                 CHECK(loc.acceptedMethods.getAllowed == true);
                 CHECK(loc.acceptedMethods.headAllowed == false);
-                CHECK(loc.acceptedMethods.postAllowed == true);
-                CHECK(loc.acceptedMethods.deleteAllowed == true);
+                CHECK(loc.acceptedMethods.postAllowed == false);
+                CHECK(loc.acceptedMethods.deleteAllowed == false);
 
                 CHECK(loc.root == "/var/www/api");
                 CHECK(loc.directoryListing == false);
@@ -383,7 +383,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.acceptedMethods.getAllowed == false);
                 CHECK(loc.acceptedMethods.headAllowed == false);
                 CHECK(loc.acceptedMethods.postAllowed == true);
-                CHECK(loc.acceptedMethods.deleteAllowed == false);
+                CHECK(loc.acceptedMethods.deleteAllowed == true);
 
                 CHECK(loc.uploadsAllowed == true);
                 CHECK(loc.uploadLocation == "/tmp/incoming");

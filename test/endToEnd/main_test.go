@@ -100,7 +100,9 @@ func TestHeadHelloWorldHtml(t *testing.T) {
 
 func TestPostGetDeleteHtmlFile(t *testing.T) {
 	expectedBody := "<p>New page</p>"
-	fileName := "/assets/new.html"
+	fileName := "/assets/uploads/new.html"
+	uploadStoreFileName := "/upload/new.html"
+
 	// Try to get before post (should fail)
 	{
 		resp, err := http.Get(getBaseURL() + fileName)
@@ -114,7 +116,7 @@ func TestPostGetDeleteHtmlFile(t *testing.T) {
 	}
 	// Post the new file
 	{
-		resp, err := http.Post(getBaseURL()+fileName, "text/html", strings.NewReader(expectedBody))
+		resp, err := http.Post(getBaseURL()+uploadStoreFileName, "text/html", strings.NewReader(expectedBody))
 		if err != nil {
 			t.Fatalf("POST request failed: %v", err)
 		}
@@ -143,7 +145,7 @@ func TestPostGetDeleteHtmlFile(t *testing.T) {
 	}
 	// Delete the newly posted file
 	{
-		req, err := http.NewRequest(http.MethodDelete, getBaseURL()+fileName, nil)
+		req, err := http.NewRequest(http.MethodDelete, getBaseURL()+uploadStoreFileName, nil)
 		if err != nil {
 			t.Fatalf("DELETE request failed: %v", err)
 		}
@@ -158,7 +160,7 @@ func TestPostGetDeleteHtmlFile(t *testing.T) {
 	}
 	// Try to get the deleted file (should fail)
 	{
-		resp, err := http.Get(getBaseURL() + fileName)
+		resp, err := http.Get(getBaseURL() + uploadStoreFileName)
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
@@ -167,5 +169,5 @@ func TestPostGetDeleteHtmlFile(t *testing.T) {
 			t.Errorf("Expected non-200 after delete, got %d", resp.StatusCode)
 		}
 	}
-	t.Logf("TestPostGetDeleteHtmlFile passed successfully")
+	// t.Logf("TestPostGetDeleteHtmlFile passed successfully")
 }

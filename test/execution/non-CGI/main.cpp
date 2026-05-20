@@ -248,7 +248,9 @@ TEST_CASE("Test POST and then GET the file with manual file delete with -p")
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    std::string path    = "/newFile.html";
+    std::string path       = "/newFile.html";
+    std::string uploadPath = "/testlocation/newFile.html";
+
     const char* rootDir = std::getenv("ROOT_DIR");
     if (rootDir)
     {
@@ -262,14 +264,14 @@ TEST_CASE("Test POST and then GET the file with manual file delete with -p")
 
     HTTPMessage httpPostMessage;
     httpPostMessage.method                    = "POST";
-    httpPostMessage.requestTarget             = path;
+    httpPostMessage.requestTarget             = uploadPath;
     httpPostMessage.protocol                  = "HTTP/1.1";
     httpPostMessage.headers["host"]           = {"localhost:8080"};
     httpPostMessage.headers["content-length"] = {std::to_string(fileContents.length())};
     httpPostMessage.body                      = fileContents;
 
     CHECK(httpPostMessage.method == "POST");
-    CHECK(httpPostMessage.requestTarget == path);
+    CHECK(httpPostMessage.requestTarget == uploadPath);
     CHECK(httpPostMessage.protocol == "HTTP/1.1");
 
     std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
@@ -277,6 +279,7 @@ TEST_CASE("Test POST and then GET the file with manual file delete with -p")
     client1.getRequest().setMessage(httpPostMessage);
 
     HTTPResponse postResponse1 = Execution::execute(client1);
+    // CHECK(postResponse1.createPacket() =="");
     CHECK(postResponse1.createPacket().find("201") != std::string::npos);
 
     HTTPResponse postResponse2 = Execution::execute(client1);
@@ -305,8 +308,9 @@ TEST_CASE("Test POST and then GET and then DELETE with -p")
     Config::config    = {};
     auto configResult = Config::parseConfigFile("config.conf");
     REQUIRE(configResult.has_value());
-    std::string path    = "/newFile.html";
-    const char* rootDir = std::getenv("ROOT_DIR");
+    std::string path       = "/newFile.html";
+    std::string uploadPath = "/testlocation/newFile.html";
+    const char* rootDir    = std::getenv("ROOT_DIR");
     if (rootDir)
     {
         InputArgs::args.relativePath = rootDir;
@@ -319,7 +323,7 @@ TEST_CASE("Test POST and then GET and then DELETE with -p")
     // POST the file
     HTTPMessage httpPostMessage;
     httpPostMessage.method                    = "POST";
-    httpPostMessage.requestTarget             = path;
+    httpPostMessage.requestTarget             = uploadPath;
     httpPostMessage.protocol                  = "HTTP/1.1";
     httpPostMessage.headers["host"]           = {"localhost:8080"};
     httpPostMessage.headers["content-length"] = {std::to_string(fileContents.length())};
@@ -350,7 +354,7 @@ TEST_CASE("Test POST and then GET and then DELETE with -p")
     // DELETE the file
     HTTPMessage httpDeleteMessage;
     httpDeleteMessage.method          = "DELETE";
-    httpDeleteMessage.requestTarget   = path;
+    httpDeleteMessage.requestTarget   = uploadPath;
     httpDeleteMessage.protocol        = "HTTP/1.1";
     httpDeleteMessage.headers["host"] = {"localhost:8080"};
     httpDeleteMessage.body            = "";

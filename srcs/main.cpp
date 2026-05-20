@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     auto ret = Config::parseConfigFile(InputArgs::args.configFile);
     if (!ret.has_value())
     {
-        std::cerr << ret.error() << "Config parsing error. Shutting down webserv" << std::endl;
+        std::cerr << ret.error() << ". Config parsing error. Shutting down webserv" << std::endl;
         return 1; // todo error handling
     }
     if (Signals::initSignals() == -1)
