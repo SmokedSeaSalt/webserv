@@ -33,7 +33,6 @@ class Client;
 
 enum class CgiState
 {
-    kInit,
     kSendingBody,
     kReceiveCGIResponse,
     KDone,
@@ -46,6 +45,8 @@ class Cgi
         auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
         auto init(std::shared_ptr<Client> client) -> std::expected<int, ResponseStatusCode>;
         auto createResponse() -> HTTPResponse;
+
+        auto getState() -> CgiState;
 
         static auto isRequestTargetCgi(const std::string target, const Config::Location& location) -> bool;
 

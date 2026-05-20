@@ -40,8 +40,13 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             break;
         LOG(LogLevel::kInfo, "Packet received from fd:{} with content:\n{}\n", fd, getHTTPMessageString(this->request_.getMessage()));
 
-        // do config check
-        // add optional flag paths
+        // execution
+        //      preprocessing
+        //           do config check
+        //           do cgi check
+        //           add optional flag paths
+        //      if cgi -> prepare everything for cgi
+        //      if normal ->
 
         // TODO put this below in helper function until --delim--
         // also check if is cgi set in location in config
@@ -58,13 +63,26 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
                 this->requestIsCgi_ = false;
                 break;
             }
-            ConnectionManager::addCGIConnection(CgiInitRet.value(), shared_from_this()); // Todo Error handling
             this->cgifd_ = CgiInitRet.value();
+            this->state_ = ClientState::Processing;
         }
         else
+        {
             this->response_ = Execution::execute(*this);
+            if (this->response_.getSendState() == SendState::kReady) // should all be in execute
+            {
+                std::string packet = this->response_.createPacket();
+                LOG(LogLevel::kInfo, "Packet created for fd:{}", fd);
+                LOG(LogLevel::kVerbose, "with content:\n{}\n", packet);
+
+                this->response_.setPacket(packet);
+                this->response_.setSendState(SendState::kSending);
+                this->state_ = ClientState::Sending;
+            }
+        }
+
         // --delim--
-        this->state_ = ClientState::Processing;
+
         break;
     }
     case ClientState::Processing:
@@ -84,21 +102,14 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
                 this->state_ = ClientState::Sending;
                 break;
             }
+            if (CgiHandler_.getState() == CgiState::KDone)
+            {
+                this->state_ = ClientState::Sending;
+                this->response_.setSendState(SendState::kSending);
+            }
             break;
         }
-        if (this->response_.getSendState() == SendState::kReady)
-        {
-            std::string packet = this->response_.createPacket();
-            LOG(LogLevel::kInfo, "Packet created for fd:{}", fd);
-            LOG(LogLevel::kVerbose, "with content:\n{}\n", packet);
-
-            this->response_.setPacket(packet);
-            this->response_.setSendState(SendState::kSending);
-            this->state_ = ClientState::Sending;
-        }
-        else
-            break;
-        [[fallthrough]];
+        break;
     }
     case ClientState::Sending:
     {
@@ -120,32 +131,30 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         {
             LOG(LogLevel::kInfo, "Response finished sending on fd:{}", fd);
             this->response_.setSendState(SendState::kDone);
-            this->state_ = ClientState::Sent;
+            processKeepAlive();
             break;
         }
 
         break;
     }
-    case ClientState::Sent:
-    {
-        if (this->response_.getKeepAlive() == false)
-            ConnectionManager::closeConnection(this->getSocketfd());
-        else
-        {
-            // Todo Reset CGI stuff
-            this->request_  = {};
-            this->response_ = {};
-            this->state_    = ClientState::Receiving;
-            LOG(LogLevel::kDebug, "Client socket at fd: {} being kept alive", fd);
-        }
-        break;
-    }
-    case ClientState::Closed:
-        break;
-    case ClientState::Error:
-        break;
     }
     return HandleEventResult::kSuccess;
+}
+
+/// @brief checks if the connection should be closed
+/// @return
+auto Client::processKeepAlive() -> void
+{
+    if (this->response_.getKeepAlive() == false)
+        ConnectionManager::closeConnection(this->getSocketfd());
+    else
+    {
+        // Todo Reset CGI stuff
+        this->request_  = {};
+        this->response_ = {};
+        this->state_    = ClientState::Receiving;
+        LOG(LogLevel::kDebug, "Client socket at fd: {} being kept alive", this->socketfd_);
+    }
 }
 
 auto Client::setSocketfd(int arg) -> void

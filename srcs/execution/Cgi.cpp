@@ -8,9 +8,14 @@
 #include <sys/socket.h> //for socketpair
 #include <unistd.h>     //for dup2, close
 
-Cgi::Cgi() : state_(CgiState::kInit)
+Cgi::Cgi() : state_(CgiState::KDone)
 {
     this->bodyToCgiBytesSend_ = 0;
+}
+
+auto Cgi::getState() -> CgiState
+{
+    return this->state_;
 }
 
 auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
@@ -20,10 +25,6 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
 
     switch (this->state_)
     {
-    case CgiState::kInit:
-    {
-        // should not get here.
-    }
     case CgiState::kSendingBody:
     {
         if (!(events & EPOLLOUT))
@@ -41,38 +42,42 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             LOG(LogLevel::kInfo, "CGI finished sending on fd:{}", fd);
             this->state_ = CgiState::kReceiveCGIResponse;
             shutdown(fd, SHUT_WR);
+            ConnectionManager::changeCGIConnectionToRead(fd);
             break;
         }
+        break;
     }
     case CgiState::kReceiveCGIResponse:
     {
+        LOG(LogLevel::kDebug, "kReceiveCGIResponse event received, events={:#x}, fd={}", events, fd);
         if (!(events & EPOLLIN))
             break;
         auto handleReceivingEventResult = ConnectionManager::handleReceivingEvent(fd);
-        if (std::get<ssize_t>(handleReceivingEventResult) < 0)
+        if (std::get<1>(handleReceivingEventResult) < 0)
         {
             // error happened but it might be EAGAIN
             LOG(LogLevel::kDebug, "recv() returned < 0 at fd: {}, closing connection.", fd);
             ConnectionManager::closeConnection(this->fd_); // TODO: how to handle this error? generate internal server error
             return HandleEventResult::kError;
         }
-        if (std::get<ssize_t>(handleReceivingEventResult) == 0)
+        this->cgiResponse_ += std::get<0>(handleReceivingEventResult);
+        if (std::get<1>(handleReceivingEventResult) == 0)
         {
             LOG(LogLevel::kInfo, "CGI finished receiving on fd:{}", fd);
+            LOG(LogLevel::kDebug, "Data received on fd:{} = {}", fd, this->cgiResponse_);
             // EOF happened
             // build actual http response for client
             ConnectionManager::getClient(this->fd_)->setResponse(this->createResponse());
             ConnectionManager::closeConnection(this->fd_);
             this->state_ = CgiState::KDone;
+            break;
         }
-        this->cgiResponse_ += std::get<std::string>(handleReceivingEventResult);
         break;
     }
     case CgiState::KDone:
     {
-    }
-
         return HandleEventResult::kSuccess;
+    }
     }
     return HandleEventResult::kSuccess;
 }
@@ -232,6 +237,15 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
     if (this->interpreterPath_ == "")
         return std::unexpected(ResponseStatusCode::kNotImplemented);
 
+    // add to epoll here
+    ConnectionManager::addCGIConnection(this->fd_, client); // Todo Error handling
+    if (this->bodyToCgi_.size() == 0)
+    {
+        shutdown(this->fd_, SHUT_WR); // tell child stdin is closed
+        this->state_ = CgiState::kReceiveCGIResponse;
+        ConnectionManager::changeCGIConnectionToRead(this->fd_);
+    }
+
     pid_t pid = fork();
     if (pid == -1)
         return std::unexpected(ResponseStatusCode::kInternalServerError);
@@ -271,7 +285,7 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
         // TODO?: cd this programm to script folder? 7.2 The current working directory for the script SHOULD be set to the directory containing the script.
 
         chdir(cdPath.data());
-
+        LOG(LogLevel::kInfo, "Executing script in child. interpeter: {}, script: {} , in folder: {}", argv[0], argv[1], getcwd(nullptr, 0));
         execve(argv[0], argv.data(), envp.data());
         LOG(LogLevel::kErrors, "Execve failed!");
         std::exit(1); // error check? What will epoll do? //make static close and free function in connectionmanager
@@ -291,6 +305,8 @@ auto Cgi::createResponse() -> HTTPResponse
     std::string headers = this->cgiResponse_.substr(0, this->cgiResponse_.find("\r\n\r\n") + 4);
     std::string body    = this->cgiResponse_.substr(this->cgiResponse_.find("\r\n\r\n") + 4);
 
+    LOG(LogLevel::kDebug, "After split; header: {}, body: {}", headers, body);
+
     std::string firstLine;
     if (headers.find("Status: ") == std::string::npos)
         firstLine = "HTTP/1.1 200 OK\r\n";
@@ -299,9 +315,11 @@ auto Cgi::createResponse() -> HTTPResponse
 
     if (headers.find("Content-Length: ") == std::string::npos)
     {
-        std::string contentLenght = "content-length: " + std::to_string(body.size());
+        std::string contentLenght = "content-length: " + std::to_string(body.size()) + "\r\n";
         headers.insert(0, contentLenght);
     }
+
+    LOG(LogLevel::kDebug, "total packet: {}", firstLine + headers + body);
 
     response.setPacket(firstLine + headers + body);
     return response;

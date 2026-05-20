@@ -14,9 +14,6 @@ enum class ClientState
     Receiving,
     Processing,
     Sending,
-    Sent,
-    Closed,
-    Error,
 };
 
 class Client : public std::enable_shared_from_this<Client>
@@ -66,6 +63,8 @@ class Client : public std::enable_shared_from_this<Client>
         std::string                           host_;
         bool                                  requestIsCgi_;
         std::chrono::steady_clock::time_point lastActivityTime_;
+
+        auto processKeepAlive() -> void;
 
         ClientState  state_;
         HTTPRequest  request_;
