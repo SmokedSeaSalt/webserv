@@ -60,7 +60,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
         else
         {
             LOG(LogLevel::kDebug, "Closed client fd: {}", std::to_string(fd));
-            client.setState(ClientState::Closed);
+            // todo: check if client has active cgifd and also close that
             clientMap_.erase(fd);
         }
         return HandleEventResult::kError;

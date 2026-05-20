@@ -57,6 +57,9 @@ class Client : public std::enable_shared_from_this<Client>
         std::string                  host_;
         bool                         requestIsCgi_;
 
+        auto processKeepAlive() -> void;
+
+
         ClientState  state_;
         HTTPRequest  request_;
         HTTPResponse response_;
