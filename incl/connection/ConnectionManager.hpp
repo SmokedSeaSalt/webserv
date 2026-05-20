@@ -31,6 +31,10 @@ class ConnectionManager
 
         static auto getClient(int fd) -> std::shared_ptr<Client>;
 
+        static auto connectionManagerCleanup() -> void;
+
+        static auto processTimeouts() -> void;
+
     private:
         static std::map<int, std::shared_ptr<Client>> clientMap_;
         static int                                    epollfd_;

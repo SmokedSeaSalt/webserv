@@ -3,6 +3,7 @@
 #include "Execution.hpp"
 #include "connection.hpp"
 #include "logging.hpp"
+#include "signals.hpp"
 #include <arpa/inet.h>
 #include <expected>
 #include <fcntl.h>
@@ -83,7 +84,10 @@ auto Server::setupListenSocket(std::string ip, int port) -> std::expected<int, s
 auto Server::closeListenSockets() -> void
 {
     for (const auto& [fd, ipPortPair] : listenSocketFdToIpPortPair_)
+    {
+        epoll_ctl(epollfd_, EPOLL_CTL_DEL, fd, NULL);
         close(fd);
+    }
 }
 
 auto Server::setupListenSockets() -> std::expected<void, std::string>
@@ -133,11 +137,12 @@ auto Server::connection_loop() -> std::expected<void, std::string>
 
     while (true)
     {
-        nfds = epoll_wait(epollfd_, events_, MAX_EVENTS, -1);
+        int epollTimeoutMs = 1000;
+        nfds               = epoll_wait(epollfd_, events_, MAX_EVENTS, epollTimeoutMs);
         if (nfds == -1)
         {
-            perror("epoll_wait");
-            return std::unexpected("epoll_wait() failed");
+            LOG(LogLevel::kDebug, "Epoll wait returned -1");
+            break;
         }
 
         for (int n = 0; n < nfds; ++n)
@@ -151,7 +156,14 @@ auto Server::connection_loop() -> std::expected<void, std::string>
                 ConnectionManager::handleEvent(events_[n]);
             }
         }
+        ConnectionManager::processTimeouts();
+        if (Signals::shouldShutdown == true)
+        {
+            LOG(LogLevel::kDebug, "Terminating connection loop.");
+            break;
+        }
     }
+    serverCleanup();
     return {};
 }
 
@@ -159,6 +171,13 @@ auto Server::connection_loop() -> std::expected<void, std::string>
 auto Server::getListenSockets() -> std::set<int>
 {
     return listenSockets_;
+}
+
+auto Server::serverCleanup() -> void
+{
+    ConnectionManager::connectionManagerCleanup();
+    closeListenSockets();
+    close(epollfd_);
 }
 
 // Server
