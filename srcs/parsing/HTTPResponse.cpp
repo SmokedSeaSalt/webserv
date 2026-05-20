@@ -161,10 +161,10 @@ auto HTTPResponse::getBodyLen() const -> size_t
 
 auto HTTPResponse::getKeepAlive() const -> bool
 {
-    return keepAlive;
+    return this->keepAlive_;
 }
 
 auto HTTPResponse::setKeepAlive(bool value) -> void
 {
-    keepAlive = value;
+    this->keepAlive_ = value;
 }

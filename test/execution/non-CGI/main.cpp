@@ -154,8 +154,9 @@ TEST_CASE("Test get html file with -p")
     std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
     Client                       client(0, 8080, dummyPair, "127.0.0.1", "");
     client.getRequest().setMessage(httpMessage);
+    Execution::setupRequestForExecution(client);
 
-    HTTPResponse response = Execution::execute(client);
+    HTTPResponse response = Execution::executeNonCGI(client);
     checkPacket(response.createPacket(), "text/html; charset=utf-8", "<p>Hello world</p>");
     // CHECK(repsonse. == "");
 }
@@ -191,7 +192,8 @@ TEST_CASE("Test get png file with -p")
     Client                       client(0, 8080, dummyPair, "127.0.0.1", "");
     client.getRequest().setMessage(httpMessage);
 
-    HTTPResponse response = Execution::execute(client);
+    Execution::setupRequestForExecution(client);
+    HTTPResponse response = Execution::executeNonCGI(client);
     std::string  packet   = response.createPacket();
 
     CHECK(packet.rfind("HTTP/1.1 200 OK\r\n", 0) == 0);
@@ -238,7 +240,8 @@ TEST_CASE("Test HEAD with -p")
     Client                       client(0, 8080, dummyPair, "127.0.0.1", "");
     client.getRequest().setMessage(httpMessage);
 
-    HTTPResponse response = Execution::execute(client);
+    Execution::setupRequestForExecution(client);
+    HTTPResponse response = Execution::executeNonCGI(client);
     checkPacket(response.createPacket(), "text/html; charset=utf-8", "");
     // CHECK(repsonse. == "");
 }
@@ -278,11 +281,12 @@ TEST_CASE("Test POST and then GET the file with manual file delete with -p")
     Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
     client1.getRequest().setMessage(httpPostMessage);
 
-    HTTPResponse postResponse1 = Execution::execute(client1);
+    Execution::setupRequestForExecution(client1);
+    HTTPResponse postResponse1 = Execution::executeNonCGI(client1);
     // CHECK(postResponse1.createPacket() =="");
     CHECK(postResponse1.createPacket().find("201") != std::string::npos);
 
-    HTTPResponse postResponse2 = Execution::execute(client1);
+    HTTPResponse postResponse2 = Execution::executeNonCGI(client1);
     CHECK(postResponse2.createPacket().find("409") != std::string::npos);
 
     HTTPMessage httpGetMessage;
@@ -296,7 +300,8 @@ TEST_CASE("Test POST and then GET the file with manual file delete with -p")
     Client client2(0, 8080, dummyPair, "127.0.0.1", "");
     client2.getRequest().setMessage(httpGetMessage);
 
-    HTTPResponse getResponse = Execution::execute(client2);
+    Execution::setupRequestForExecution(client2);
+    HTTPResponse getResponse = Execution::executeNonCGI(client2);
     checkPacket(getResponse.createPacket(), "text/html; charset=utf-8", fileContents);
 
     // CHECK(repsonse. == "");
@@ -333,7 +338,8 @@ TEST_CASE("Test POST and then GET and then DELETE with -p")
     Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
     client1.getRequest().setMessage(httpPostMessage);
 
-    HTTPResponse postResponse = Execution::execute(client1);
+    Execution::setupRequestForExecution(client1);
+    HTTPResponse postResponse = Execution::executeNonCGI(client1);
     CHECK(postResponse.createPacket().find("201") != std::string::npos);
 
     // GET the file
@@ -348,7 +354,8 @@ TEST_CASE("Test POST and then GET and then DELETE with -p")
     Client client2(0, 8080, dummyPair, "127.0.0.1", "");
     client2.getRequest().setMessage(httpGetMessage);
 
-    HTTPResponse getResponse1 = Execution::execute(client2);
+    Execution::setupRequestForExecution(client2);
+    HTTPResponse getResponse1 = Execution::executeNonCGI(client2);
     checkPacket(getResponse1.createPacket(), "text/html; charset=utf-8", fileContents);
 
     // DELETE the file
@@ -362,11 +369,12 @@ TEST_CASE("Test POST and then GET and then DELETE with -p")
     Client client3(0, 8080, dummyPair, "127.0.0.1", "");
     client3.getRequest().setMessage(httpDeleteMessage);
 
-    HTTPResponse deleteResponse = Execution::execute(client3);
+    Execution::setupRequestForExecution(client3);
+    HTTPResponse deleteResponse = Execution::executeNonCGI(client3);
     CHECK(deleteResponse.createPacket().find("204") != std::string::npos);
 
     // GET the already deleted file (should fail)
-    HTTPResponse getResponse2 = Execution::execute(client3);
+    HTTPResponse getResponse2 = Execution::executeNonCGI(client3);
     CHECK(getResponse2.createPacket().find("404") != std::string::npos);
 }
 
@@ -399,7 +407,8 @@ TEST_CASE("Test location header in POST")
     Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
     client1.getRequest().setMessage(httpPostMessage);
 
-    HTTPResponse postResponse = Execution::execute(client1);
+    Execution::setupRequestForExecution(client1);
+    HTTPResponse postResponse = Execution::executeNonCGI(client1);
     CHECK(postResponse.createPacket().find("201") != std::string::npos);
     CHECK(postResponse.createPacket().find("location: " + path) != std::string::npos);
 
@@ -414,11 +423,12 @@ TEST_CASE("Test location header in POST")
     Client client3(0, 8080, dummyPair, "127.0.0.1", "");
     client3.getRequest().setMessage(httpDeleteMessage);
 
-    HTTPResponse deleteResponse = Execution::execute(client3);
+    Execution::setupRequestForExecution(client3);
+    HTTPResponse deleteResponse = Execution::executeNonCGI(client3);
     CHECK(deleteResponse.createPacket().find("204") != std::string::npos);
 
     // GET the already deleted file (should fail)
-    HTTPResponse getResponse2 = Execution::execute(client3);
+    HTTPResponse getResponse2 = Execution::executeNonCGI(client3);
     CHECK(getResponse2.createPacket().find("404") != std::string::npos);
 }
 
@@ -447,7 +457,8 @@ TEST_CASE("Test default error page 404")
     Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
     client1.getRequest().setMessage(httpGetMessage);
 
-    HTTPResponse getResponse = Execution::execute(client1);
+    Execution::setupRequestForExecution(client1);
+    HTTPResponse getResponse = Execution::executeNonCGI(client1);
     CHECK(getResponse.createPacket().find("404") != std::string::npos);
     CHECK(getResponse.createPacket().find(fileContents) != std::string::npos);
     CHECK(getResponse.createPacket().find("content-length: " + std::to_string(fileContents.length())) != std::string::npos);
@@ -477,7 +488,8 @@ TEST_CASE("Test default error page when not available")
     Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
     client1.getRequest().setMessage(httpGetMessage);
 
-    HTTPResponse getResponse = Execution::execute(client1);
+    Execution::setupRequestForExecution(client1);
+    HTTPResponse getResponse = Execution::executeNonCGI(client1);
     CHECK(getResponse.createPacket().find("404") != std::string::npos);
     CHECK(getResponse.createPacket().find("content-length: 0") != std::string::npos);
 }
@@ -506,8 +518,9 @@ TEST_CASE("Test default error page 405 with PUT")
     std::tuple<std::string, int> dummyPair("127.0.0.1", 8080);
     Client                       client1(0, 8080, dummyPair, "127.0.0.1", "");
     client1.getRequest().setMessage(httpPutMessage);
-
-    HTTPResponse putResponse = Execution::execute(client1);
+    auto ret = Execution::setupRequestForExecution(client1);
+    REQUIRE(!ret.has_value());
+    HTTPResponse putResponse = ret.error();
     CHECK(putResponse.createPacket().find("405") != std::string::npos);
     CHECK(putResponse.createPacket().find(fileContents) != std::string::npos);
     CHECK(putResponse.createPacket().find("content-length: " + std::to_string(fileContents.length())) != std::string::npos);

@@ -10,11 +10,13 @@
 namespace Execution
 {
 
-auto execute(Client& client) -> HTTPResponse;
+auto executeNonCGI(Client& client) -> HTTPResponse;
 
 auto checkRequestConfigCompliance(Client& client) -> ResponseStatusCode;
+auto setupRequestForExecution(Client& client) -> std::expected<void, HTTPResponse>;
 auto buildErrorResponse(Client& client, ResponseStatusCode statusCode) -> HTTPResponse;
 auto processValidRequest(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>;
+auto getRedirectResponse(Client& client) -> HTTPResponse;
 auto validateContentType(Client& client);
 
 auto processGet(Client& client) -> std::expected<HTTPResponse, ResponseStatusCode>;

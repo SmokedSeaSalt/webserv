@@ -26,6 +26,7 @@ auto getPathAfterLocation(Client& client) -> std::string
 
 auto setupRequestForExecution(Client& client) -> std::expected<void, HTTPResponse>
 {
+
     auto serverBlock = Config::getServerBlock(client.getListenSocketIpPortPair());
     if (!serverBlock.has_value())
     {
@@ -49,6 +50,18 @@ auto setupRequestForExecution(Client& client) -> std::expected<void, HTTPRespons
     else
         client.getRequest().setAbsoluteTarget(getAbsFilePath(client.getRequest()));
 
+    // check if request is cgi
+    client.setRequestIsCgi(Cgi::isRequestTargetCgi(client.getRequest().getMessage().requestTarget, client.getRequest().getLocation()));
+
+    // check if request is valid
+    ResponseStatusCode status = checkRequestConfigCompliance(client);
+    if (status != ResponseStatusCode::kOK)
+        return std::unexpected(buildErrorResponse(client, status));
+
+    // check if request should be redirected
+    if (!client.getRequest().getLocation().redirectLocation.empty())
+        return std::unexpected(getRedirectResponse(client));
+
     return {};
 }
 
@@ -65,46 +78,18 @@ auto getRedirectResponse(Client& client) -> HTTPResponse
     return response;
 }
 
-auto execute(Client& client) -> HTTPResponse
+auto executeNonCGI(Client& client) -> HTTPResponse
 {
     HTTPResponse response;
     HTTPMessage  requestMessage = client.getRequest().getMessage();
 
-    auto setupResult = setupRequestForExecution(client);
-    if (!setupResult.has_value())
-        return setupResult.error();
-
-    // move this to Client right before cgi or execute() call
-    if (!client.getRequest().getLocation().redirectLocation.empty())
-        return getRedirectResponse(client);
-
-    ResponseStatusCode status = checkRequestConfigCompliance(client);
-
-    if (status != ResponseStatusCode::kOK)
-        response = buildErrorResponse(client, status);
+    auto validRequestResult = processValidRequest(client);
+    if (!validRequestResult.has_value())
+        response = buildErrorResponse(client, validRequestResult.error()); // todo check this error handling
     else
-    {
-        // if (cgi)
-        //      executeCGI
-        // else non cgi below
-        auto validRequestResult = processValidRequest(client);
-        if (!validRequestResult.has_value())
-            response = buildErrorResponse(client, validRequestResult.error()); // todo check this error handling
-        else
-            response = validRequestResult.value();
-    }
+        response = validRequestResult.value();
+
     response.setSendState(SendState::kReady);
-
-    if (requestMessage.headers.contains("connection") && requestMessage.headers.at("connection")[0] == "close")
-    {
-        response.addHeaderValue("connection", "close");
-        response.setKeepAlive(false);
-    }
-    else
-    {
-        response.addHeaderValue("connection", "keep-alive");
-        response.setKeepAlive(true);
-    }
 
     return response;
 }
