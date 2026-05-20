@@ -66,7 +66,6 @@ class Client : public std::enable_shared_from_this<Client>
 
         auto processKeepAlive() -> void;
 
-
         ClientState  state_;
         HTTPRequest  request_;
         HTTPResponse response_;
