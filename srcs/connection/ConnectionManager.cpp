@@ -1,7 +1,7 @@
 #include "ConnectionManager.hpp"
 #include "Client.hpp"
-#include "logging.hpp"
 #include "InputArgs.hpp"
+#include "logging.hpp"
 #include <arpa/inet.h> // for client logging
 #include <netdb.h>     // for client logging
 #include <netinet/in.h>
