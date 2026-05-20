@@ -177,15 +177,13 @@ auto ConnectionManager::getClient(int fd) -> std::shared_ptr<Client>
 
 auto ConnectionManager::connectionManagerCleanup() -> void
 {
-    int cgiPID;
-    for (auto& [fd, client] : clientMap_)
+    std::vector<int> fdsToClose;
+    for (const auto& [fd, client] : clientMap_)
     {
-        cgiPID = client->getCgiPID();
-        if (cgiPID > 0)
-        {
-            kill(cgiPID, SIGTERM); // todo SIGTERM or SIGKILL
-            waitpid(cgiPID, NULL, 0);
-        }
+        fdsToClose.push_back(fd);
+    }
+    for (int fd : fdsToClose)
+    {
         closeConnection(fd);
     }
 }
