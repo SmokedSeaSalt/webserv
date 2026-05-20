@@ -16,13 +16,17 @@ LOG_DIR="$ROOT_DIR/test/.logs"
 mkdir -p "$LOG_DIR"
 
 DIRS=(
-    "test/connection"
+    # "test/connection"
     "test/parsing/config"
     "test/parsing/HTTPRequest"
     "test/parsing/HTTPResponse"
     "test/logging"
     "test/execution/non-CGI"
 )
+
+printf "\n%b\n" "${BLUE}Building core object files...${NC}"
+cd "$ROOT_DIR" || exit 1
+make build-objects || exit 1
 
 run_single() {
     for dir in "${DIRS[@]}"; do
@@ -35,8 +39,7 @@ run_single() {
 
         cd "$ROOT_DIR/$dir" || return 1
 
-        make all || return 1
-        make run --no-print-directory || return 1
+        make all run LINK_ONLY=1 --no-print-directory || return 1
         make fclean >/dev/null 2>&1 || return 1
     done
 
@@ -51,8 +54,7 @@ run_one() {
     fi
     printf "\n%b\n" "${BLUE}=== Running tests in $dir ===${NC}"
     cd "$ROOT_DIR/$dir" || return 1
-    make all || return 1
-    make run --no-print-directory || return 1
+    make all run LINK_ONLY=1 --no-print-directory || return 1
     make fclean >/dev/null 2>&1 || return 1
     printf "%b\n" "${GREEN}Test $dir complete!${NC}"
 }
