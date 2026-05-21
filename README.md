@@ -25,7 +25,7 @@ The following things can be configured in the config file:
 - ```git clone```
 - ```cd webserv```
 - ```make```
-- ```./webserv [config_file]```
+- ```./webserv <config_file>```
 - ```./webserv -h``` to check out additional running options
 
 TODO check rules for duplicates and upload store things
