@@ -214,7 +214,7 @@ func TestPythonCGI(t *testing.T) {
 
 func TestShellCGI(t *testing.T) {
     t.Run("Get hello.sh", func(t *testing.T) {
-        helloExpectedBody := "<html><head><title>Hello from CGI in Shell</title></head><body><h1>Hello World!</h2></body></html>"
+        helloExpectedBody := "<html><head><title>Hello from CGI in Shell</title></head><body><h1>Hello World!</h1></body></html>"
         helloFileName := "/cgi-bin/hello.sh"
         resp, err := http.Get(getBaseURL() + helloFileName)
         if err != nil {

@@ -223,6 +223,11 @@ auto Cgi::headerToEnvVar(std::string header, std::vector<std::string> value) -> 
 
 auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseStatusCode>
 {
+    // make sure everything is clean
+    this->bodyToCgi_          = "";
+    this->bodyToCgiBytesSend_ = 0;
+    this->cgiResponse_        = "";
+
     // create socketpair
     int fd[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
@@ -240,6 +245,7 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
 
     // add to epoll here
     ConnectionManager::addCGIConnection(this->fd_, client); // Todo Error handling
+    this->state_ = CgiState::kSendingBody;
     if (this->bodyToCgi_.size() == 0)
     {
         shutdown(this->fd_, SHUT_WR); // tell child stdin is closed
@@ -301,6 +307,9 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
 
 auto Cgi::createResponse(std::shared_ptr<Client> client) -> HTTPResponse
 {
+    if (this->cgiResponse_.find("\r\n\r\n") == std::string::npos)
+        return Execution::buildErrorResponse(*client, ResponseStatusCode::kInternalServerError);
+
     std::string headers = this->cgiResponse_.substr(0, this->cgiResponse_.find("\r\n\r\n") + 4);
     std::string body    = this->cgiResponse_.substr(this->cgiResponse_.find("\r\n\r\n") + 4);
 
