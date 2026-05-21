@@ -1,5 +1,4 @@
-echo -n -e "Content-type:text/html\r\n"
-echo -n -e "\r\n"
+echo -n "Content-type:text/html\\r\\n\\r\\n"
 
 echo -n '<html>'
 echo -n '<head>'
