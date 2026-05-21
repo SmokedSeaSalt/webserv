@@ -1,5 +1,6 @@
 #include "Cgi.hpp"
 #include "ConnectionManager.hpp"
+#include "Execution.hpp"
 #include "configUtils.hpp"
 #include "connection.hpp"
 #include "logging.hpp"
@@ -67,7 +68,7 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             LOG(LogLevel::kDebug, "Data received on fd:{} = {}", fd, this->cgiResponse_);
             // EOF happened
             // build actual http response for client
-            ConnectionManager::getClient(this->fd_)->setResponse(this->createResponse());
+            ConnectionManager::getClient(this->fd_)->setResponse(this->createResponse(ConnectionManager::getClient(this->fd_)));
             ConnectionManager::closeConnection(this->fd_);
             this->state_ = CgiState::KDone;
             break;
@@ -298,29 +299,57 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
     }
 }
 
-auto Cgi::createResponse() -> HTTPResponse
+auto Cgi::createResponse(std::shared_ptr<Client> client) -> HTTPResponse
 {
-    HTTPResponse response;
-
     std::string headers = this->cgiResponse_.substr(0, this->cgiResponse_.find("\r\n\r\n") + 4);
     std::string body    = this->cgiResponse_.substr(this->cgiResponse_.find("\r\n\r\n") + 4);
 
     LOG(LogLevel::kDebug, "After split; header: {}, body: {}", headers, body);
 
-    std::string firstLine;
-    if (headers.find("Status: ") == std::string::npos)
-        firstLine = "HTTP/1.1 200 OK\r\n";
-    else
-        firstLine = "HTTP/1.1 " + headers.substr(headers.find("Status: ") + 8, headers.find("\r\n", headers.find("Status: ")));
+    // create mock request to parse CGI headers
 
-    if (headers.find("Content-Length: ") == std::string::npos)
+    HTTPRequest request;
+
+    std::string fakeFirstLine = "GET / HTTP/1.1\r\n";
+    auto        ret           = request.newData(fakeFirstLine + headers); // Todo catch error return
+    if (!ret.has_value())
+        return Execution::buildErrorResponse(*client, ret.error());
+
+    // create response
+
+    HTTPResponse response;
+
+    // set StatusCode
+    if (!request.getMessage().headers.contains("status"))
+        response.setStatusCode(ResponseStatusCode::kOK);
+    else
     {
-        std::string contentLenght = "content-length: " + std::to_string(body.size()) + "\r\n";
-        headers.insert(0, contentLenght);
+        std::string statusCodeStr;
+        int         statusCode;
+        statusCodeStr = request.getMessage().headers["status"][0].substr(0, 3);
+        try
+        {
+            statusCode = std::stoi(statusCodeStr);
+            response.setStatusCode(static_cast<ResponseStatusCode>(statusCode));
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+            return Execution::buildErrorResponse(*client, ResponseStatusCode::kInternalServerError);
+        }
     }
 
-    LOG(LogLevel::kDebug, "total packet: {}", firstLine + headers + body);
+    // copy headers to response
+    for (const auto& [key, values] : request.getMessage().headers)
+    {
+        response.addHeaderValue(key, values[0]);
+    }
 
-    response.setPacket(firstLine + headers + body);
+    // check if content-length header needs to be added
+    if (!request.getMessage().headers.contains("content-length"))
+        response.addHeaderValue("content-length", std::to_string(body.size()));
+
+    response.addBodyData(body);
+
     return response;
 }
