@@ -18,10 +18,10 @@ if query_string:
                 break
 
 # Read request body from stdin
-body = f"<h1>Hello {name}!</h1>"
+body = f"<body><h1>Hello {name}!</h1></body>"
 
 # Output HTTP headers
-print("Content-Type: text/plain", end='\r\n')
+print("Content-Type: text/html", end='\r\n')
 print(f"Content-Length: {len(body)}", end='\r\n')
 print("", end='\r\n')
 
