@@ -148,9 +148,13 @@ auto Client::execute() -> void
         this->cgifd_ = CgiInitRet.value();
         this->state_ = ClientState::Processing;
     }
-    else
+    else if (this->getRequest().getLocation().cgiPaths.empty())
     {
         this->response_ = Execution::executeNonCGI(*this);
+    }
+    else
+    {
+        this->response_ = Execution::buildErrorResponse(*this, ResponseStatusCode::kForbidden);
     }
     return;
 }

@@ -171,3 +171,63 @@ func TestPostGetDeleteHtmlFile(t *testing.T) {
 	}
 	// t.Logf("TestPostGetDeleteHtmlFile passed successfully")
 }
+
+func TestPythonCGI(t *testing.T) {
+
+
+    t.Run("Get hello.py", func(t *testing.T) {
+        helloExpectedBody := "<html><head><title>Hello from CGI in Python</title></head><body><h1>Hello World!</h2></body></html>"
+        helloFileName := "/cgi-bin/hello.py"
+        resp, err := http.Get(getBaseURL() + helloFileName)
+        if err != nil {
+            t.Fatalf("Request failed: %v", err)
+        }
+        defer resp.Body.Close()
+        if resp.StatusCode != 200 {
+            t.Errorf("Expected 200, got %d", resp.StatusCode)
+        }
+        respBody, _ := io.ReadAll(resp.Body)
+        if string(respBody) != helloExpectedBody {
+            t.Errorf("Expected body %q, got %q", helloExpectedBody, string(respBody))
+        }
+    })
+
+    t.Run("Post toUpper.py", func(t *testing.T) {
+        // requestBody := "tHis SHouLd All BE uppErCAsE 123"
+        // responseExpectedBody := "THIS SHOULD ALL BE UPPERCASE 123"
+        // toUpperFileName := "/cgi-bin/toUpper.py"
+        // resp, err := http.Post(getBaseURL() + toUpperFileName, "text/html", strings.NewReader(requestBody))
+        // if err != nil {
+        //     t.Fatalf("Request failed: %v", err)
+        // }
+        // defer resp.Body.Close()
+        // if resp.StatusCode != 200 {
+        //     t.Errorf("Expected 200, got %d", resp.StatusCode)
+        // }
+        // respBody, _ := io.ReadAll(resp.Body)
+        // if string(respBody) != responseExpectedBody {
+        //     t.Errorf("Expected body %q, got %q", responseExpectedBody, string(respBody))
+        // }
+    })
+
+}
+
+func TestShellCGI(t *testing.T) {
+    t.Run("Get hello.sh", func(t *testing.T) {
+        helloExpectedBody := "<html><head><title>Hello from CGI in Shell</title></head><body><h1>Hello World!</h1></body></html>"
+        helloFileName := "/cgi-bin/hello.sh"
+        resp, err := http.Get(getBaseURL() + helloFileName)
+        if err != nil {
+            t.Fatalf("Request failed: %v", err)
+        }
+        defer resp.Body.Close()
+        if resp.StatusCode != 200 {
+            t.Errorf("Expected 200, got %d", resp.StatusCode)
+        }
+        respBody, _ := io.ReadAll(resp.Body)
+        if string(respBody) != helloExpectedBody {
+            t.Errorf("Expected body %q, got %q", helloExpectedBody, string(respBody))
+        }
+    })
+
+}
