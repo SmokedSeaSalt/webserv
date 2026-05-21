@@ -19,11 +19,10 @@ func getBaseURL() string {
 
 
 func TestPythonCGI(t *testing.T) {
-
-    t.Run("Get hello.sh", func(t *testing.T) {
-        helloExpectedBody := "<html><head><title>Hello from CGI in Shell</title></head><body><h1>Hello World!</h2></body></html>"
-        helloFileName := "/cgi-bin/hello.sh"
-        resp, err := http.Get(getBaseURL() + helloFileName)
+	t.Run("Get greetings.py", func(t *testing.T) {
+        greetingsExpectedBody := "<h1>Hello john!</h1>"
+        greetingsFileNameQueryStr := "/cgi-bin/greetings.py?name=john"
+        resp, err := http.Get(getBaseURL() + greetingsFileNameQueryStr)
         if err != nil {
             t.Fatalf("Request failed: %v", err)
         }
@@ -32,8 +31,8 @@ func TestPythonCGI(t *testing.T) {
             t.Errorf("Expected 200, got %d", resp.StatusCode)
         }
         respBody, _ := io.ReadAll(resp.Body)
-        if string(respBody) != helloExpectedBody {
-            t.Errorf("Expected body %q, got %q", helloExpectedBody, string(respBody))
+        if string(respBody) != greetingsExpectedBody {
+            t.Errorf("Expected body %q, got %q", greetingsExpectedBody, string(respBody))
         }
     })
 }

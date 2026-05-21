@@ -210,6 +210,23 @@ func TestPythonCGI(t *testing.T) {
         }
     })
 
+	t.Run("Get greetings.py", func(t *testing.T) {
+        greetingsExpectedBody := "<h1>Hello john!</h1>"
+        greetingsFileNameQueryStr := "/cgi-bin/greetings.py?name=john"
+        resp, err := http.Get(getBaseURL() + greetingsFileNameQueryStr)
+        if err != nil {
+            t.Fatalf("Request failed: %v", err)
+        }
+        defer resp.Body.Close()
+        if resp.StatusCode != 200 {
+            t.Errorf("Expected 200, got %d", resp.StatusCode)
+        }
+        respBody, _ := io.ReadAll(resp.Body)
+        if string(respBody) != greetingsExpectedBody {
+            t.Errorf("Expected body %q, got %q", greetingsExpectedBody, string(respBody))
+        }
+    })
+
 }
 
 func TestShellCGI(t *testing.T) {
@@ -227,6 +244,24 @@ func TestShellCGI(t *testing.T) {
         respBody, _ := io.ReadAll(resp.Body)
         if string(respBody) != helloExpectedBody {
             t.Errorf("Expected body %q, got %q", helloExpectedBody, string(respBody))
+        }
+    })
+
+	t.Run("Post toUpper.sh", func(t *testing.T) {
+        requestBody := "tHis SHouLd All BE uppErCAsE 123"
+        responseExpectedBody := "THIS SHOULD ALL BE UPPERCASE 123"
+        toUpperFileName := "/cgi-bin/toUpper.sh"
+        resp, err := http.Post(getBaseURL() + toUpperFileName, "text/html", strings.NewReader(requestBody))
+        if err != nil {
+            t.Fatalf("Request failed: %v", err)
+        }
+        defer resp.Body.Close()
+        if resp.StatusCode != 200 {
+            t.Errorf("Expected 200, got %d", resp.StatusCode)
+        }
+        respBody, _ := io.ReadAll(resp.Body)
+        if string(respBody) != responseExpectedBody {
+            t.Errorf("Expected body %q, got %q", responseExpectedBody, string(respBody))
         }
     })
 
