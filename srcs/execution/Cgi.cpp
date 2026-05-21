@@ -1,4 +1,5 @@
 #include "Cgi.hpp"
+#include "CGIResponse.hpp"
 #include "ConnectionManager.hpp"
 #include "Execution.hpp"
 #include "configUtils.hpp"
@@ -307,35 +308,21 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
 
 auto Cgi::createResponse(std::shared_ptr<Client> client) -> HTTPResponse
 {
-    if (this->cgiResponse_.find("\r\n\r\n") == std::string::npos)
+    CGIResponse cgiResponse;
+    if (cgiResponse.parseResponse(this->cgiResponse_) == -1)
         return Execution::buildErrorResponse(*client, ResponseStatusCode::kInternalServerError);
 
-    std::string headers = this->cgiResponse_.substr(0, this->cgiResponse_.find("\r\n\r\n") + 4);
-    std::string body    = this->cgiResponse_.substr(this->cgiResponse_.find("\r\n\r\n") + 4);
-
-    LOG(LogLevel::kDebug, "After split; header: {}, body: {}", headers, body);
-
-    // create mock request to parse CGI headers
-
-    HTTPRequest request;
-
-    std::string fakeFirstLine = "GET / HTTP/1.1\r\n";
-    auto        ret           = request.newData(fakeFirstLine + headers + body); // Todo catch error return
-    if (!ret.has_value())
-        return Execution::buildErrorResponse(*client, ret.error());
-
     // create response
-
     HTTPResponse response;
 
     // set StatusCode
-    if (!request.getMessage().headers.contains("status"))
+    if (!cgiResponse.getMessage().headers.contains("status"))
         response.setStatusCode(ResponseStatusCode::kOK);
     else
     {
         std::string statusCodeStr;
         int         statusCode;
-        statusCodeStr = request.getMessage().headers["status"][0].substr(0, 3);
+        statusCodeStr = cgiResponse.getMessage().headers["status"][0].substr(0, 3);
         try
         {
             statusCode = std::stoi(statusCodeStr);
@@ -349,16 +336,16 @@ auto Cgi::createResponse(std::shared_ptr<Client> client) -> HTTPResponse
     }
 
     // copy headers to response
-    for (const auto& [key, values] : request.getMessage().headers)
+    for (const auto& [key, values] : cgiResponse.getMessage().headers)
     {
         response.addHeaderValue(key, values[0]);
     }
 
     // check if content-length header needs to be added
-    if (!request.getMessage().headers.contains("content-length"))
-        response.addHeaderValue("content-length", std::to_string(body.size()));
+    if (!cgiResponse.getMessage().headers.contains("content-length"))
+        response.addHeaderValue("content-length", std::to_string(cgiResponse.getMessage().body.size()));
 
-    response.addBodyData(body);
+    response.addBodyData(cgiResponse.getMessage().body);
 
     return response;
 }

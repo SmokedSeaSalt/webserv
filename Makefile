@@ -39,6 +39,7 @@ SRC =	main.cpp \
 		configUtils.cpp \
 		Client.cpp \
 		Cgi.cpp \
+		CGIResponse.cpp \
 		signalHandler.cpp
 
 INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/connection  -I$(ROOT_DIR)/incl/logging -I$(ROOT_DIR)/incl/signals#TODO
@@ -99,7 +100,7 @@ $(BUILD_DIR):
 
 -include $(DEP)
 
-.PHONY:	clean fclean re all run debug asan test format 
+.PHONY:	clean fclean re all run debug asan test format
 
 ################################################################################
 # Testing                                                                      #
