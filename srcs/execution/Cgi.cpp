@@ -2,8 +2,10 @@
 #include "CGIResponse.hpp"
 #include "ConnectionManager.hpp"
 #include "Execution.hpp"
+#include "InputArgs.hpp"
 #include "configUtils.hpp"
 #include "connection.hpp"
+#include "executionHelpers.hpp"
 #include "logging.hpp"
 #include "parsing.hpp"
 #include <string>
@@ -248,6 +250,31 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
     this->interpreterPath_              = getInterpreterPath(this->scriptPath_, location);
     if (this->interpreterPath_ == "")
         return std::unexpected(ResponseStatusCode::kNotImplemented);
+
+    // do we have read access to the script
+    std::error_code       ec;
+    std::filesystem::path path{InputArgs::args.relativePath + this->scriptPath_};
+
+    bool fileExists = std::filesystem::exists(path, ec);
+    if (!fileExists)
+    {
+        if (!ec)
+            return std::unexpected(ResponseStatusCode::kNotFound);
+        return std::unexpected(ecToResponseErrorStatusCode(ec));
+    }
+
+    auto permissons = std::filesystem::status(path, ec).permissions();
+    if (ec)
+    {
+        return std::unexpected(ecToResponseErrorStatusCode(ec));
+    }
+
+    if ((permissons & std::filesystem::perms::owner_read) == std::filesystem::perms::none &&
+        (permissons & std::filesystem::perms::group_read) == std::filesystem::perms::none &&
+        (permissons & std::filesystem::perms::others_read) == std::filesystem::perms::none)
+    {
+        return std::unexpected(ResponseStatusCode::kForbidden);
+    }
 
     // add to epoll here
     ConnectionManager::addCGIConnection(this->fd_, client); // Todo Error handling

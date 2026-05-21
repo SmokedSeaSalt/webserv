@@ -18,7 +18,7 @@ if query_string:
                 break
 
 # Read request body from stdin
-body = f"<body><h1>Hello {name}!</h1></body>"
+body = f"<h1>Hello {name}!</h1>"
 
 # Output HTTP headers
 print("Content-Type: text/html", end='\r\n')
