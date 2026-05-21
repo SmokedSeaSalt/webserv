@@ -320,7 +320,7 @@ auto Cgi::createResponse(std::shared_ptr<Client> client) -> HTTPResponse
     HTTPRequest request;
 
     std::string fakeFirstLine = "GET / HTTP/1.1\r\n";
-    auto        ret           = request.newData(fakeFirstLine + headers); // Todo catch error return
+    auto        ret           = request.newData(fakeFirstLine + headers + body); // Todo catch error return
     if (!ret.has_value())
         return Execution::buildErrorResponse(*client, ret.error());
 
