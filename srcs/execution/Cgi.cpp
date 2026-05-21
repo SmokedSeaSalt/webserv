@@ -86,7 +86,12 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
 
 auto Cgi::isRequestTargetCgi(const std::string target, const Config::Location& location) -> bool
 {
-    auto targetSegments = split(target, '/');
+    std::string URI;
+    if (target.find("?") == std::string::npos)
+        URI = target;
+    else
+        URI = target.substr(0, target.find("?"));
+    auto targetSegments = split(URI, '/');
     for (std::string& segment : targetSegments.value())
     {
         if (endsInCgi(segment, location))
@@ -159,7 +164,7 @@ auto Cgi::createEnv(const HTTPRequest& request, std::shared_ptr<Client> client) 
     std::string query  = "";
     if (target.find_first_of('?') != std::string::npos)
     {
-        query = target.substr(target.find_first_of('?'));
+        query = target.substr(target.find_first_of('?') + 1);
         target.erase(target.find_first_of('?'));
     }
     env_strings.push_back("QUERY_STRING=" + query);
