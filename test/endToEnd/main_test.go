@@ -210,6 +210,23 @@ func TestPythonCGI(t *testing.T) {
         }
     })
 
+	t.Run("Get divideByZero.py", func(t *testing.T) {
+		expectedBody := "<h>500 internal server error</h>"
+        divideByZeroFileName := "/cgi-bin/divideByZero.py"
+        resp, err := http.Get(getBaseURL() + divideByZeroFileName)
+        if err != nil {
+            t.Fatalf("Request failed: %v", err)
+        }
+        defer resp.Body.Close()
+        if resp.StatusCode != 500 {
+            t.Errorf("Expected 500, got %d", resp.StatusCode)
+        }
+        respBody, _ := io.ReadAll(resp.Body)
+        if string(respBody) != expectedBody {
+            t.Errorf("Expected body %q, got %q", expectedBody, string(respBody))
+        }
+    })
+
 	t.Run("Get greetings.py", func(t *testing.T) {
         greetingsExpectedBody := "<h1>Hello john!</h1>"
         greetingsFileNameQueryStr := "/cgi-bin/greetings.py?name=john"
