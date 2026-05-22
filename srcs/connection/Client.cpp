@@ -108,6 +108,9 @@ auto Client::prepareResponseForSending() -> void
         this->response_.setHeader("connection", "keep-alive");
     }
 
+    if (this->getRequest().getMessage().method == "HEAD")
+        this->getResponse().setBody("");
+
     std::string packet = this->response_.createPacket();
     LOG(LogLevel::kInfo, "Packet created for fd:{}", this->socketfd_);
     LOG(LogLevel::kVerbose, "with content:\n{}\n", packet);
