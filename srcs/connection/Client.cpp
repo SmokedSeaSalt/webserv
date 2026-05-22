@@ -109,7 +109,7 @@ auto Client::prepareResponseForSending() -> void
     }
 
     if (this->getRequest().getMessage().method == "HEAD")
-            this->getResponse().setBody("");
+        this->getResponse().setBody("");
 
     std::string packet = this->response_.createPacket();
     LOG(LogLevel::kInfo, "Packet created for fd:{}", this->socketfd_);
