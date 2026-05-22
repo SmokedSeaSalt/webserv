@@ -36,7 +36,8 @@ SRC =	main.cpp \
 		Client.cpp \
 		ConnectionManager.cpp \
 		connectionHelpers.cpp \
-		Cgi.cpp 
+		Cgi.cpp \
+		CGIResponse.cpp
 
 
 INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/logging -I$(ROOT_DIR)/incl/connection
@@ -65,7 +66,8 @@ ifdef LINK_ONLY
                  $(CENTRAL_BUILD_DIR)/Client.o \
                  $(CENTRAL_BUILD_DIR)/ConnectionManager.o \
                  $(CENTRAL_BUILD_DIR)/connectionHelpers.o \
-                 $(CENTRAL_BUILD_DIR)/Cgi.o
+                 $(CENTRAL_BUILD_DIR)/Cgi.o \
+                 $(CENTRAL_BUILD_DIR)/CGIResponse.o
   LINK_OBJS = $(CENTRAL_OBJS) $(BUILD_DIR)/main.o
 else
   LINK_OBJS = $(OBJ)
