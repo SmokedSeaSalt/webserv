@@ -134,6 +134,8 @@ auto buildErrorResponse(Client& client, ResponseStatusCode statusCode) -> HTTPRe
     }
     response.setStatusCode(statusCode);
     response.setHeader("content-length", std::to_string(response.getBodyLen())); // todo check does this overwrite anything?
+    if (client.getRequest().getMessage().method == "HEAD")
+        response.setBody("");
     return response;
 }
 
