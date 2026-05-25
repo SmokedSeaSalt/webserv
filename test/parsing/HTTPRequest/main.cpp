@@ -243,6 +243,19 @@ TEST_CASE("invalid headers")
     }
 }
 
+TEST_CASE("No host header")
+{
+    HTTPRequest request{};
+    std::string basic = "GET /index.html HTTP/1.1\r\n"
+                        "User-agent: curl/7.68.0\r\n"
+                        "Accept: */*\r\n"
+                        "\r\n";
+
+    auto ret = request.newData(basic);
+    REQUIRE(!ret.has_value());
+    CHECK(ret.error() == ResponseStatusCode::kBadRequest);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Invalid body                                                               //
 ////////////////////////////////////////////////////////////////////////////////

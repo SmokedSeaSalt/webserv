@@ -116,6 +116,9 @@ auto HTTPRequest::processHeaders() -> std::expected<bool, ResponseStatusCode>
         return true;
     if (pos == 0)
     {
+        if (!this->message_.headers.contains("host"))
+            return std::unexpected(ResponseStatusCode::kBadRequest);
+
         auto ret = this->expectBody();
         if (!ret.has_value())
             return std::unexpected(ret.error());
