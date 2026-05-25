@@ -37,6 +37,15 @@ TEST_CASE("logs to stderr")
     CHECK(out.find("hello 42") != std::string::npos);
 }
 
+TEST_CASE("logs to stderr with to low loglevel")
+{
+    Logging::g_logger.level = LogLevel::kInfo;
+    auto out                = capture_stderr([]
+                              { LOG(LogLevel::kDebug, "hello {}", 42); });
+    CHECK(out.find("[INFO]") == std::string::npos);
+    CHECK(out.find("hello 42") == std::string::npos);
+}
+
 TEST_CASE("silent suppresses output")
 {
     Logging::g_logger.level = LogLevel::kSilent;
@@ -73,5 +82,6 @@ TEST_CASE("logs to file")
 TEST_CASE("actual terminal output")
 {
     Logging::g_logger.level = LogLevel::kInfo;
-    LOG(LogLevel::kDebug, "This is a test if it acutally prints to the terminal.");
+    LOG(LogLevel::kInfo, "This is a test if it acutally prints to the terminal.");
+    LOG(LogLevel::kDebug, "This should not print to the terminal.");
 }

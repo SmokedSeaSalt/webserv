@@ -37,7 +37,7 @@ auto init(std::string path, LogLevel level) -> void;
 template <typename... Args>
 auto log_impl(LogLevel level, std::source_location locaction, std::format_string<Args...> format, Args&&... args) -> void
 {
-    if (g_logger.level == LogLevel::kSilent)
+    if (level > g_logger.level)
         return;
     auto msg  = std::format(format, std::forward<Args>(args)...);
     auto now  = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
