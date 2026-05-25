@@ -133,7 +133,7 @@ static auto parseCGI(Location& location, std::vector<std::string> tokens)
     if (location.cgiPaths.count(tokens[1]))
         return std::unexpected("Duplicate CGI extension not allowed");
     if (!isValidExecutable(tokens[2]))
-        return std::unexpected("CGI binary path not executable or existent");
+        return std::unexpected("CGI binary path " + tokens[2] + " not executable or existent");
     location.cgiPaths[tokens[1]] = tokens[2];
     return {};
 }
