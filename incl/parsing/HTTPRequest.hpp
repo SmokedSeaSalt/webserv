@@ -61,6 +61,8 @@ class HTTPRequest : public HTTPRules
         auto parseBody(std::string line) -> std::expected<size_t, ResponseStatusCode>;
 
         auto expectBody() -> std::expected<bool, ResponseStatusCode>;
+
+        auto url_decode(std::string input) -> std::string;
 };
 
 #endif // HTTPREQUEST
