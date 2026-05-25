@@ -11,7 +11,7 @@ auto print_usage(const char* prog) -> void
               << "  -p <path>    Global relative path\n"
               << "  -l <file>    Output logfile instead of stdout\n"
               << "  -d <n>       Debug log level. 0: Nothing, 1: Info, 2: Verbose, 3: Errors, 4: Debug\n"
-              << "  -t <seconds> client timeout\n"
+              << "  -t <seconds> Client request timeout\n"
               << "  -h           Print this message\n";
 }
 
@@ -68,6 +68,7 @@ auto parseArguments(int argc, char* argv[]) -> bool
                 return false;
             }
             args.timeout = ret;
+            std::cout << "Request timeout set to " << args.timeout << " seconds." << std::endl;
             break;
         }
 
