@@ -525,12 +525,12 @@ TEST_CASE("Test non existent cgi executable")
 {
     auto ret = Config::parseConfigFile("test_files/nonExistentCgiPath.conf");
     CHECK(!ret.has_value());
-    CHECK_EQ(ret.error(), "CGI binary path not executable or existent");
+    CHECK_EQ(ret.error(), "CGI binary path /usr/bin/python300000000 not executable or existent");
 }
 
 TEST_CASE("Test non executable cgi executable")
 {
     auto ret = Config::parseConfigFile("test_files/nonExecutableCgiPath.conf");
     CHECK(!ret.has_value());
-    CHECK_EQ(ret.error(), "CGI binary path not executable or existent");
+    CHECK_EQ(ret.error(), "CGI binary path /etc/hosts not executable or existent");
 }
