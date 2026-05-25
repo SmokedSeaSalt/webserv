@@ -122,22 +122,12 @@ auto Client::prepareResponseForSending() -> void
 
 auto Client::execute() -> void
 {
-    // execution
-    //      preprocessing
-    //           do config check
-    //           do cgi check
-    //           add optional flag paths
-    //      if cgi -> prepare everything for cgi
-    //      if normal ->
-
     auto setupResult = Execution::setupRequestForExecution(*this);
     if (!setupResult.has_value())
     {
         this->response_ = setupResult.error();
         return;
     }
-
-    // also check if is cgi set in location in config
 
     if (this->requestIsCgi_)
     {
@@ -151,9 +141,13 @@ auto Client::execute() -> void
         this->cgifd_ = CgiInitRet.value();
         this->state_ = ClientState::Processing;
     }
-    else
+    else if (this->getRequest().getLocation().cgiPaths.empty())
     {
         this->response_ = Execution::executeNonCGI(*this);
+    }
+    else
+    {
+        this->response_ = Execution::buildErrorResponse(*this, ResponseStatusCode::kForbidden);
     }
     return;
 }

@@ -44,7 +44,7 @@ class Cgi
         Cgi();
         auto handleEvent(const epoll_event& epollEvent) -> HandleEventResult;
         auto init(std::shared_ptr<Client> client) -> std::expected<int, ResponseStatusCode>;
-        auto createResponse() -> HTTPResponse;
+        auto createResponse(std::shared_ptr<Client> client) -> HTTPResponse;
 
         auto getState() -> CgiState;
 

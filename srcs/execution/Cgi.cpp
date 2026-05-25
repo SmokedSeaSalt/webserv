@@ -1,7 +1,11 @@
 #include "Cgi.hpp"
+#include "CGIResponse.hpp"
 #include "ConnectionManager.hpp"
+#include "Execution.hpp"
+#include "InputArgs.hpp"
 #include "configUtils.hpp"
 #include "connection.hpp"
+#include "executionHelpers.hpp"
 #include "logging.hpp"
 #include "parsing.hpp"
 #include <string>
@@ -67,7 +71,7 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             LOG(LogLevel::kDebug, "Data received on fd:{} = {}", fd, this->cgiResponse_);
             // EOF happened
             // build actual http response for client
-            ConnectionManager::getClient(this->fd_)->setResponse(this->createResponse());
+            ConnectionManager::getClient(this->fd_)->setResponse(this->createResponse(ConnectionManager::getClient(this->fd_)));
             ConnectionManager::closeConnection(this->fd_);
             this->state_ = CgiState::KDone;
             break;
@@ -84,7 +88,12 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
 
 auto Cgi::isRequestTargetCgi(const std::string target, const Config::Location& location) -> bool
 {
-    auto targetSegments = split(target, '/');
+    std::string URI;
+    if (target.find("?") == std::string::npos)
+        URI = target;
+    else
+        URI = target.substr(0, target.find("?"));
+    auto targetSegments = split(URI, '/');
     for (std::string& segment : targetSegments.value())
     {
         if (endsInCgi(segment, location))
@@ -157,7 +166,7 @@ auto Cgi::createEnv(const HTTPRequest& request, std::shared_ptr<Client> client) 
     std::string query  = "";
     if (target.find_first_of('?') != std::string::npos)
     {
-        query = target.substr(target.find_first_of('?'));
+        query = target.substr(target.find_first_of('?') + 1);
         target.erase(target.find_first_of('?'));
     }
     env_strings.push_back("QUERY_STRING=" + query);
@@ -222,6 +231,11 @@ auto Cgi::headerToEnvVar(std::string header, std::vector<std::string> value) -> 
 
 auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseStatusCode>
 {
+    // make sure everything is clean
+    this->bodyToCgi_          = "";
+    this->bodyToCgiBytesSend_ = 0;
+    this->cgiResponse_        = "";
+
     // create socketpair
     int fd[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
@@ -237,8 +251,34 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
     if (this->interpreterPath_ == "")
         return std::unexpected(ResponseStatusCode::kNotImplemented);
 
+    // do we have read access to the script
+    std::error_code       ec;
+    std::filesystem::path path{InputArgs::args.relativePath + this->scriptPath_};
+
+    bool fileExists = std::filesystem::exists(path, ec);
+    if (!fileExists)
+    {
+        if (!ec)
+            return std::unexpected(ResponseStatusCode::kNotFound);
+        return std::unexpected(ecToResponseErrorStatusCode(ec));
+    }
+
+    auto permissons = std::filesystem::status(path, ec).permissions();
+    if (ec)
+    {
+        return std::unexpected(ecToResponseErrorStatusCode(ec));
+    }
+
+    if ((permissons & std::filesystem::perms::owner_read) == std::filesystem::perms::none &&
+        (permissons & std::filesystem::perms::group_read) == std::filesystem::perms::none &&
+        (permissons & std::filesystem::perms::others_read) == std::filesystem::perms::none)
+    {
+        return std::unexpected(ResponseStatusCode::kForbidden);
+    }
+
     // add to epoll here
     ConnectionManager::addCGIConnection(this->fd_, client); // Todo Error handling
+    this->state_ = CgiState::kSendingBody;
     if (this->bodyToCgi_.size() == 0)
     {
         shutdown(this->fd_, SHUT_WR); // tell child stdin is closed
@@ -298,29 +338,46 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
     }
 }
 
-auto Cgi::createResponse() -> HTTPResponse
+auto Cgi::createResponse(std::shared_ptr<Client> client) -> HTTPResponse
 {
+    CGIResponse cgiResponse;
+    if (cgiResponse.parseResponse(this->cgiResponse_) == -1)
+        return Execution::buildErrorResponse(*client, ResponseStatusCode::kInternalServerError);
+
+    // create response
     HTTPResponse response;
 
-    std::string headers = this->cgiResponse_.substr(0, this->cgiResponse_.find("\r\n\r\n") + 4);
-    std::string body    = this->cgiResponse_.substr(this->cgiResponse_.find("\r\n\r\n") + 4);
-
-    LOG(LogLevel::kDebug, "After split; header: {}, body: {}", headers, body);
-
-    std::string firstLine;
-    if (headers.find("Status: ") == std::string::npos)
-        firstLine = "HTTP/1.1 200 OK\r\n";
+    // set StatusCode
+    if (!cgiResponse.getMessage().headers.contains("status"))
+        response.setStatusCode(ResponseStatusCode::kOK);
     else
-        firstLine = "HTTP/1.1 " + headers.substr(headers.find("Status: ") + 8, headers.find("\r\n", headers.find("Status: ")));
-
-    if (headers.find("Content-Length: ") == std::string::npos)
     {
-        std::string contentLenght = "content-length: " + std::to_string(body.size()) + "\r\n";
-        headers.insert(0, contentLenght);
+        std::string statusCodeStr;
+        int         statusCode;
+        statusCodeStr = cgiResponse.getMessage().headers["status"][0].substr(0, 3);
+        try
+        {
+            statusCode = std::stoi(statusCodeStr);
+            response.setStatusCode(static_cast<ResponseStatusCode>(statusCode));
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+            return Execution::buildErrorResponse(*client, ResponseStatusCode::kInternalServerError);
+        }
     }
 
-    LOG(LogLevel::kDebug, "total packet: {}", firstLine + headers + body);
+    // copy headers to response
+    for (const auto& [key, values] : cgiResponse.getMessage().headers)
+    {
+        response.addHeaderValue(key, values[0]);
+    }
 
-    response.setPacket(firstLine + headers + body);
+    // check if content-length header needs to be added
+    if (!cgiResponse.getMessage().headers.contains("content-length"))
+        response.addHeaderValue("content-length", std::to_string(cgiResponse.getMessage().body.size()));
+
+    response.addBodyData(cgiResponse.getMessage().body);
+
     return response;
 }
