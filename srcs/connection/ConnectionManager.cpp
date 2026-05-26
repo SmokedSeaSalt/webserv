@@ -2,9 +2,9 @@
 #include "Client.hpp"
 #include "InputArgs.hpp"
 #include "logging.hpp"
-#include <arpa/inet.h> // for client logging
-#include <netdb.h>     // for client logging
-#include <netinet/in.h>
+#include <arpa/inet.h>  // for client logging
+#include <netdb.h>      // for client logging
+#include <netinet/in.h> // for client logging
 #include <signal.h>
 #include <sys/epoll.h>
 #include <sys/types.h>
