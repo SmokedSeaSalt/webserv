@@ -41,6 +41,8 @@ auto Server::getListenServerAddress(std::string ip, int port)
 
 auto Server::setupListenSocket(std::string ip, int port) -> std::expected<int, std::string>
 {
+    if (ip == "localhost")
+        ip = "127.0.0.1";
     // Create socket with IPv4 and TCP
     int listenSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (listenSocket == -1)
