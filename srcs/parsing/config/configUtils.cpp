@@ -20,14 +20,22 @@ auto getServerBlock(const std::tuple<std::string, int>& listenSocketIpPortPair) 
 auto getLocation(ServerBlock& serverBlock, std::string target) -> std::expected<Location, std::string>
 {
     // std::string target          = client.request.getMessage().requestTarget;
-    size_t      maxMatchedLen   = 0;
-    size_t      curPathLen      = 0;
+    size_t   maxMatchedLen   = 0;
+    size_t   curPathLen      = 0;
     Location matchedLocation = {};
     bool     foundMatch      = false;
 
     for (Location curLocation : serverBlock.locations)
     {
-        curPathLen = curLocation.pathPrefix.length();
+        if (curLocation.pathPrefix == "/" && maxMatchedLen == 0)
+        {
+            maxMatchedLen   = curPathLen;
+            matchedLocation = curLocation;
+            foundMatch      = true;
+            continue;
+        }
+
+        curPathLen      = curLocation.pathPrefix.length();
         size_t matchLen = target.find(curLocation.pathPrefix);
         if (matchLen != 0)
             continue;
