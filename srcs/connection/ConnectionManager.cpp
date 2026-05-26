@@ -66,17 +66,6 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
     return client.handleEvent(epollEvent);
 }
 
-// auto ConnectionManager::logNewConnection(int connectionSocket, sockaddr_storage clientAddress, socklen_t addressLen) -> void
-// {
-//     char host[NI_MAXHOST];
-//     char service[NI_MAXSERV];
-
-//     int rc = getnameinfo(reinterpret_cast<sockaddr*>(&clientAddress), addressLen,
-//                          host, sizeof(host), service, sizeof(service),
-//                          NI_NUMERICHOST | NI_NUMERICSERV);
-
-// }
-
 auto ConnectionManager::closeConnection(int fd) -> void
 {
     epoll_ctl(epollfd_, EPOLL_CTL_DEL, fd, NULL);
