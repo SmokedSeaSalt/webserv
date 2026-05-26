@@ -59,14 +59,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
 
     if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP) && !(events & EPOLLIN))
     {
-        if (close(fd) == -1)
-            LOG(LogLevel::kDebug, "failed to close client fd: {}", std::to_string(fd));
-        else
-        {
-            LOG(LogLevel::kDebug, "Closed client fd: {}", std::to_string(fd));
-            // todo: check if client has active cgifd and also close that
-            clientMap_.erase(fd);
-        }
+        closeConnection(fd);
         return HandleEventResult::kError;
     }
 
