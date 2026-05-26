@@ -59,17 +59,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
 
     if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP) && !(events & EPOLLIN))
     {
-<<<<<<< 61-epoll-ctl-delete
         closeConnection(fd);
-=======
-        if (close(fd) == -1)
-            LOG(LogLevel::kDebug, "failed to close client fd: {}", std::to_string(fd));
-        else
-        {
-            LOG(LogLevel::kDebug, "Closed client fd: {}", std::to_string(fd));
-            clientMap_.erase(fd);
-        }
->>>>>>> main
         return HandleEventResult::kError;
     }
 
