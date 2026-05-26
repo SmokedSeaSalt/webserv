@@ -21,8 +21,6 @@ class Server
         auto setup() -> std::expected<void, std::string>;
         auto connection_loop() -> std::expected<void, std::string>;
 
-
-
     private:
         struct epoll_event                          ev_;
         struct epoll_event                          events_[MAX_EVENTS];

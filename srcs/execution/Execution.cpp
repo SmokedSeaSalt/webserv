@@ -217,9 +217,8 @@ auto processDirectoryListing(Client client) -> std::expected<HTTPResponse, Respo
 
         std::filesystem::path hyperLink = std::filesystem::path(client.getRequest().getMessage().requestTarget) / href;
         html += "<li><a href=\"" + hyperLink.string() + "\">" + name + "</a>"
-                                                         " &nbsp; " +
-                sizeStr +
-                " &nbsp; " + formattedTimeStr + "</li>";
+                                                                       " &nbsp; " +
+                sizeStr + " &nbsp; " + formattedTimeStr + "</li>";
     }
     html += "</ul></body></html>";
 
