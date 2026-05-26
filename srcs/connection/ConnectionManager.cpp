@@ -59,7 +59,17 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
 
     if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP) && !(events & EPOLLIN))
     {
+<<<<<<< 61-epoll-ctl-delete
         closeConnection(fd);
+=======
+        if (close(fd) == -1)
+            LOG(LogLevel::kDebug, "failed to close client fd: {}", std::to_string(fd));
+        else
+        {
+            LOG(LogLevel::kDebug, "Closed client fd: {}", std::to_string(fd));
+            clientMap_.erase(fd);
+        }
+>>>>>>> main
         return HandleEventResult::kError;
     }
 
@@ -121,7 +131,6 @@ auto ConnectionManager::createConnection(const epoll_event& epollEvent, std::tup
         return std::unexpected(("Listen socket " + std::to_string(listenSocket) + " has been closed"));
     }
 
-    // todo: can provide more args to log info on clients
     connectionSocket = accept(listenSocket, reinterpret_cast<sockaddr*>(&clientAddress), &addressLen);
     if (connectionSocket == -1)
     {

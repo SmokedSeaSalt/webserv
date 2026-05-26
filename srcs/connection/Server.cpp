@@ -30,8 +30,7 @@ auto Server::getListenServerAddress(std::string ip, int port)
     listenServerAddress.sin_port   = htons(port);
     if (ip.empty())
         listenServerAddress.sin_addr.s_addr = INADDR_ANY;
-    else if (inet_pton(AF_INET, ip.c_str(), &listenServerAddress.sin_addr) !=
-             1) // todo: check two different fail cases?
+    else if (inet_pton(AF_INET, ip.c_str(), &listenServerAddress.sin_addr) != 1)
     {
         perror("inet_pton");
         return std::unexpected("inet_pton failed");
@@ -151,7 +150,7 @@ auto Server::connection_loop() -> std::expected<void, std::string>
         {
             if (listenSocketFdToIpPortPair_.contains(events_[n].data.fd))
             {
-                ConnectionManager::createConnection(events_[n], listenSocketFdToIpPortPair_[events_[n].data.fd]); // todo also pass whole epoll_event struct
+                ConnectionManager::createConnection(events_[n], listenSocketFdToIpPortPair_[events_[n].data.fd]);
             }
             else
             {
@@ -167,12 +166,6 @@ auto Server::connection_loop() -> std::expected<void, std::string>
     }
     serverCleanup();
     return {};
-}
-
-// Getters
-auto Server::getListenSockets() -> std::set<int>
-{
-    return listenSockets_;
 }
 
 auto Server::serverCleanup() -> void

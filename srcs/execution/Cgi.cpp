@@ -61,7 +61,7 @@ auto Cgi::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         {
             // error happened but it might be EAGAIN
             LOG(LogLevel::kDebug, "recv() returned < 0 at fd: {}, closing connection.", fd);
-            ConnectionManager::closeConnection(this->fd_); // TODO: how to handle this error? generate internal server error
+            ConnectionManager::closeConnection(this->fd_);
             return HandleEventResult::kError;
         }
         this->cgiResponse_ += std::get<0>(handleReceivingEventResult);
@@ -242,7 +242,6 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
         return std::unexpected(ResponseStatusCode::kInternalServerError);
     this->fd_ = fd[0];
 
-    // Todo do some more standard execution checking. like, does the script even exist? prepend the relative path
     this->bodyToCgi_                    = client->getRequest().getMessage().body;
     std::vector<std::string> envStrings = createEnv(client->getRequest(), client);
     Config::ServerBlock      block      = Config::getServerBlock(client->getListenSocketIpPortPair()).value();
@@ -277,7 +276,9 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
     }
 
     // add to epoll here
-    ConnectionManager::addCGIConnection(this->fd_, client); // Todo Error handling
+    auto ret = ConnectionManager::addCGIConnection(this->fd_, client);
+    if (!ret.has_value())
+        return std::unexpected(ResponseStatusCode::kInternalServerError);
     this->state_ = CgiState::kSendingBody;
     if (this->bodyToCgi_.size() == 0)
     {
@@ -321,8 +322,6 @@ auto Cgi::init(std::shared_ptr<Client> client) -> std::expected<int, ResponseSta
         argv.push_back(interpreterPath_.data());
         argv.push_back(scriptName.data());
         argv.push_back(nullptr);
-
-        // TODO?: cd this programm to script folder? 7.2 The current working directory for the script SHOULD be set to the directory containing the script.
 
         chdir(cdPath.data());
         LOG(LogLevel::kInfo, "Executing script in child. interpeter: {}, script: {} , in folder: {}", argv[0], argv[1], getcwd(nullptr, 0));

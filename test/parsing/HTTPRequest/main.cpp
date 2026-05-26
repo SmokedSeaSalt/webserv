@@ -91,6 +91,19 @@ TEST_CASE("Basic test per byte")
         CHECK(request.getMessage().body.empty());
     }
 }
+TEST_CASE("Weird header that should work")
+{
+    HTTPRequest request{};
+    std::string basic = "GET /// HTTP/1.1\r\n"
+                        "Host: localhost:8080\r\n"
+                        "User-agent:\r\n"
+                        "Accept: */*\r\n"
+                        "\r\n";
+
+    auto ret = request.newData(basic);
+    REQUIRE(ret.has_value());
+    CHECK(request.getMessage().requestTarget == "///");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Including body                                                             //
@@ -183,6 +196,16 @@ TEST_CASE("Invalid target")
 {
     HTTPRequest request{};
     std::string basic = "GET test/index.html HTTP/1.1\r\n\r\n";
+
+    auto ret = request.newData(basic);
+    REQUIRE(!ret.has_value());
+    CHECK(ret.error() == ResponseStatusCode::kBadRequest);
+}
+
+TEST_CASE("Empty target")
+{
+    HTTPRequest request{};
+    std::string basic = "GET  HTTP/1.1\r\n\r\n";
 
     auto ret = request.newData(basic);
     REQUIRE(!ret.has_value());

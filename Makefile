@@ -42,12 +42,12 @@ SRC =	main.cpp \
 		CGIResponse.cpp \
 		signalHandler.cpp
 
-INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/connection  -I$(ROOT_DIR)/incl/logging -I$(ROOT_DIR)/incl/signals#TODO
+INCLUDE_FLAGS = -I$(ROOT_DIR)/incl/parsing -I$(ROOT_DIR)/incl/execution -I$(ROOT_DIR)/incl/connection  -I$(ROOT_DIR)/incl/logging -I$(ROOT_DIR)/incl/signals
 
 OBJ = $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SRC))
 DEP = ${OBJ:.o=.d}
 
-vpath %.cpp .:$(ROOT_DIR)/srcs/parsing #TODO
+vpath %.cpp .:$(ROOT_DIR)/srcs/parsing
 vpath %.cpp .:$(ROOT_DIR)/srcs/parsing/config
 vpath %.cpp .:$(ROOT_DIR)/srcs/logging
 vpath %.cpp .:$(ROOT_DIR)/srcs/connection

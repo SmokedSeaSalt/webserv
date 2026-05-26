@@ -26,6 +26,7 @@ class HTTPResponse : public HTTPRules
 
         auto setProtocol(std::string protocol) -> std::expected<void, ResponseStatusCode>;
         auto setStatusCode(ResponseStatusCode statusCode) -> void;
+        auto getStatusCode() -> ResponseStatusCode;
 
         auto setPacket(std::string packet) -> void;
         auto getRemainingPacket() -> std::string;

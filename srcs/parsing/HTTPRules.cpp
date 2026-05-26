@@ -35,12 +35,14 @@ auto HTTPRules::is_field_content(const unsigned char& c) -> bool
     return (is_vchar(c) || is_obs_text(c) || c == ' ' || c == '\t');
 }
 
-// TODO test when empty. should be valid
 auto HTTPRules::is_field_value(const std::string& value) -> bool
 {
-    bool first    = is_field_vchar(value.front());
-    bool last     = is_field_vchar(value.back());
-    bool validKey = std::all_of(value.begin(), value.end(), HTTPRules::is_field_content);
+    if (value.empty())
+        return true;
+    bool first = true, last = true, validKey = true;
+    first    = is_field_vchar(value.front());
+    last     = is_field_vchar(value.back());
+    validKey = std::all_of(value.begin(), value.end(), HTTPRules::is_field_content);
 
     return (first && last && validKey);
 }
@@ -61,7 +63,6 @@ auto HTTPRules::is_hexdig(const unsigned char& c) -> bool
     return (isdigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
 }
 
-// TODO test when empty. should be valid
 auto HTTPRules::is_segment(const std::string& str) -> bool
 {
     int insidePctEncoded = 0;
