@@ -3,6 +3,7 @@
 
 #include "HTTPRules.hpp"
 #include <chrono>
+#include <filesystem>
 #include <format>
 #include <iostream>
 #include <print>

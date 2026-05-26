@@ -21,7 +21,7 @@ auto HTTPResponse::setHeader(std::string key, std::string value) -> std::expecte
     if (this->message_.headers.contains(keyLower))
         this->message_.headers[keyLower].clear();
     else
-        this->message_.headers[keyLower].push_back(value); // todo check if this works correctly. (not overwriting)
+        this->message_.headers[keyLower].push_back(value);
 
     return {};
 }
@@ -67,6 +67,11 @@ auto HTTPResponse::setProtocol(std::string protocol) -> std::expected<void, Resp
 auto HTTPResponse::setStatusCode(ResponseStatusCode statusCode) -> void
 {
     this->statusCode_ = statusCode;
+}
+
+auto HTTPResponse::getStatusCode() -> ResponseStatusCode
+{
+    return this->statusCode_;
 }
 
 auto HTTPResponse::createFirstLine(ResponseStatusCode errorCode) const -> std::string

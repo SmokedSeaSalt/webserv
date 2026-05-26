@@ -13,6 +13,6 @@ auto split(std::string line, char delimChar) -> std::expected<std::vector<std::s
     {
         if (!token.empty())
             wordList.push_back(token);
-    } // todo error handling?
+    }
     return wordList;
 }

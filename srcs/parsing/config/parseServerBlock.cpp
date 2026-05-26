@@ -51,12 +51,13 @@ static auto parseErrorPage(ServerBlock& serverBlock, std::string buf)
         errorCode  = std::stoi(tokens[1], &pos);
         if (pos != tokens[1].size())
             return std::unexpected("Invalid error code at: " + buf);
-        // todo: what are valid int values for error codes?
     }
     catch (...)
     {
         return std::unexpected("Invalid error code at: " + buf);
     }
+    if (errorCode < 100 || errorCode > 999)
+        return std::unexpected("Incalid error code at: " + buf);
     if (tokens[2].empty())
         return std::unexpected("Invalid error page at: " + buf);
     if (!isDuplicateErrorPage(serverBlock, errorCode))
