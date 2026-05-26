@@ -2,9 +2,9 @@
 #include "Client.hpp"
 #include "InputArgs.hpp"
 #include "logging.hpp"
-#include <arpa/inet.h> // for client logging
-#include <netdb.h>     // for client logging
-#include <netinet/in.h>
+#include <arpa/inet.h>  // for client logging
+#include <netdb.h>      // for client logging
+#include <netinet/in.h> // for client logging
 #include <signal.h>
 #include <sys/epoll.h>
 #include <sys/types.h>
@@ -59,13 +59,7 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
 
     if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP) && !(events & EPOLLIN))
     {
-        if (close(fd) == -1)
-            LOG(LogLevel::kDebug, "failed to close client fd: {}", std::to_string(fd));
-        else
-        {
-            LOG(LogLevel::kDebug, "Closed client fd: {}", std::to_string(fd));
-            clientMap_.erase(fd);
-        }
+        closeConnection(fd);
         return HandleEventResult::kError;
     }
 
