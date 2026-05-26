@@ -199,7 +199,6 @@ TEST_CASE("Test get png file with -p")
     CHECK(packet.rfind("HTTP/1.1 200 OK\r\n", 0) == 0);
     CHECK(packet.find("content-type: image/png\r\n", 0) != std::string::npos);
 
-    // TODO: also check if header content-type is set correctly
     const std::string sep = "\r\n\r\n";
 
     size_t bodyPos = packet.find(sep);

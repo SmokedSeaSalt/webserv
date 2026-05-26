@@ -13,7 +13,7 @@ int main(int argc, char** argv)
     if (!ret.has_value())
     {
         std::cerr << ret.error() << ". Config parsing error. Shutting down webserv" << std::endl;
-        return 1; // todo error handling
+        return 1;
     }
     if (Signals::initSignals() == -1)
     {

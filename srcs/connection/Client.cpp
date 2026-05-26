@@ -35,7 +35,13 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
             return HandleEventResult::kError;
         }
         this->updateLastActivityTime();
-        this->request_.newData(std::get<std::string>(handleReceivingEventResult));
+        auto newDataRes = this->request_.newData(std::get<std::string>(handleReceivingEventResult));
+        if (!newDataRes.has_value())
+        {
+            LOG(LogLevel::kErrors, "Bad request from client fd:{}", fd);
+            this->response_ = Execution::buildErrorResponse(*this, newDataRes.error());
+            prepareResponseForSending();
+        }
         if (this->request_.getState() != RequestState::KDone)
             break;
         LOG(LogLevel::kInfo, "Packet received from fd:{} with content:\n{}\n", fd, getHTTPMessageString(this->request_.getMessage()));
@@ -67,15 +73,12 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
     {
         if (!(events & EPOLLOUT))
             break;
-        // if (!(this->response_.getSendState() == SendState::kSending))
-        //     break; // should never get in this state
         ssize_t bytesSend = ConnectionManager::handleSendingEvent(fd, this->response_.getRemainingPacket());
         if (bytesSend < 0)
         {
             this->response_.setSendState(SendState::kFailed);
             LOG(LogLevel::kErrors, "Error during send on fd:{}", fd);
             return HandleEventResult::kError;
-            // todo handle error
         }
         this->updateLastActivityTime();
         this->response_.incrementTotalBytesSent(bytesSend);
@@ -97,7 +100,7 @@ auto Client::prepareResponseForSending() -> void
 {
     HTTPMessage requestMessage = this->getRequest().getMessage();
 
-    if (requestMessage.headers.contains("connection") && requestMessage.headers.at("connection")[0] == "close")
+    if ((requestMessage.headers.contains("connection") && requestMessage.headers.at("connection")[0] == "close") || this->response_.getStatusCode() == ResponseStatusCode::kBadRequest)
     {
         this->response_.setKeepAlive(false);
         this->response_.setHeader("connection", "close");
@@ -160,7 +163,6 @@ auto Client::processKeepAlive() -> void
         ConnectionManager::closeConnection(this->getSocketfd());
     else
     {
-        // Todo Reset CGI stuff
         this->request_  = {};
         this->response_ = {};
         this->state_    = ClientState::Receiving;

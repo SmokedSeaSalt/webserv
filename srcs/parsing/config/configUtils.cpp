@@ -20,16 +20,24 @@ auto getServerBlock(const std::tuple<std::string, int>& listenSocketIpPortPair) 
 auto getLocation(ServerBlock& serverBlock, std::string target) -> std::expected<Location, std::string>
 {
     // std::string target          = client.request.getMessage().requestTarget;
-    int      maxMatchedLen   = 0;
-    int      curPathLen      = 0;
+    size_t      maxMatchedLen   = 0;
+    size_t      curPathLen      = 0;
     Location matchedLocation = {};
     bool     foundMatch      = false;
 
     for (Location curLocation : serverBlock.locations)
     {
         curPathLen = curLocation.pathPrefix.length();
-        if (target.find(curLocation.pathPrefix) != 0)
+        size_t matchLen = target.find(curLocation.pathPrefix);
+        if (matchLen != 0)
             continue;
+
+        // is this full location match or has target / after match
+        if (target.length() == curPathLen)
+            return curLocation;
+        if (target[curPathLen] != '/')
+            continue;
+
         if (curPathLen > maxMatchedLen)
         {
             maxMatchedLen   = curPathLen;
@@ -77,45 +85,7 @@ auto checkLocationCompliance(HTTPRequest request) -> ResponseStatusCode
         LOG(LogLevel::kDebug, "Method {} not allowed", request.getMessage().method);
         return ResponseStatusCode::kMethodNotAllowed;
     }
-    // todo are there other checks?
     return ResponseStatusCode::kOK;
 }
-
-// auto getServerBlock(Config& config, Client& client) -> std::expected<ServerBlock, std::string>
-// {
-//     for (ServerBlock& serverBlock : config.serverBlocks)
-//     {
-//         if (serverBlock.ip == get<0>(client.listenSocketIpPortPair) && serverBlock.port == get<1>(client.listenSocketIpPortPair))
-//             return serverBlock;
-//     }
-//     return std::unexpected("Serverblock not found");
-// }
-
-// auto getLocation(ServerBlock& serverBlock, Client& client) -> std::expected<Location, std::string>
-// {
-//     std::string target          = client.request.getMessage().requestTarget;
-//     int         maxMatchedLen   = 0;
-//     int         curPathLen      = 0;
-//     Location    matchedLocation = {};
-//     bool        foundMatch      = false;
-
-//     for (Location curLocation : serverBlock.locations)
-//     {
-//         curPathLen = curLocation.pathPrefix.length();
-//         if (target.find(curLocation.pathPrefix) != 0)
-//             continue;
-//         if (curPathLen > maxMatchedLen)
-//         {
-//             maxMatchedLen   = curPathLen;
-//             matchedLocation = curLocation;
-//             foundMatch      = true;
-//         }
-//     }
-//     if (foundMatch)
-//         return matchedLocation;
-//     LOG(LogLevel::kInfo, "Client with fd:{} with target: {}. No matching location found.\n", client.socketfd, target);
-//     return std::unexpected("Location not found");
-// }
-// targets [/, /images, /images/pngs] for target /images/pngs/cat.png
 
 } // namespace Config
