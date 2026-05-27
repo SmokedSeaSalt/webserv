@@ -78,6 +78,7 @@ auto Client::handleEvent(const epoll_event& epollEvent) -> HandleEventResult
         {
             this->response_.setSendState(SendState::kFailed);
             LOG(LogLevel::kErrors, "Error during send on fd:{}", fd);
+            ConnectionManager::closeConnection(this->getSocketfd());
             return HandleEventResult::kError;
         }
         this->updateLastActivityTime();
