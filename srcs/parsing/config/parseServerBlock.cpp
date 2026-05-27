@@ -92,10 +92,10 @@ static auto parseMaxBodySize(ServerBlock& serverBlock, std::string buf)
     }
     catch (...)
     {
-        return std::unexpected("Invalid error code at: " + buf);
+        return std::unexpected("Invalid max body size at: " + buf);
     }
     if (maxBodySize < 0)
-        return std::unexpected("Invalid error code at: " + buf);
+        return std::unexpected("Invalid max body size at: " + buf);
     serverBlock.maxBodySize = maxBodySize;
 
     return {};
@@ -199,7 +199,14 @@ auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
                 return std::unexpected("Duplicate location path prefix");
         }
         else if (buf == "}")
+        {
+            if (foundListen == false)
+                return std::unexpected("No listen socket configured");
+            if (foundMaxBodySize == false)
+                return std::unexpected("No max body size configured");
+
             return serverBlock;
+        }
     }
     return std::unexpected("Server block closing bracket not found");
 }
