@@ -69,6 +69,8 @@ static auto parseRedirect(Location& location, std::vector<std::string> tokens)
         return std::unexpected("Invalid redirect code");
     }
     location.redirectLocation = tokens[2];
+    location.acceptedMethods.getAllowed = true;
+    location.acceptedMethods.headAllowed = true;
     return {};
 }
 
