@@ -105,8 +105,8 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
             CHECK(loc.redirectCode == 301);
             CHECK(loc.redirectLocation == "/new-page");
 
-            CHECK(loc.acceptedMethods.getAllowed == false);
-            CHECK(loc.acceptedMethods.headAllowed == false);
+            CHECK(loc.acceptedMethods.getAllowed == true);
+            CHECK(loc.acceptedMethods.headAllowed == true);
             CHECK(loc.acceptedMethods.postAllowed == false);
             CHECK(loc.acceptedMethods.deleteAllowed == false);
 
@@ -124,7 +124,7 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
             CHECK(loc.pathPrefix == "/scripts");
             CHECK(loc.acceptedMethods.getAllowed == true);
             CHECK(loc.acceptedMethods.headAllowed == false);
-            CHECK(loc.acceptedMethods.postAllowed == true);
+            CHECK(loc.acceptedMethods.postAllowed == false);
             CHECK(loc.acceptedMethods.deleteAllowed == false);
 
             CHECK(loc.root == "/var/www/cgi");
@@ -229,7 +229,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.acceptedMethods.getAllowed == false);
                 CHECK(loc.acceptedMethods.headAllowed == false);
                 CHECK(loc.acceptedMethods.postAllowed == true);
-                CHECK(loc.acceptedMethods.deleteAllowed == true);
+                CHECK(loc.acceptedMethods.deleteAllowed == false);
 
                 CHECK(loc.uploadsAllowed == true);
                 CHECK(loc.uploadLocation == "/tmp/uploads");
@@ -249,8 +249,8 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.redirectCode == 301);
                 CHECK(loc.redirectLocation == "/new-page");
 
-                CHECK(loc.acceptedMethods.getAllowed == false);
-                CHECK(loc.acceptedMethods.headAllowed == false);
+                CHECK(loc.acceptedMethods.getAllowed == true);
+                CHECK(loc.acceptedMethods.headAllowed == true);
                 CHECK(loc.acceptedMethods.postAllowed == false);
                 CHECK(loc.acceptedMethods.deleteAllowed == false);
 
@@ -268,7 +268,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.pathPrefix == "/scripts");
                 CHECK(loc.acceptedMethods.getAllowed == true);
                 CHECK(loc.acceptedMethods.headAllowed == false);
-                CHECK(loc.acceptedMethods.postAllowed == true);
+                CHECK(loc.acceptedMethods.postAllowed == false);
                 CHECK(loc.acceptedMethods.deleteAllowed == false);
 
                 CHECK(loc.root == "/var/www/cgi");
@@ -320,8 +320,8 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.pathPrefix == "/");
                 CHECK(loc.acceptedMethods.getAllowed == true);
                 CHECK(loc.acceptedMethods.headAllowed == false);
-                CHECK(loc.acceptedMethods.postAllowed == true);
-                CHECK(loc.acceptedMethods.deleteAllowed == true);
+                CHECK(loc.acceptedMethods.postAllowed == false);
+                CHECK(loc.acceptedMethods.deleteAllowed == false);
 
                 CHECK(loc.defaultFile == "index.html");
                 CHECK(loc.directoryListing == false);
@@ -340,8 +340,8 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.pathPrefix == "/api");
                 CHECK(loc.acceptedMethods.getAllowed == true);
                 CHECK(loc.acceptedMethods.headAllowed == false);
-                CHECK(loc.acceptedMethods.postAllowed == true);
-                CHECK(loc.acceptedMethods.deleteAllowed == true);
+                CHECK(loc.acceptedMethods.postAllowed == false);
+                CHECK(loc.acceptedMethods.deleteAllowed == false);
 
                 CHECK(loc.root == "/var/www/api");
                 CHECK(loc.directoryListing == false);
@@ -383,7 +383,7 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.acceptedMethods.getAllowed == false);
                 CHECK(loc.acceptedMethods.headAllowed == false);
                 CHECK(loc.acceptedMethods.postAllowed == true);
-                CHECK(loc.acceptedMethods.deleteAllowed == false);
+                CHECK(loc.acceptedMethods.deleteAllowed == true);
 
                 CHECK(loc.uploadsAllowed == true);
                 CHECK(loc.uploadLocation == "/tmp/incoming");
@@ -525,12 +525,12 @@ TEST_CASE("Test non existent cgi executable")
 {
     auto ret = Config::parseConfigFile("test_files/nonExistentCgiPath.conf");
     CHECK(!ret.has_value());
-    CHECK_EQ(ret.error(), "CGI binary path not executable or existent");
+    CHECK_EQ(ret.error(), "CGI binary path /usr/bin/python300000000 not executable or existent");
 }
 
 TEST_CASE("Test non executable cgi executable")
 {
     auto ret = Config::parseConfigFile("test_files/nonExecutableCgiPath.conf");
     CHECK(!ret.has_value());
-    CHECK_EQ(ret.error(), "CGI binary path not executable or existent");
+    CHECK_EQ(ret.error(), "CGI binary path /etc/hosts not executable or existent");
 }

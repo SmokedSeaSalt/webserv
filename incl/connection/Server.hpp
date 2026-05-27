@@ -21,13 +21,9 @@ class Server
         auto setup() -> std::expected<void, std::string>;
         auto connection_loop() -> std::expected<void, std::string>;
 
-        // getters
-        auto getListenSockets() -> std::set<int>;
-
     private:
         struct epoll_event                          ev_;
         struct epoll_event                          events_[MAX_EVENTS];
-        std::set<int>                               listenSockets_; // todo check if used
         std::map<int, std::tuple<std::string, int>> listenSocketFdToIpPortPair_;
         int                                         epollfd_;
 

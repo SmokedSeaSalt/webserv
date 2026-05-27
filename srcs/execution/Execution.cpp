@@ -26,6 +26,7 @@ auto getPathAfterLocation(Client& client) -> std::string
 
 auto setupRequestForExecution(Client& client) -> std::expected<void, HTTPResponse>
 {
+
     auto serverBlock = Config::getServerBlock(client.getListenSocketIpPortPair());
     if (!serverBlock.has_value())
     {
@@ -44,7 +45,22 @@ auto setupRequestForExecution(Client& client) -> std::expected<void, HTTPRespons
 
     client.getRequest().setpathAfterLocation(getPathAfterLocation(client));
 
-    client.getRequest().setAbsoluteTarget(getAbsFilePath(client.getRequest()));
+    if (client.getRequest().getMessage().method == "POST" || client.getRequest().getMessage().method == "DELETE")
+        client.getRequest().setAbsoluteTarget(getAbsFilePath(client.getRequest(), true));
+    else
+        client.getRequest().setAbsoluteTarget(getAbsFilePath(client.getRequest()));
+
+    // check if request is cgi
+    client.setRequestIsCgi(Cgi::isRequestTargetCgi(client.getRequest().getMessage().requestTarget, client.getRequest().getLocation()));
+
+    // check if request is valid
+    ResponseStatusCode status = checkRequestConfigCompliance(client);
+    if (status != ResponseStatusCode::kOK)
+        return std::unexpected(buildErrorResponse(client, status));
+
+    // check if request should be redirected
+    if (!client.getRequest().getLocation().redirectLocation.empty())
+        return std::unexpected(getRedirectResponse(client));
 
     return {};
 }
@@ -62,46 +78,18 @@ auto getRedirectResponse(Client& client) -> HTTPResponse
     return response;
 }
 
-auto execute(Client& client) -> HTTPResponse
+auto executeNonCGI(Client& client) -> HTTPResponse
 {
     HTTPResponse response;
     HTTPMessage  requestMessage = client.getRequest().getMessage();
 
-    auto setupResult = setupRequestForExecution(client);
-    if (!setupResult.has_value())
-        return setupResult.error();
-
-    // move this to Client right before cgi or execute() call
-    if (!client.getRequest().getLocation().redirectLocation.empty())
-        return getRedirectResponse(client);
-
-    ResponseStatusCode status = checkRequestConfigCompliance(client);
-
-    if (status != ResponseStatusCode::kOK)
-        response = buildErrorResponse(client, status);
+    auto validRequestResult = processValidRequest(client);
+    if (!validRequestResult.has_value())
+        response = buildErrorResponse(client, validRequestResult.error());
     else
-    {
-        // if (cgi)
-        //      executeCGI
-        // else non cgi below
-        auto validRequestResult = processValidRequest(client);
-        if (!validRequestResult.has_value())
-            response = buildErrorResponse(client, validRequestResult.error()); // todo check this error handling
-        else
-            response = validRequestResult.value();
-    }
+        response = validRequestResult.value();
+
     response.setSendState(SendState::kReady);
-
-    if (requestMessage.headers.contains("connection") && requestMessage.headers.at("connection")[0] == "close")
-    {
-        response.addHeaderValue("connection", "close");
-        response.setKeepAlive(false);
-    }
-    else
-    {
-        response.addHeaderValue("connection", "keep-alive");
-        response.setKeepAlive(true);
-    }
 
     return response;
 }
@@ -145,7 +133,8 @@ auto buildErrorResponse(Client& client, ResponseStatusCode statusCode) -> HTTPRe
         }
     }
     response.setStatusCode(statusCode);
-    response.setHeader("content-length", std::to_string(response.getBodyLen())); // todo check does this overwrite anything?
+    response.setHeader("content-length", std::to_string(response.getBodyLen()));
+
     return response;
 }
 
@@ -197,8 +186,8 @@ auto processDirectoryListing(Client client) -> std::expected<HTTPResponse, Respo
         return std::unexpected(ResponseStatusCode::kNotFound);
     }
 
-    std::string html = "<!DOCTYPE html>\n<html><head><title>Directory listing for " + path + "</title></head><body>";
-    html += "<h1>Directory listing for " + path + "</h1><ul>";
+    std::string html = "<!DOCTYPE html>\n<html><head><title>Directory listing for " + client.getRequest().getMessage().requestTarget + "</title></head><body>";
+    html += "<h1>Directory listing for " + client.getRequest().getMessage().requestTarget + "</h1><ul>";
 
     for (std::filesystem::directory_iterator it(path, ec), end; it != end; ++it)
     {
@@ -226,10 +215,10 @@ auto processDirectoryListing(Client client) -> std::expected<HTTPResponse, Respo
                                   ? std::to_string(it->file_size()) + " bytes"
                                   : "-";
 
-        html += "<li><a href=\"" + href + "\">" + name + "</a>"
-                                                         " &nbsp; " +
-                sizeStr +
-                " &nbsp; " + formattedTimeStr + "</li>";
+        std::filesystem::path hyperLink = std::filesystem::path(client.getRequest().getMessage().requestTarget) / href;
+        html += "<li><a href=\"" + hyperLink.string() + "\">" + name + "</a>"
+                                                                       " &nbsp; " +
+                sizeStr + " &nbsp; " + formattedTimeStr + "</li>";
     }
     html += "</ul></body></html>";
 
@@ -253,7 +242,6 @@ auto processGetDir(Client client, const std::string path) -> std::expected<HTTPR
         auto processGetFileResult = processGetFile(getAbsFilePath(client.getRequest()));
         if (!processGetFileResult.has_value())
         {
-            // todo log
             LOG(LogLevel::kDebug, "default file: {} could not be read", location.defaultFile);
             return std::unexpected(processGetFileResult.error());
         }
@@ -264,7 +252,6 @@ auto processGetDir(Client client, const std::string path) -> std::expected<HTTPR
         auto processDirectoryListingResult = processDirectoryListing(client);
         if (!processDirectoryListingResult.has_value())
         {
-            // todo log
             LOG(LogLevel::kDebug, "Directory listing at: {} failed", client.getRequest().getMessage().absoluteRequestTarget);
             return std::unexpected(ResponseStatusCode::kInternalServerError);
         }
@@ -295,18 +282,19 @@ auto processGet(Client& client) -> std::expected<HTTPResponse, ResponseStatusCod
     HTTPResponse    response;
 
     bool fileExists = std::filesystem::exists(path, ec);
+
     if (!fileExists)
     {
         if (!ec)
             return std::unexpected(ResponseStatusCode::kNotFound);
-        // todo log("value: "ec.value() " message: " ec.message());
+        LOG(LogLevel::kDebug, "value: {} message: {}", ec.value(), ec.message());
         return std::unexpected(ecToResponseErrorStatusCode(ec));
     }
 
     bool isADirectory = std::filesystem::is_directory(path, ec);
     if (ec)
     {
-        // todo log("value: "ec.value() " message: " ec.message());
+        LOG(LogLevel::kDebug, "value: {} message: {}", ec.value(), ec.message());
         return std::unexpected(ecToResponseErrorStatusCode(ec));
     }
     if (isADirectory)
@@ -314,7 +302,7 @@ auto processGet(Client& client) -> std::expected<HTTPResponse, ResponseStatusCod
         auto processGetDirResult = processGetDir(client, path);
         if (!processGetDirResult.has_value())
         {
-            // todo log
+            LOG(LogLevel::kDebug, "Read on directory {} failed.", path);
             return std::unexpected(processGetDirResult.error());
         }
         return processGetDirResult.value();
@@ -325,7 +313,7 @@ auto processGet(Client& client) -> std::expected<HTTPResponse, ResponseStatusCod
         auto processGetFileResult = processGetFile(path);
         if (!processGetFileResult.has_value())
         {
-            // todo log
+            LOG(LogLevel::kDebug, "Read on file {} failed.", path);
             return std::unexpected(processGetFileResult.error());
         }
         response = processGetFileResult.value();
@@ -354,7 +342,6 @@ auto processPost(Client& client) -> std::expected<HTTPResponse, ResponseStatusCo
     auto postFileResult = createFileWithContent(path, request.getMessage().body);
     if (!postFileResult.has_value())
         return std::unexpected(postFileResult.error());
-    // todo: any headers need to be set here?
     response.setStatusCode(ResponseStatusCode::kCreated);
     response.setHeader("content-length", std::to_string(response.getBodyLen()));
     std::string pathAfterLocation = request.getMessage().pathAfterLocation;
@@ -376,7 +363,6 @@ auto processDelete(Client& client) -> std::expected<HTTPResponse, ResponseStatus
     auto deleteFileResult = deleteFile(path);
     if (!deleteFileResult.has_value())
         return std::unexpected(deleteFileResult.error());
-    // todo: any headers need to be set here?
     response.setStatusCode(ResponseStatusCode::kNoContent);
     response.setHeader("content-length", std::to_string(response.getBodyLen()));
     return response;

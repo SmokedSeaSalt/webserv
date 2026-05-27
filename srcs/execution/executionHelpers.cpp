@@ -43,14 +43,14 @@ auto readFile(std::string pathString) -> std::expected<std::string, ResponseStat
     {
         if (!ec)
             return std::unexpected(ResponseStatusCode::kNotFound);
-        // todo log("value: "ec.value() " message: " ec.message());
+        LOG(LogLevel::kDebug, "value: {} message: {}", ec.value(), ec.message());
         return std::unexpected(ecToResponseErrorStatusCode(ec));
     }
 
     std::uintmax_t size = std::filesystem::file_size(path, ec);
     if (ec)
     {
-        // todo log("value: "ec.value() " message: " ec.message());
+        LOG(LogLevel::kDebug, "value: {} message: {}", ec.value(), ec.message());
         return std::unexpected(ecToResponseErrorStatusCode(ec));
     }
 
@@ -93,7 +93,7 @@ auto createFileWithContent(std::string pathString, std::string body) -> std::exp
     bool fileExists = std::filesystem::exists(path, ec);
     if (fileExists)
     {
-        // todo log
+        LOG(LogLevel::kDebug, "File {} already exists", path.string());
         return std::unexpected(ResponseStatusCode::kConflict);
     }
 
@@ -103,19 +103,19 @@ auto createFileWithContent(std::string pathString, std::string body) -> std::exp
         bool fileParentExists = std::filesystem::exists(parent, ec);
         if (ec)
         {
-            // log
+            LOG(LogLevel::kDebug, "value: {} message: {}", ec.value(), ec.message());
             return std::unexpected(ecToResponseErrorStatusCode(ec));
         }
         if (!fileParentExists)
         {
-            // log
+            LOG(LogLevel::kDebug, "Subdirectory for {} does not exists", path.string());
             return std::unexpected(ResponseStatusCode::kNotFound);
         }
 
         auto permissions = std::filesystem::status(parent, ec).permissions();
         if (ec)
         {
-            // log
+            LOG(LogLevel::kDebug, "value: {} message: {}", ec.value(), ec.message());
             return std::unexpected(ecToResponseErrorStatusCode(ec));
         }
 
@@ -123,6 +123,7 @@ auto createFileWithContent(std::string pathString, std::string body) -> std::exp
             (permissions & std::filesystem::perms::group_write) == std::filesystem::perms::none &&
             (permissions & std::filesystem::perms::others_write) == std::filesystem::perms::none)
         {
+            LOG(LogLevel::kDebug, "File permissions for {} are not correct", path.string());
             return std::unexpected(ResponseStatusCode::kForbidden);
         }
     }
@@ -142,8 +143,6 @@ auto createFileWithContent(std::string pathString, std::string body) -> std::exp
     return {};
 }
 
-// todo discuss mathijs no deleting dirs (also no creating dirs with post?). In general, it is assumed that the origin server will only allow DELETE on resources for which it has a prescribed mechanism for accomplishing the deletion.
-
 /// @brief deletes a file on the system. directories wont be deleted and will return an error.
 /// @param pathString file path
 /// @return void or an appropriate http status error code
@@ -155,24 +154,20 @@ auto deleteFile(std::string pathString) -> std::expected<void, ResponseStatusCod
     const bool isADirectory = std::filesystem::is_directory(path, ec);
     if (ec)
     {
-        // todo log("value: "ec.value() " message: " ec.message());
         return std::unexpected(ecToResponseErrorStatusCode(ec));
     }
     if (isADirectory)
     {
-        // log
         return std::unexpected(ResponseStatusCode::kMethodNotAllowed);
     }
 
     const bool removed = std::filesystem::remove(path, ec);
     if (ec)
     {
-        // log
         return std::unexpected(ecToResponseErrorStatusCode(ec));
     }
     if (!removed)
     {
-        // log
         return std::unexpected(ResponseStatusCode::kNotFound);
     }
     return {};
@@ -181,26 +176,27 @@ auto deleteFile(std::string pathString) -> std::expected<void, ResponseStatusCod
 /// @brief request.pathAfterLocation should be set already
 /// @param request
 /// @return
-auto getAbsFilePath(HTTPRequest& request) -> std::string
+auto getAbsFilePath(HTTPRequest& request, bool useUploadStoreRoot = false) -> std::string
 {
-    std::string root              = request.getLocation().root;
+    std::string root;
+
+    if (useUploadStoreRoot)
+        root = request.getLocation().uploadLocation;
+    else
+        root = request.getLocation().root;
     std::string pathAfterLocation = request.getMessage().pathAfterLocation;
 
-    // -p "/home/egrisel/webserv", root ""
+    if (!pathAfterLocation.empty() && pathAfterLocation[0] == '/')
+        pathAfterLocation = pathAfterLocation.substr(1);
+
     if (!InputArgs::args.relativePath.empty())
     {
-        if (!pathAfterLocation.empty() && pathAfterLocation[0] == '/')
-            pathAfterLocation = pathAfterLocation.substr(1);
         if (!root.empty() && root[0] == '/')
             root = root.substr(1);
         return (std::filesystem::path(InputArgs::args.relativePath) / root / pathAfterLocation).string();
     }
     else
     {
-        // todo check if this works
         return (std::filesystem::path(root) / pathAfterLocation).string();
     }
 }
-
-// is_a_directory
-//

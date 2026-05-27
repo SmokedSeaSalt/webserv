@@ -26,6 +26,7 @@ class HTTPResponse : public HTTPRules
 
         auto setProtocol(std::string protocol) -> std::expected<void, ResponseStatusCode>;
         auto setStatusCode(ResponseStatusCode statusCode) -> void;
+        auto getStatusCode() -> ResponseStatusCode;
 
         auto setPacket(std::string packet) -> void;
         auto getRemainingPacket() -> std::string;
@@ -50,7 +51,7 @@ class HTTPResponse : public HTTPRules
         std::string        packet_;
         size_t             totalBytesSent_ = 0;
         SendState          sendState_      = SendState::kIdle;
-        bool               keepAlive       = true;
+        bool               keepAlive_      = true;
 
         auto createFirstLine(ResponseStatusCode errorCode) const -> std::string;
         auto createHeaders() const -> std::string;

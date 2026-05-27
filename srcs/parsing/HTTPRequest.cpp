@@ -1,5 +1,6 @@
 #include "HTTPRequest.hpp"
 #include "parsing.hpp"
+#include <charconv>
 
 auto HTTPRequest::getMessage() const -> HTTPMessage
 {
@@ -115,6 +116,9 @@ auto HTTPRequest::processHeaders() -> std::expected<bool, ResponseStatusCode>
         return true;
     if (pos == 0)
     {
+        if (!this->message_.headers.contains("host"))
+            return std::unexpected(ResponseStatusCode::kBadRequest);
+
         auto ret = this->expectBody();
         if (!ret.has_value())
             return std::unexpected(ret.error());
@@ -216,6 +220,10 @@ auto HTTPRequest::parseStartLine(std::string line) -> std::expected<size_t, Resp
     if (!ret.has_value())
         return std::unexpected(ret.error());
 
+    this->message_.requestTarget = url_decode(this->message_.requestTarget);
+    if (this->message_.requestTarget.find("../") != std::string::npos)
+        return std::unexpected(ResponseStatusCode::kBadRequest);
+
     return 1;
 }
 
@@ -286,6 +294,28 @@ auto HTTPRequest::expectBody() -> std::expected<bool, ResponseStatusCode>
     }
     this->bodyType_ = BodyType::kNone;
     return false;
+}
+
+auto HTTPRequest::url_decode(std::string input) -> std::string
+{
+    std::string result;
+
+    for (size_t i = 0; i < input.size(); ++i)
+    {
+        if (input[i] == '%')
+        {
+            int value;
+            std::from_chars(&input[i + 1], &input[i + 3], value, 16);
+            result += static_cast<char>(value);
+            i += 2;
+        }
+        else
+        {
+            result += input[i];
+        }
+    }
+
+    return result;
 }
 
 auto HTTPRequest::getState() const -> RequestState

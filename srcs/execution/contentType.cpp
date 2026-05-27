@@ -31,10 +31,3 @@ auto fileExtensionToContentType(std::string_view path) -> std::string_view
     auto it  = types.find(ext);
     return it != types.end() ? it->second : "application/octet-stream";
 }
-
-// todo
-auto contentTypeToFileExtension(std::string_view path) -> std::string_view
-{
-    (void)path;
-    return "TODO";
-}

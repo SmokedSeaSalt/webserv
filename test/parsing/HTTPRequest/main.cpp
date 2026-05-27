@@ -40,6 +40,20 @@ TEST_CASE("Basic test")
     }
 }
 
+TEST_CASE("Basic URL encoding")
+{
+    HTTPRequest request{};
+    std::string basic = "GET /index.htm%6C HTTP/1.1\r\n"
+                        "Host: localhost:8080\r\n"
+                        "User-agent: curl/7.68.0\r\n"
+                        "Accept: */*\r\n"
+                        "\r\n";
+
+    auto ret = request.newData(basic);
+    REQUIRE(ret.has_value());
+    CHECK(request.getMessage().requestTarget == "/index.html");
+}
+
 TEST_CASE("Basic test per byte")
 {
     HTTPRequest request{};
@@ -76,6 +90,19 @@ TEST_CASE("Basic test per byte")
     {
         CHECK(request.getMessage().body.empty());
     }
+}
+TEST_CASE("Weird header that should work")
+{
+    HTTPRequest request{};
+    std::string basic = "GET /// HTTP/1.1\r\n"
+                        "Host: localhost:8080\r\n"
+                        "User-agent:\r\n"
+                        "Accept: */*\r\n"
+                        "\r\n";
+
+    auto ret = request.newData(basic);
+    REQUIRE(ret.has_value());
+    CHECK(request.getMessage().requestTarget == "///");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -175,6 +202,16 @@ TEST_CASE("Invalid target")
     CHECK(ret.error() == ResponseStatusCode::kBadRequest);
 }
 
+TEST_CASE("Empty target")
+{
+    HTTPRequest request{};
+    std::string basic = "GET  HTTP/1.1\r\n\r\n";
+
+    auto ret = request.newData(basic);
+    REQUIRE(!ret.has_value());
+    CHECK(ret.error() == ResponseStatusCode::kBadRequest);
+}
+
 TEST_CASE("Invalid version")
 {
     HTTPRequest request{};
@@ -189,12 +226,51 @@ TEST_CASE("Invalid version")
 // Invalid headers                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-TEST_CASE("invalid header")
+TEST_CASE("invalid headers")
+{
+    {
+        HTTPRequest request{};
+        std::string basic = "GET /index.html HTTP/1.1\r\n"
+                            "Host: localhost:8080\r\n"
+                            "User-@gent: curl/7.68.0\r\n"
+                            "Accept: */*\r\n"
+                            "\r\n";
+
+        auto ret = request.newData(basic);
+        REQUIRE(!ret.has_value());
+        CHECK(ret.error() == ResponseStatusCode::kBadRequest);
+    }
+    {
+        HTTPRequest request{};
+        std::string basic = "GET /index.htm%A HTTP/1.1\r\n"
+                            "Host: localhost:8080\r\n"
+                            "User-agent: curl/7.68.0\r\n"
+                            "Accept: */*\r\n"
+                            "\r\n";
+
+        auto ret = request.newData(basic);
+        REQUIRE(!ret.has_value());
+        CHECK(ret.error() == ResponseStatusCode::kBadRequest);
+    }
+    {
+        HTTPRequest request{};
+        std::string basic = "GET /../index.html HTTP/1.1\r\n"
+                            "Host: localhost:8080\r\n"
+                            "User-agent: curl/7.68.0\r\n"
+                            "Accept: */*\r\n"
+                            "\r\n";
+
+        auto ret = request.newData(basic);
+        REQUIRE(!ret.has_value());
+        CHECK(ret.error() == ResponseStatusCode::kBadRequest);
+    }
+}
+
+TEST_CASE("No host header")
 {
     HTTPRequest request{};
     std::string basic = "GET /index.html HTTP/1.1\r\n"
-                        "Host: localhost:8080\r\n"
-                        "User-@gent: curl/7.68.0\r\n"
+                        "User-agent: curl/7.68.0\r\n"
                         "Accept: */*\r\n"
                         "\r\n";
 

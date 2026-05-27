@@ -1,9 +1,10 @@
 #include "ConnectionManager.hpp"
 #include "Client.hpp"
+#include "InputArgs.hpp"
 #include "logging.hpp"
-#include <arpa/inet.h> // for client logging
-#include <netdb.h>     // for client logging
-#include <netinet/in.h>
+#include <arpa/inet.h>  // for client logging
+#include <netdb.h>      // for client logging
+#include <netinet/in.h> // for client logging
 #include <signal.h>
 #include <sys/epoll.h>
 #include <sys/types.h>
@@ -27,12 +28,11 @@ auto ConnectionManager::handleReceivingEvent(int fd) -> std::tuple<std::string, 
     std::string buf;
     buf.resize(BUFFER_SIZE);
     ssize_t numBytes = recv(fd, buf.data(), BUFFER_SIZE, 0);
-    // if (numBytes < 0)
-    //     return std::unexpected("recv failed");
-    // if (numBytes == 0)
-    //     return std::unexpected("Client " + std::to_string(fd) + " has disconnected. recv returned 0.");
+    LOG(LogLevel::kDebug, "recv fd={} returned={}", fd, numBytes);
+    if (numBytes <= 0)
+        return {"", numBytes}; // don't return garbage buffer on EOF or error
+    buf.resize(numBytes);      // trim to actual received size
 
-    // todo error handling
     return {buf, numBytes};
 }
 
@@ -57,35 +57,18 @@ auto ConnectionManager::handleEvent(const epoll_event& epollEvent) -> HandleEven
     }
     Client& client = *it->second;
 
-    if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
+    if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP) && !(events & EPOLLIN))
     {
-        if (close(fd) == -1)
-            LOG(LogLevel::kDebug, "failed to close client fd: {}", std::to_string(fd));
-        else
-        {
-            LOG(LogLevel::kDebug, "Closed client fd: {}", std::to_string(fd));
-            client.setState(ClientState::Closed);
-            clientMap_.erase(fd);
-        }
+        closeConnection(fd);
         return HandleEventResult::kError;
     }
 
     return client.handleEvent(epollEvent);
 }
 
-// auto ConnectionManager::logNewConnection(int connectionSocket, sockaddr_storage clientAddress, socklen_t addressLen) -> void
-// {
-//     char host[NI_MAXHOST];
-//     char service[NI_MAXSERV];
-
-//     int rc = getnameinfo(reinterpret_cast<sockaddr*>(&clientAddress), addressLen,
-//                          host, sizeof(host), service, sizeof(service),
-//                          NI_NUMERICHOST | NI_NUMERICSERV);
-
-// }
-
 auto ConnectionManager::closeConnection(int fd) -> void
 {
+    epoll_ctl(epollfd_, EPOLL_CTL_DEL, fd, NULL);
     if (close(fd) == -1)
         LOG(LogLevel::kDebug, "failed to close client fd: {}", fd);
     else
@@ -102,14 +85,26 @@ auto ConnectionManager::addCGIConnection(int cgiFd, std::shared_ptr<Client> clie
         return std::unexpected(setNonBlockingRes.error());
 
     struct epoll_event ev_;
-    ev_.events  = EPOLLIN | EPOLLRDHUP | EPOLLOUT;
+    ev_.events  = EPOLLRDHUP | EPOLLOUT;
     ev_.data.fd = cgiFd;
     if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, cgiFd, &ev_) == -1)
     {
         perror("epoll_ctl: connectionSocket");
         return std::unexpected("epoll_ctl failed");
     }
+    LOG(LogLevel::kInfo, "New CGI fd added to epoll on fd={}", cgiFd);
+
     clientMap_.emplace(cgiFd, client);
+    return {};
+}
+
+auto ConnectionManager::changeCGIConnectionToRead(int cgiFd) -> std::expected<void, std::string>
+{
+    // Re-arm epoll for reading
+    epoll_event ev{};
+    ev.events  = EPOLLIN | EPOLLRDHUP;
+    ev.data.fd = cgiFd;
+    epoll_ctl(epollfd_, EPOLL_CTL_MOD, cgiFd, &ev); // MOD, not ADD
     return {};
 }
 
@@ -126,7 +121,6 @@ auto ConnectionManager::createConnection(const epoll_event& epollEvent, std::tup
         return std::unexpected(("Listen socket " + std::to_string(listenSocket) + " has been closed"));
     }
 
-    // todo: can provide more args to log info on clients
     connectionSocket = accept(listenSocket, reinterpret_cast<sockaddr*>(&clientAddress), &addressLen);
     if (connectionSocket == -1)
     {
@@ -175,21 +169,33 @@ auto ConnectionManager::getClient(int fd) -> std::shared_ptr<Client>
 
 auto ConnectionManager::connectionManagerCleanup() -> void
 {
-    int cgiPID;
-    for (auto it = clientMap_.begin(); it != clientMap_.end();)
+    std::vector<int> fdsToClose;
+    for (const auto& [fd, client] : clientMap_)
     {
-        int   fd     = it->first;
-        auto& client = it->second;
-        cgiPID       = client->getCgiPID();
-        if (cgiPID > 0)
-        {
-            kill(cgiPID, SIGTERM); // todo SIGTERM or SIGKILL
-            waitpid(cgiPID, NULL, 0);
-        }
-        if (close(fd) == -1)
-            LOG(LogLevel::kDebug, "failed to close client fd: {}", fd);
-        else
-            LOG(LogLevel::kDebug, "Closed client fd: {}. Erasing from clientMap_", fd);
-        it = clientMap_.erase(it);
+        fdsToClose.push_back(fd);
+    }
+    for (int fd : fdsToClose)
+    {
+        closeConnection(fd);
+    }
+}
+
+auto ConnectionManager::processTimeouts() -> void
+{
+    unsigned int timeout = InputArgs::args.timeout;
+    if (timeout == 0)
+        return;
+    std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+    std::vector<int>                      fdsToClose;
+    for (const auto& [fd, client] : clientMap_)
+    {
+        auto idleSeconds = std::chrono::duration_cast<std::chrono::seconds>(now - client->getLastActivity()).count();
+        if (idleSeconds > timeout)
+            fdsToClose.push_back(fd);
+    }
+    for (int fd : fdsToClose)
+    {
+        LOG(LogLevel::kDebug, "Client fd: {} timed out", fd);
+        closeConnection(fd);
     }
 }

@@ -14,9 +14,6 @@ enum class ClientState
     Receiving,
     Processing,
     Sending,
-    Sent,
-    Closed,
-    Error,
 };
 
 class Client : public std::enable_shared_from_this<Client>
@@ -54,21 +51,33 @@ class Client : public std::enable_shared_from_this<Client>
         auto setListenSocketIpPortPair(std::tuple<std::string, int>) -> void;
         auto getListenSocketIpPortPair() -> std::tuple<std::string, int>;
 
+        auto setRequestIsCgi(bool) -> void;
+        auto getRequestIsCgi() -> bool;
+
+        std::chrono::steady_clock::time_point getLastActivity();
+
     private:
-        int                          socketfd_;
-        int                          cgifd_;
-        int                          listenSocketPort_;
-        int                          cgiPID_ = -1;
-        std::tuple<std::string, int> listenSocketIpPortPair_;
-        std::string                  service_;
-        std::string                  host_;
-        bool                         requestIsCgi_;
+        int                                   socketfd_;
+        int                                   cgifd_;
+        int                                   listenSocketPort_;
+        int                                   cgiPID_ = -1;
+        std::tuple<std::string, int>          listenSocketIpPortPair_;
+        std::string                           service_;
+        std::string                           host_;
+        bool                                  requestIsCgi_;
+        std::chrono::steady_clock::time_point lastActivityTime_;
+
+        auto execute() -> void;
+        auto processKeepAlive() -> void;
+        auto prepareResponseForSending() -> void;
 
         ClientState  state_;
         HTTPRequest  request_;
         HTTPResponse response_;
         Cgi          CgiHandler_;
         ErrorType    error_;
+
+        auto updateLastActivityTime() -> void;
 };
 
 #endif // CLIENT_HPP
