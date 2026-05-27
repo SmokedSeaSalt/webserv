@@ -283,3 +283,24 @@ func TestShellCGI(t *testing.T) {
     })
 
 }
+
+
+
+
+
+func TestLargerThanMaxBodySize(t *testing.T) {
+    t.Run("larger than max body size", func(t *testing.T) {
+        body := "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur et consectetur nunc. In elementum mattis felis non volutpat. Duis odio elit, euismod at velit nec, iaculis malesuada nunc. Integer id mauris placerat, accumsan erat ut, pretium massa. Aliquam erat volutpat. Donec ex mauris, varius eu faucibus sit amet, tincidunt vel mauris. Nullam quis mattis purus. Aenean ut molestie lectus. Donec rutrum leo diam, bibendum porta lorem pretium in. Curabitur accumsan malesuada leo, quis blandit diam feugiat id. Sed a ligula in felis iaculis vehicula sit amet at lacus. Aenean porttitor molestie nunc ut vulputate. Praesent a urna dictum, tempor diam nec, feugiat erat. Interdum et malesuada fames ac ante ipsum primis in faucibus. Duis ac volutpat mi, non ultricies felis. Pellentesque sodales tempus velit eget hendrerit. Etiam vel tellus sit amet tortor tempus tempor facilisis et justo. Proin tristique at nunc at venenatis. Integer dui nisi, accumsan vitae ornare ut, sagittis tempus ante. Curabitur vel condimentum arcu, porta congue lectus. Praesent aliquet lobortis viverra. Nulla volutpat."
+        fileName := "/assets/newFileToAdd"
+        resp, err := http.Post(getBaseURL()+fileName, "text/html", strings.NewReader(body))
+
+        if err != nil {
+            t.Fatalf("Request failed: %v", err)
+        }
+        defer resp.Body.Close()
+        if resp.StatusCode != 413 {
+            t.Errorf("Expected 413, got %d", resp.StatusCode)
+        }
+    })
+
+}
