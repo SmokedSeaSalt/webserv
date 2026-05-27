@@ -3,7 +3,7 @@
 ## Description
 
 This project is a HTTP/1.1 webserver written in c++23.
-It has support for the following CGI types: xx, xx, xx.
+It has support for the following CGI types: .sh, .py.
 It supports the GET, HEAD, POST, and DELETE methods.
 It supports mutliple client connections and is non blocking with the use of epoll()
 
@@ -20,21 +20,23 @@ The following things can be configured in the config file:
 - Clients uploading file location
 - Supported CGI types
 
+## Prerequisits
+- clang 21+ (21.1.8 verified)
+
 ## Instructions
 
-- ```git clone```
+- ```git clone <URL> webserv```
 - ```cd webserv```
 - ```make```
 - ```./webserv <config_file>```
 - ```./webserv -h``` to check out additional running options
 
-TODO check rules for duplicates and upload store things
 ### config file layout
 - If you want to custmize your own .conf file, follow the same structure as the example.conf provided. All options are present in the example.conf file.
 - Locations with a return (redirect) must only contain return.
-- Locations with 'upload_store' must contain only an 'upload_store' and a 'methods' with POST
+- Locations with 'upload_store' must contain only an 'upload_store' and a 'methods' with POST or DELETE
 - Duplicate location path prefixes are invalid
-- duplicate server listens are invalid
+- Duplicate ports numbers are invalid
 
 ## Resources
 - HTTP 1.1: https://www.rfc-editor.org/rfc/rfc9112.html
@@ -47,7 +49,7 @@ TODO check rules for duplicates and upload store things
 - send(): https://cplusplus.com/forum/general/266899/
 
 ## AI usage
-- Test writing
+- Help with writing tests
 - Explaining/finding information in documentation
 - Explaining functions when documentation is vague or insufficient
 - Help track down bugs
