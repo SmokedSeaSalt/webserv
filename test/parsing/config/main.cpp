@@ -105,8 +105,8 @@ TEST_CASE("Test single ServerBlock (test1.conf)")
             CHECK(loc.redirectCode == 301);
             CHECK(loc.redirectLocation == "/new-page");
 
-            CHECK(loc.acceptedMethods.getAllowed == false);
-            CHECK(loc.acceptedMethods.headAllowed == false);
+            CHECK(loc.acceptedMethods.getAllowed == true);
+            CHECK(loc.acceptedMethods.headAllowed == true);
             CHECK(loc.acceptedMethods.postAllowed == false);
             CHECK(loc.acceptedMethods.deleteAllowed == false);
 
@@ -249,8 +249,8 @@ TEST_CASE("Test multiple ServerBlocks (test2.conf)")
                 CHECK(loc.redirectCode == 301);
                 CHECK(loc.redirectLocation == "/new-page");
 
-                CHECK(loc.acceptedMethods.getAllowed == false);
-                CHECK(loc.acceptedMethods.headAllowed == false);
+                CHECK(loc.acceptedMethods.getAllowed == true);
+                CHECK(loc.acceptedMethods.headAllowed == true);
                 CHECK(loc.acceptedMethods.postAllowed == false);
                 CHECK(loc.acceptedMethods.deleteAllowed == false);
 
