@@ -204,7 +204,7 @@ auto parseServerBlock(std::ifstream& inFile) -> std::expected<ServerBlock, std::
                 return std::unexpected("No listen socket configured");
             if (foundMaxBodySize == false)
                 return std::unexpected("No max body size configured");
-                
+
             return serverBlock;
         }
     }
